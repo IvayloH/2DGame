@@ -1,0 +1,7 @@
+*.prefs
+images/
+.classpath
+maps/
+sounds/
+.project
+bin/
