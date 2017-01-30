@@ -64,7 +64,7 @@ public class Game extends GameCore
         Sprite s;	// Temporary reference to a sprite
 
         // Load the tile map and print it out so we can check it is valid
-        tmap.loadMap("maps", "map.txt");
+        tmap.loadMap("assets/maps", "map.txt");
 
         // Create a set of background sprites that we can 
         // rearrange to give the illusion of motion
