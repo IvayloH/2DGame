@@ -93,7 +93,7 @@ public class Game extends GameCore
 
         initialiseGame();
       		
-        System.out.println(tmap);
+       //System.out.println(tmap);
     }
 
     /**
@@ -205,6 +205,22 @@ public class Game extends GameCore
         	// and make them bounce
         	player.setVelocityY(-player.getVelocityY() * (0.03f * elapsed));
         }
+        
+        //Restricts player from going off the top of the screen
+        if(player.getY()<0)
+        {
+        	player.setY(0);
+        }
+        
+       //Getting the sprite's location on the tile map
+        int tileLocationX = (int)(player.getX()/tmap.getTileWidth());
+        int tileLocationY = (int)(player.getY()/tmap.getTileHeight());
+        
+        if(tmap.getTileChar(tileLocationX, tileLocationY+1) == 'p')
+        {
+        	
+        }
+        
     }
     
     

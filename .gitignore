@@ -1,7 +1,14 @@
-*.prefs
+##########
+#Contents#
+##########
+
 images/
-.classpath
 maps/
 sounds/
-.project
+
+#
 bin/
+*.project
+*.prefs
+*.classpath
+assets/
