@@ -106,7 +106,7 @@ public class Game extends GameCore
     	total = 0;
     	      
         player.setX(64);
-        player.setY(280);
+        player.setY(100);
         player.setVelocityX(0);
         player.setVelocityY(0);
         player.show();
@@ -216,9 +216,11 @@ public class Game extends GameCore
         int tileLocationX = (int)(player.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(player.getY()/tmap.getTileHeight());
         
-        if(tmap.getTileChar(tileLocationX, tileLocationY+1) == 'p')
+        if(tmap.getTileChar(tileLocationX, tileLocationY+1) == 'b')
         {
         	
+        	//player.setY(player.getY()-player.getHeight());
+        	player.setVelocityY(.0f);
         }
         
     }

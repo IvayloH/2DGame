@@ -6,7 +6,7 @@ package game2D;
 	create a velocity object with a particular speed and direction and
 	then query the object to find our what the corresponding change in
 	vertical and horizontal pixels per millisecond should be. These
-	queries are achieved using the methods 'getdx' and 'getdy'.
+	queries are achieved using the methods ‘getdx’ and ‘getdy’.
 	respectively.
 	
 	@author David Cairns
@@ -19,6 +19,8 @@ public class Velocity {
 
 	private double dx;		// Above values broken down into x and y changes
 	private double dy;
+	
+	public final static float PI = 3.14159265f;
 
 	/**
 		Initialise a default velocity with 0 speed and an
@@ -46,6 +48,26 @@ public class Velocity {
 		reCalc();
 	}
 
+	/**
+	 * Initialise a velocity object with a required speed and angle based on
+	 * the angle between a source and target relative to the horizontal 
+	 * 
+	 * @param s		Speed to use with angle
+	 * @param x		X coordinate of source
+	 * @param y		Y coordinate of source
+	 * @param tgtx	X coordinate of target
+	 * @param tgty	Y coordinate of target
+	 */
+	public Velocity(float s, float x, float y, float tgtx, float tgty)
+	{
+		dx = 0.0f;
+		dy = 0.0f;
+		speed = s;
+		dangle = getAngle(x, y, tgtx, tgty);
+		reCalc();
+	}
+
+	
 	/**
 		Recalculates the dx and dy values for the current
 		speed and angle. Automatically called whenever you
@@ -153,5 +175,18 @@ public class Velocity {
 		current angle and speed.
 	*/
 	public double getdy() { return dy; }
+	
+	/**
+	 * 
+	 * @param x		X coordinate of source
+	 * @param y		Y coordinate of source
+	 * @param tgtx	X coordinate of target
+	 * @param tgty	Y coordinate of target
+	 * @return		Angle in degrees between source and target
+	 */
+	public static double getAngle(float x, float y, float tgtx, float tgty)
+	{
+		return Math.atan2(tgty - y, tgtx - x) * 180 / PI;
+	}
 
 }
