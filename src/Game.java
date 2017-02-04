@@ -29,15 +29,22 @@ public class Game extends GameCore
     
     // Game state flags
     boolean flap = false;
-    enum SpriteState
+    boolean collisionRIGHT = false;
+    boolean collisionLEFT = false;
+    boolean collisionABOVE = false;
+    boolean collisionBELOW = false;
+    
+    enum ESpriteState
     {
-    	flap,
-    	run,
-    	jump,
-    	standing,
-    	NONE
+    	RUN,
+    	JUMP,
+    	STANDING,
+    	IDLE
     }
-    SpriteState ss = SpriteState.NONE;
+    
+    
+   //Sprite State
+    ESpriteState spriteState = ESpriteState.IDLE;
     
     // Game resources
     Animation landing;
@@ -173,10 +180,14 @@ public class Game extends GameCore
      */    
     public void update(long elapsed)
     {
-    	if(ss.equals(SpriteState.standing))
+    	if(collisionBELOW)
     		player.setVelocityY(.0f);
         // Make adjustments to the speed of the sprite due to gravity
     	else player.setVelocityY(player.getVelocityY()+(gravity*elapsed));
+    	if(collisionRIGHT)
+    		player.setVelocityX(.0f);
+    	if(collisionLEFT)
+    		player.setVelocityX(.0f);
     	    	
        	player.setAnimationSpeed(1.0f);
        	
@@ -230,12 +241,28 @@ public class Game extends GameCore
         int tileLocationX = (int)(player.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(player.getY()/tmap.getTileHeight());
         
-        if(tmap.getTileChar(tileLocationX, tileLocationY+1) == 'b')
-        {
-        	ss = SpriteState.standing;
-        }
+        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+1);
+        char tileCharAbove = tmap.getTileChar(tileLocationX, tileLocationY);
+        char tileCharRight = tmap.getTileChar(tileLocationX+1, tileLocationY);
+        char tileCharLeft = tmap.getTileChar(tileLocationX, tileLocationY);
+        
+      //Check Tile underneath the player for collision
+        if(tileCharBelow == 'p' || tileCharBelow=='t' || tileCharBelow=='b')
+        	collisionBELOW = true;
+        else 
+        	collisionBELOW = false;
+        
+        //Check Tile to the RIGHT of the player for collision
+        if(tileCharRight == 'p' || tileCharRight == 't' || tileCharRight=='b')
+        	collisionRIGHT = true;
         else
-        	ss = SpriteState.NONE;
+        	collisionRIGHT=false;
+        
+      //Check Tile to the LEFT of the player for collision
+        if(tileCharLeft == 'p' || tileCharLeft == 't' || tileCharLeft=='b')
+        	collisionLEFT = true;
+        else
+        	collisionLEFT = false;
         
     }
 
@@ -266,7 +293,9 @@ public class Game extends GameCore
     	}
     	
     	if(key == KeyEvent.VK_LEFT) 
-    		player.setVelocityX(-player.getVelocityX());
+    	{	float currSpeed = player.getVelocityX();
+				player.setVelocityX(currSpeed-.05f);
+    	}
     	
     	if (key == KeyEvent.VK_S)
     	{
