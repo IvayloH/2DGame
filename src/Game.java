@@ -28,8 +28,8 @@ public class Game extends GameCore
 	
 	
 	// Useful game constants
-	static int screenWidth = 512;   //512
-	static int screenHeight = 384;  //384
+	static final int screenWidth = 512;   //512
+	static final int screenHeight = 384;  //384
 
     float 	lift = 0.005f;
     float	gravity = 0.01f;
@@ -43,6 +43,7 @@ public class Game extends GameCore
     //Pressed Key flags
     boolean leftKey = false;
     boolean rightKey = false;
+    boolean spaceKey = false;
     
     enum ESpriteState
     {
@@ -56,20 +57,14 @@ public class Game extends GameCore
     	DEAD,
     	IDLE
     }
-    
-    
    //Sprite State
     ESpriteState spriteState = ESpriteState.FALLING;
     
     // Game resources
     Animation landing;
-    
     Sprite	player = null;
-    
     ArrayList<Sprite> clouds = new ArrayList<Sprite>();
-
-    TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()
-    
+    TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
     long lives;         			// number of lives left
 
 
@@ -79,8 +74,8 @@ public class Game extends GameCore
      * 
      * @param args	The list of parameters this program might use (ignored)
      */
-    public static void main(String[] args) {
-
+    public static void main(String[] args)
+    {
         Game gct = new Game();
         gct.init();
         // Start in windowed mode with the given screen height and width
@@ -123,9 +118,8 @@ public class Game extends GameCore
         	clouds.add(s);
         }
         
-        initialiseGame();
-      		
-       System.out.println(tmap);
+        initialiseGame(); 		
+        System.out.println(tmap);
     }
 
     /**
@@ -144,22 +138,13 @@ public class Game extends GameCore
      * Draw the current state of the game
      */
     public void draw(Graphics2D g)
-    {    	
-    	// Be careful about the order in which you draw objects - you
-    	// should draw the background first, then work your way 'forward'
-
+    {
     	// First work out how much we need to shift the view 
     	// in order to see where the player is.
         int xo = 0;
         int yo = 0;
         
         //xo = 0-(int)player.getX();
-        
-        
-        // If relative, adjust the offset so that
-        // it is relative to the player
-
-        // ...?
         
         g.setColor(Color.blue);
         g.fillRect(0, 0, getWidth(), getHeight());
@@ -248,8 +233,6 @@ public class Game extends GameCore
     		player.setVelocityY(player.getVelocityY()+(gravity*elapsed)); // Make adjustments to the speed of the sprite due to gravity
     	}
     	
-       	//player.setAnimationSpeed(1.0f);
-                
        	for (Sprite s: clouds)
        		s.update(elapsed);
        	
@@ -258,7 +241,6 @@ public class Game extends GameCore
        
         // Then check for any collisions that may have occurred
         handleTileMapCollisions(player,elapsed);
-         	
     }
     
     
@@ -271,10 +253,6 @@ public class Game extends GameCore
      */
     public void handleTileMapCollisions(Sprite s, long elapsed)
     {
-    	// This method should check actual tile map collisions. For
-    	// now it just checks if the player has gone off the bottom
-    	// of the tile map.
-    	
         if (player.getY() + player.getHeight() > tmap.getPixelHeight())
         {
         	// Put the player back on the map
@@ -387,12 +365,9 @@ public class Game extends GameCore
     }
 
 
-	public void keyReleased(KeyEvent e) { 
-
+	public void keyReleased(KeyEvent e) 
+	{
 		int key = e.getKeyCode();
-
-		// Switch statement instead of lots of ifs...
-		// Need to use break to prevent fall through.
 		switch (key)
 		{
 			case KeyEvent.VK_ESCAPE:
