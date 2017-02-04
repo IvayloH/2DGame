@@ -20,12 +20,15 @@ import game2D.*;
 
 public class Game extends GameCore 
 {
+	static final float RUNSPEED = .07f;
+	
+	
 	// Useful game constants
 	static int screenWidth = 512;
 	static int screenHeight = 384;
 
     float 	lift = 0.005f;
-    float	gravity = 0.0001f;
+    float	gravity = 0.01f;
     
     // Game state flags
     boolean flap = false;
@@ -34,17 +37,25 @@ public class Game extends GameCore
     boolean collisionABOVE = false;
     boolean collisionBELOW = false;
     
+    //Pressed Key flags
+    boolean leftKey = false;
+    boolean rightKey = false;
+    
     enum ESpriteState
     {
-    	RUN,
+    	RUN_LEFT,
+    	RUN_RIGHT,
     	JUMP,
+    	JUMP_LEFT,
+    	JUMP_RIGHT,
     	STANDING,
+    	FALLING,
     	IDLE
     }
     
     
    //Sprite State
-    ESpriteState spriteState = ESpriteState.IDLE;
+    ESpriteState spriteState = ESpriteState.FALLING;
     
     // Game resources
     Animation landing;
@@ -180,22 +191,48 @@ public class Game extends GameCore
      */    
     public void update(long elapsed)
     {
+    	if(spriteState.equals(ESpriteState.STANDING))
+    	{
+    		player.setVelocityX(.0f);
+    		player.setVelocityY(.0f);
+    	}
+    	if(spriteState.equals(ESpriteState.JUMP))
+    	{
+    		player.setVelocityY(-.04f);
+    	}
+    	
+    	if(spriteState.equals(ESpriteState.RUN_RIGHT))
+    	{
+    		if(collisionRIGHT) player.setVelocityX(.0f);
+    		else
+    			player.setVelocityX(RUNSPEED);
+    	}
+    	
+    	if(spriteState.equals(ESpriteState.RUN_LEFT))
+    	{
+    		if(collisionLEFT) player.setVelocityX(.0f);
+    		else
+    			player.setVelocityX(-RUNSPEED);
+    	}
+    	
     	if(collisionBELOW)
     		player.setVelocityY(.0f);
-        // Make adjustments to the speed of the sprite due to gravity
-    	else player.setVelocityY(player.getVelocityY()+(gravity*elapsed));
-    	if(collisionRIGHT)
+    	else 
+    	{
+    		player.setVelocityY(.05f);
+    		player.setVelocityY(player.getVelocityY()+(gravity*elapsed)); // Make adjustments to the speed of the sprite due to gravity
+    	}
+    	/*if(collisionRIGHT)
+    	{
     		player.setVelocityX(.0f);
+    	}
+    	
     	if(collisionLEFT)
+    	{
     		player.setVelocityX(.0f);
-    	    	
+    	}
+    	*/	
        	player.setAnimationSpeed(1.0f);
-       	
-       	if (flap) 
-       	{
-       		player.setAnimationSpeed(1.8f);
-       		player.setVelocityY(-0.04f);
-       	}
                 
        	for (Sprite s: clouds)
        		s.update(elapsed);
@@ -275,11 +312,10 @@ public class Game extends GameCore
      */
     public void keyPressed(KeyEvent e) 
     { 
+    	
     	int key = e.getKeyCode();
     	
     	if (key == KeyEvent.VK_ESCAPE) stop();
-    	
-    	if (key == KeyEvent.VK_UP) flap = true;
     	  
     	if (key==KeyEvent.VK_DOWN) 
     	{
@@ -288,13 +324,24 @@ public class Game extends GameCore
     	}
     	if( key == KeyEvent.VK_RIGHT) 
     	{
-    		float currSpeed = player.getVelocityX();
-    		player.setVelocityX(currSpeed+.05f);
+    		spriteState = ESpriteState.RUN_RIGHT;
+    		rightKey = true;
     	}
     	
     	if(key == KeyEvent.VK_LEFT) 
-    	{	float currSpeed = player.getVelocityX();
-				player.setVelocityX(currSpeed-.05f);
+    	{	
+    		spriteState = ESpriteState.RUN_LEFT;
+    		leftKey=true;
+    	}
+    	
+    	if (key == KeyEvent.VK_UP)
+    	{
+    		if(rightKey) 
+    			spriteState = ESpriteState.JUMP_RIGHT;
+    		else if(leftKey)
+    			spriteState = ESpriteState.JUMP_LEFT;
+    		else 
+    			spriteState = ESpriteState.JUMP;
     	}
     	
     	if (key == KeyEvent.VK_S)
@@ -319,9 +366,33 @@ public class Game extends GameCore
 		// Need to use break to prevent fall through.
 		switch (key)
 		{
-			case KeyEvent.VK_ESCAPE : stop(); break;
-			case KeyEvent.VK_UP     : flap = false; break;
-			default :  break;
+			case KeyEvent.VK_ESCAPE:
+			{
+				stop(); 
+				break;
+			}
+			case KeyEvent.VK_UP:
+			{
+				spriteState = ESpriteState.FALLING;
+				break;
+			}
+			
+			case KeyEvent.VK_RIGHT:
+			{
+				spriteState = ESpriteState.STANDING;
+				rightKey = false;
+				break;
+			}
+			
+			case KeyEvent.VK_LEFT:
+			{
+				spriteState = ESpriteState.STANDING;
+				leftKey = false;
+				break;
+			}
+			
+			default:
+				break;
 		}
 	}
 }
