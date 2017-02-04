@@ -21,17 +21,20 @@ import game2D.*;
 public class Game extends GameCore 
 {
 	static final float RUNSPEED = .07f;
+	//
+	//  Should images be 31x31 so they fall between tiles? Might Solve Collision Glitch
+	//
+	//
 	
 	
 	// Useful game constants
-	static int screenWidth = 512;
-	static int screenHeight = 384;
+	static int screenWidth = 512;   //512
+	static int screenHeight = 384;  //384
 
     float 	lift = 0.005f;
     float	gravity = 0.01f;
     
     // Game state flags
-    boolean flap = false;
     boolean collisionRIGHT = false;
     boolean collisionLEFT = false;
     boolean collisionABOVE = false;
@@ -50,6 +53,7 @@ public class Game extends GameCore
     	JUMP_RIGHT,
     	STANDING,
     	FALLING,
+    	DEAD,
     	IDLE
     }
     
@@ -61,11 +65,12 @@ public class Game extends GameCore
     Animation landing;
     
     Sprite	player = null;
+    
     ArrayList<Sprite> clouds = new ArrayList<Sprite>();
 
     TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()
     
-    long total;         			// The score will be the total time elapsed since a crash
+    long lives;         			// number of lives left
 
 
     /**
@@ -97,7 +102,7 @@ public class Game extends GameCore
         // rearrange to give the illusion of motion
         
         landing = new Animation();
-        landing.loadAnimationFromSheet("images/landbird.png", 1, 1, 60);
+        landing.loadAnimationFromSheet("assets/images/batman1.png", 1, 1, 60);
         
         // Initialise the player with an animation
         player = new Sprite(landing);
@@ -117,7 +122,7 @@ public class Game extends GameCore
         	s.show();
         	clouds.add(s);
         }
-
+        
         initialiseGame();
       		
        System.out.println(tmap);
@@ -130,12 +135,8 @@ public class Game extends GameCore
      */
     public void initialiseGame()
     {
-    	total = 0;
-    	      
-        player.setX(0);
-        player.setY(100);
-        player.setVelocityX(0);
-        player.setVelocityY(0);
+    	lives = 3;
+    	resetPlayerPositionAndVelocity(0,100,0,0);
         player.show();
     }
     
@@ -163,7 +164,6 @@ public class Game extends GameCore
         g.setColor(Color.blue);
         g.fillRect(0, 0, getWidth(), getHeight());
         
-        
         // Apply offsets to sprites then draw them
         for (Sprite s: clouds)
         {
@@ -179,9 +179,9 @@ public class Game extends GameCore
         tmap.draw(g,xo,yo);
         
         // Show score and status information
-        //String msg = String.format("Score: %d", total/100);
-        //g.setColor(Color.darkGray);
-        //g.drawString(msg, getWidth() - 80, 50);
+        String msg = String.format("Lives: %d", lives);
+        g.setColor(Color.darkGray);
+        g.drawString(msg, getWidth() - 80, 50);
     }
 
     /**
@@ -191,48 +191,64 @@ public class Game extends GameCore
      */    
     public void update(long elapsed)
     {
+    	if(spriteState.equals(ESpriteState.DEAD)) 
+    	{
+    		lives--;
+    		if(lives<1) 
+    			stop(); // stop game if player loses all lives
+    		else
+    		{
+    			resetPlayerPositionAndVelocity(0,100,0,0);
+    		}
+    	}
+    		
     	if(spriteState.equals(ESpriteState.STANDING))
     	{
     		player.setVelocityX(.0f);
     		player.setVelocityY(.0f);
     	}
+    	
     	if(spriteState.equals(ESpriteState.JUMP))
     	{
     		player.setVelocityY(-.04f);
     	}
+    	if(spriteState.equals(ESpriteState.JUMP_LEFT))
+    	{
+    		//TODO rotate sprite
+    		player.setVelocityY(-.04f);
+    		player.setVelocityX(-RUNSPEED);
+    	}
+    	if(spriteState.equals(ESpriteState.JUMP_RIGHT))
+    	{
+    		player.setVelocityY(-.04f);
+    		player.setVelocityX(RUNSPEED);
+    	}
     	
     	if(spriteState.equals(ESpriteState.RUN_RIGHT))
     	{
-    		if(collisionRIGHT) player.setVelocityX(.0f);
+    		if(collisionRIGHT) 
+    			player.setVelocityX(.0f);
     		else
     			player.setVelocityX(RUNSPEED);
     	}
     	
     	if(spriteState.equals(ESpriteState.RUN_LEFT))
     	{
-    		if(collisionLEFT) player.setVelocityX(.0f);
+    		if(collisionLEFT) 
+    			player.setVelocityX(.0f);
     		else
     			player.setVelocityX(-RUNSPEED);
     	}
     	
-    	if(collisionBELOW)
+    	if(collisionBELOW && !spriteState.equals(ESpriteState.JUMP))
     		player.setVelocityY(.0f);
-    	else 
+    	else if(!spriteState.equals(ESpriteState.JUMP)) 
     	{
     		player.setVelocityY(.05f);
     		player.setVelocityY(player.getVelocityY()+(gravity*elapsed)); // Make adjustments to the speed of the sprite due to gravity
     	}
-    	/*if(collisionRIGHT)
-    	{
-    		player.setVelocityX(.0f);
-    	}
     	
-    	if(collisionLEFT)
-    	{
-    		player.setVelocityX(.0f);
-    	}
-    	*/	
-       	player.setAnimationSpeed(1.0f);
+       	//player.setAnimationSpeed(1.0f);
                 
        	for (Sprite s: clouds)
        		s.update(elapsed);
@@ -264,8 +280,8 @@ public class Game extends GameCore
         	// Put the player back on the map
         	player.setY(tmap.getPixelHeight() - player.getHeight());
         	
-        	// and make them bounce
-        	//player.setVelocityY(-player.getVelocityY() * (0.03f * elapsed));
+        	//TODO uncomment so player dies once they fall off the map
+        	//spriteState = ESpriteState.DEAD;
         }
         
         //Restricts player from going off the top of the screen
@@ -278,16 +294,29 @@ public class Game extends GameCore
         int tileLocationX = (int)(player.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(player.getY()/tmap.getTileHeight());
         
-        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+1);
-        char tileCharAbove = tmap.getTileChar(tileLocationX, tileLocationY);
-        char tileCharRight = tmap.getTileChar(tileLocationX+1, tileLocationY);
+        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+player.getHeight()/32);
+        char tileCharRight = tmap.getTileChar(tileLocationX+player.getWidth()/32, tileLocationY);
         char tileCharLeft = tmap.getTileChar(tileLocationX, tileLocationY);
         
       //Check Tile underneath the player for collision
         if(tileCharBelow == 'p' || tileCharBelow=='t' || tileCharBelow=='b')
+        {
         	collisionBELOW = true;
-        else 
-        	collisionBELOW = false;
+        }
+        else
+        {
+        	char possibleSecondTile = tmap.getTileChar(tileLocationX+player.getWidth()/32, tileLocationY+player.getHeight()/32);
+        	//check if player is in 2 tiles
+        	if(possibleSecondTile == 'p' || possibleSecondTile == 't' || possibleSecondTile == 'b')
+        	{
+        		collisionBELOW = true;
+        	}
+        	else
+        	{
+        		collisionBELOW = false; //player not standing on a second tile 
+        		//spriteState = ESpriteState.FALLING;
+        	}
+        }
         
         //Check Tile to the RIGHT of the player for collision
         if(tileCharRight == 'p' || tileCharRight == 't' || tileCharRight=='b')
@@ -300,7 +329,6 @@ public class Game extends GameCore
         	collisionLEFT = true;
         else
         	collisionLEFT = false;
-        
     }
 
      
@@ -312,10 +340,11 @@ public class Game extends GameCore
      */
     public void keyPressed(KeyEvent e) 
     { 
-    	
+    	//TODO Flag the keys pressed and decide on the action at the end
     	int key = e.getKeyCode();
     	
-    	if (key == KeyEvent.VK_ESCAPE) stop();
+    	if (key == KeyEvent.VK_ESCAPE) 
+    		stop();
     	  
     	if (key==KeyEvent.VK_DOWN) 
     	{
@@ -334,9 +363,9 @@ public class Game extends GameCore
     		leftKey=true;
     	}
     	
-    	if (key == KeyEvent.VK_UP)
+    	if (key == KeyEvent.VK_UP && collisionBELOW)
     	{
-    		if(rightKey) 
+    		if(rightKey)
     			spriteState = ESpriteState.JUMP_RIGHT;
     		else if(leftKey)
     			spriteState = ESpriteState.JUMP_LEFT;
@@ -394,5 +423,19 @@ public class Game extends GameCore
 			default:
 				break;
 		}
+	}
+	
+	/**
+	 * @param defaultX The value for the X position
+	 * @param defaultY The value for the Y position
+	 * @param defaultDX The value for the Horizontal(X) velocity
+	 * @param defaultDY The value for the Vertical(Y) velocity
+	 */
+	private void resetPlayerPositionAndVelocity(float defaultX, float defaultY, float defaultDX, float defaultDY)
+	{  
+		player.setX(defaultX);
+		player.setY(defaultY);
+		player.setVelocityX(defaultDX);
+		player.setVelocityY(defaultDY);
 	}
 }
