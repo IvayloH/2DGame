@@ -29,7 +29,16 @@ public class Game extends GameCore
     
     // Game state flags
     boolean flap = false;
-
+    enum SpriteState
+    {
+    	flap,
+    	run,
+    	jump,
+    	standing,
+    	NONE
+    }
+    SpriteState ss = SpriteState.NONE;
+    
     // Game resources
     Animation landing;
     
@@ -70,7 +79,7 @@ public class Game extends GameCore
         // rearrange to give the illusion of motion
         
         landing = new Animation();
-        landing.loadAnimationFromSheet("images/landbird.png", 4, 1, 60);
+        landing.loadAnimationFromSheet("images/landbird.png", 1, 1, 60);
         
         // Initialise the player with an animation
         player = new Sprite(landing);
@@ -93,7 +102,7 @@ public class Game extends GameCore
 
         initialiseGame();
       		
-       //System.out.println(tmap);
+       System.out.println(tmap);
     }
 
     /**
@@ -105,7 +114,7 @@ public class Game extends GameCore
     {
     	total = 0;
     	      
-        player.setX(64);
+        player.setX(0);
         player.setY(100);
         player.setVelocityX(0);
         player.setVelocityY(0);
@@ -124,14 +133,18 @@ public class Game extends GameCore
     	// in order to see where the player is.
         int xo = 0;
         int yo = 0;
-
+        
+        //xo = 0-(int)player.getX();
+        
+        
         // If relative, adjust the offset so that
         // it is relative to the player
 
         // ...?
         
-        g.setColor(Color.white);
+        g.setColor(Color.blue);
         g.fillRect(0, 0, getWidth(), getHeight());
+        
         
         // Apply offsets to sprites then draw them
         for (Sprite s: clouds)
@@ -141,16 +154,16 @@ public class Game extends GameCore
         }
 
         // Apply offsets to player and draw 
-        player.setOffsets(xo, yo);
+        player.setOffsets(-xo, yo);
         player.draw(g);
                 
         // Apply offsets to tile map and draw  it
-        tmap.draw(g,xo,yo);    
+        tmap.draw(g,xo,yo);
         
         // Show score and status information
-        String msg = String.format("Score: %d", total/100);
-        g.setColor(Color.darkGray);
-        g.drawString(msg, getWidth() - 80, 50);
+        //String msg = String.format("Score: %d", total/100);
+        //g.setColor(Color.darkGray);
+        //g.drawString(msg, getWidth() - 80, 50);
     }
 
     /**
@@ -160,9 +173,10 @@ public class Game extends GameCore
      */    
     public void update(long elapsed)
     {
-    	
+    	if(ss.equals(SpriteState.standing))
+    		player.setVelocityY(.0f);
         // Make adjustments to the speed of the sprite due to gravity
-        player.setVelocityY(player.getVelocityY()+(gravity*elapsed));
+    	else player.setVelocityY(player.getVelocityY()+(gravity*elapsed));
     	    	
        	player.setAnimationSpeed(1.0f);
        	
@@ -203,7 +217,7 @@ public class Game extends GameCore
         	player.setY(tmap.getPixelHeight() - player.getHeight());
         	
         	// and make them bounce
-        	player.setVelocityY(-player.getVelocityY() * (0.03f * elapsed));
+        	//player.setVelocityY(-player.getVelocityY() * (0.03f * elapsed));
         }
         
         //Restricts player from going off the top of the screen
@@ -218,14 +232,13 @@ public class Game extends GameCore
         
         if(tmap.getTileChar(tileLocationX, tileLocationY+1) == 'b')
         {
-        	
-        	//player.setY(player.getY()-player.getHeight());
-        	player.setVelocityY(.0f);
+        	ss = SpriteState.standing;
         }
+        else
+        	ss = SpriteState.NONE;
         
     }
-    
-    
+
      
     /**
      * Override of the keyPressed event defined in GameCore to catch our
@@ -240,7 +253,21 @@ public class Game extends GameCore
     	if (key == KeyEvent.VK_ESCAPE) stop();
     	
     	if (key == KeyEvent.VK_UP) flap = true;
-    	   	
+    	  
+    	if (key==KeyEvent.VK_DOWN) 
+    	{
+    		player.setVelocityX(.0f);
+    		player.setVelocityY(.0f);
+    	}
+    	if( key == KeyEvent.VK_RIGHT) 
+    	{
+    		float currSpeed = player.getVelocityX();
+    		player.setVelocityX(currSpeed+.05f);
+    	}
+    	
+    	if(key == KeyEvent.VK_LEFT) 
+    		player.setVelocityX(-player.getVelocityX());
+    	
     	if (key == KeyEvent.VK_S)
     	{
     		// Example of playing a sound as a thread

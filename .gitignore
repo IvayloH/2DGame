@@ -11,3 +11,4 @@ bin/
 *.project
 *.prefs
 *.classpath
+src/FireSprite.java
