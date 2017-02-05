@@ -20,7 +20,6 @@ import game2D.*;
 
 public class Game extends GameCore 
 {
-	static final float RUNSPEED = .07f;
 	//
 	//  Should images be 31x31 so they fall between tiles? Might Solve Collision Glitch
 	//
@@ -30,6 +29,8 @@ public class Game extends GameCore
 	// Useful game constants
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
+	static final float RUNSPEED = .07f;
+	static final float JUMPSPEED = -.04f;
 
     float 	lift = 0.005f;
     float	gravity = 0.01f;
@@ -144,7 +145,6 @@ public class Game extends GameCore
         int xo = 0;
         int yo = 0;
         
-        //xo = 0-(int)player.getX();
         
         g.setColor(Color.blue);
         g.fillRect(0, 0, getWidth(), getHeight());
@@ -180,10 +180,14 @@ public class Game extends GameCore
     	{
     		lives--;
     		if(lives<1) 
+    		{
     			stop(); // stop game if player loses all lives
+    			//TODO add an end game state
+    		}
     		else
     		{
     			resetPlayerPositionAndVelocity(0,100,0,0);
+    			spriteState = ESpriteState.FALLING;
     		}
     	}
     		
@@ -195,18 +199,20 @@ public class Game extends GameCore
     	
     	if(spriteState.equals(ESpriteState.JUMP))
     	{
-    		player.setVelocityY(-.04f);
+    		if(!collisionABOVE)
+    			player.setVelocityY(JUMPSPEED);
+    		else
+    			player.setVelocityY(-JUMPSPEED);
+    			//spriteState = ESpriteState.FALLING;
     	}
     	if(spriteState.equals(ESpriteState.JUMP_LEFT))
     	{
-    		//TODO rotate sprite
-    		player.setVelocityY(-.04f);
-    		player.setVelocityX(-RUNSPEED);
+    		//TODO rotate sprite; stop jump after 1s(or less?)
     	}
     	if(spriteState.equals(ESpriteState.JUMP_RIGHT))
     	{
-    		player.setVelocityY(-.04f);
-    		player.setVelocityX(RUNSPEED);
+    		//TODO stop jump after 1s(or less?)
+    		
     	}
     	
     	if(spriteState.equals(ESpriteState.RUN_RIGHT))
@@ -255,11 +261,7 @@ public class Game extends GameCore
     {
         if (player.getY() + player.getHeight() > tmap.getPixelHeight())
         {
-        	// Put the player back on the map
-        	player.setY(tmap.getPixelHeight() - player.getHeight());
-        	
-        	//TODO uncomment so player dies once they fall off the map
-        	//spriteState = ESpriteState.DEAD;
+        	spriteState = ESpriteState.DEAD;
         }
         
         //Restricts player from going off the top of the screen
@@ -272,6 +274,7 @@ public class Game extends GameCore
         int tileLocationX = (int)(player.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(player.getY()/tmap.getTileHeight());
         
+        char tileCharAbove = tmap.getTileChar(tileLocationX, tileLocationY);
         char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+player.getHeight()/32);
         char tileCharRight = tmap.getTileChar(tileLocationX+player.getWidth()/32, tileLocationY);
         char tileCharLeft = tmap.getTileChar(tileLocationX, tileLocationY);
@@ -292,21 +295,29 @@ public class Game extends GameCore
         	else
         	{
         		collisionBELOW = false; //player not standing on a second tile 
-        		//spriteState = ESpriteState.FALLING;
         	}
         }
         
         //Check Tile to the RIGHT of the player for collision
-        if(tileCharRight == 'p' || tileCharRight == 't' || tileCharRight=='b')
+        if(tileCharRight == 'p' || tileCharRight == 't' || tileCharRight == 'b')
         	collisionRIGHT = true;
         else
         	collisionRIGHT=false;
         
       //Check Tile to the LEFT of the player for collision
-        if(tileCharLeft == 'p' || tileCharLeft == 't' || tileCharLeft=='b')
+        if(tileCharLeft == 'p' || tileCharLeft == 't' || tileCharLeft == 'b')
         	collisionLEFT = true;
         else
         	collisionLEFT = false;
+        
+      //Check Tile ABOVE the player for collision
+        if(tileCharAbove == 'p' || tileCharAbove == 't' || tileCharAbove == 'b')
+        {
+        	//TODO check for second tile pos+width
+        	collisionABOVE = true;
+        }
+        else 
+        	collisionABOVE = false;
     }
 
      
