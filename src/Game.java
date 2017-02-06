@@ -290,20 +290,8 @@ public class Game extends GameCore implements MouseListener
         int tileLocationX = (int)(s.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(s.getY()/tmap.getTileHeight());
         
-        int tileLocationXMid = (int)((s.getX()+s.getWidth()/2+1)/tmap.getTileWidth());
-        int tileLocationYMid = (int)((s.getY()+s.getHeight()/2+1)/tmap.getTileHeight());
-
-        char tileCharTopMiddle = tmap.getTileChar(tileLocationXMid,tileLocationY);
-		char tileCharBeottomMiddle = tmap.getTileChar(tileLocationXMid, tileLocationY+s.getHeight()/tmap.getTileHeight());
-        char tileCharRightMiddle = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationYMid);
-        char tileCharLeftMiddle = tmap.getTileChar(tileLocationX, tileLocationYMid);
-        
-        //Tile char for the corners of the sprite
-        char tileCharTopLeft = tmap.getTileChar(tileLocationX, tileLocationY);
-        char tileCharTopRight = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationY);
         char tileCharBottomLeft = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/tmap.getTileHeight());
-        char tileCharBottomRight = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationY+s.getHeight()/tmap.getTileHeight());
-        		
+       
         //Check Tile underneath the player for collision
         if(tileCharBottomLeft == 'p' || tileCharBottomLeft=='t' || tileCharBottomLeft=='b')
         {
@@ -326,35 +314,51 @@ public class Game extends GameCore implements MouseListener
         //Check Tile to the RIGHT of the player for collision
         if(playerState.equals(EPlayerState.RUN_RIGHT))
         {
-	        if(tileCharTopRight == 'p' || tileCharTopRight == 't' || tileCharTopRight == 'b')
-	        	collisionRIGHT = true;
-	        else
-	        {
-	    		if(tileCharRightMiddle=='p' || tileCharRightMiddle == 't' || tileCharRightMiddle == 'b')
-	    			collisionRIGHT=true;
-	    		else
-	    			collisionRIGHT=false;
-	        }
+        	//flag indicating whether the sprite has hit a tile 
+        	boolean hit = false;
+        	for(int i=1; i<player.getHeight()-2; i++)
+        	{
+        		char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
+	    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
+	    			hit =true;
+        	}
+        	if(hit)
+        		collisionRIGHT = true;
+        	else 
+        		collisionRIGHT=false;
         }
         
         //Check Tile to the LEFT of the player for collision
-        if(tileCharTopLeft == 'p' || tileCharTopLeft == 't' || tileCharTopLeft == 'b')
-        	collisionLEFT = true;
-        else
-        	collisionLEFT = false;
-        
-        //Check Tile ABOVE the player for collision
-        if(tileCharTopLeft == 'p' || tileCharTopLeft == 't' || tileCharTopLeft == 'b')
+        if(playerState.equals(EPlayerState.RUN_LEFT))
         {
-        	collisionABOVE = true;
+        	//flag indicating whether the sprite has hit a tile 
+        	boolean hit = false;
+        	for(int i=1; i<player.getHeight()-2; i++)
+        	{
+        		char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
+	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
+	    			hit =true;
+        	}
+        	if(hit)
+        		collisionLEFT = true;
+        	else 
+        		collisionLEFT=false;
         }
-        else 
+        //Check Tile ABOVE the player for collision
+        if(playerState.equals(EPlayerState.JUMP))
         {
-        	//char possibleSecondTile = tmap.getTileChar((tileLocationXMid,tileLocationY);
-        	if(tileCharTopMiddle == 'p' || tileCharTopMiddle == 't' || tileCharTopMiddle == 'b')
+        	//flag indicating whether the sprite has hit a tile 
+        	boolean hit = false;
+        	for(int i=1; i<player.getWidth()-2; i++)
+        	{
+        		char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
+	    		if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
+	    			hit =true;
+        	}
+        	if(hit)
         		collisionABOVE = true;
-        	else
-        		collisionABOVE = false;
+        	else 
+        		collisionABOVE=false;
         }
         //TODO ADD COLLISON TEST FOR LOWER RIGHT/LEFT!!! If image is 64 pixels in height -> no detection for lower part...
         
