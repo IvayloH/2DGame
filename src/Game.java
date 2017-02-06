@@ -58,7 +58,8 @@ public class Game extends GameCore implements MouseListener
     ESpriteState spriteState = ESpriteState.FALLING;
     
     // Game resources
-    Animation landing = null;
+    Animation standing = null;
+    Animation movement_Right = null;
     Sprite	player = null;
     Animation grapple = null;
     Sprite grappleHook = null;
@@ -95,11 +96,15 @@ public class Game extends GameCore implements MouseListener
         // Create a set of background sprites that we can 
         // rearrange to give the illusion of motion
         
-        landing = new Animation();
-        landing.loadAnimationFromSheet("assets/images/batman1.png", 1, 1, 60);
+        standing = new Animation();
+        standing.addFrame(loadImage("assets/images/Batman.gif"),60);
+        
+        movement_Right= new Animation();
+        movement_Right.addFrame(loadImage("assets/images/BatmanMoveRight.gif"), 60);
         
         // Initialise the player with an animation
-        player = new Sprite(landing);
+        player = new Sprite(standing);
+        
         player.setTag("player");
         
         //Initialise the grapple hook with an animation
@@ -185,7 +190,8 @@ public class Game extends GameCore implements MouseListener
      */    
     public void update(long elapsed)
     {
-    	if (grappleHook.isVisible()) grappleHook.update(elapsed);
+    	if (grappleHook.isVisible())
+    		grappleHook.update(elapsed);
     	
     	if(spriteState.equals(ESpriteState.DEAD)) 
     	{
@@ -214,7 +220,7 @@ public class Game extends GameCore implements MouseListener
     			player.setVelocityY(JUMPSPEED);
     		else
     			player.setVelocityY(-JUMPSPEED);
-    			//spriteState = ESpriteState.FALLING;
+    			//TODO FIX THIS SO THE SPRITE DOESNT GO UNDERGROUND xD
     	}
     	if(spriteState.equals(ESpriteState.JUMP_LEFT))
     	{
@@ -342,7 +348,6 @@ public class Game extends GameCore implements MouseListener
             char hookLocationTileMap = tmap.getTileChar((int)(grappleHook.getX()/tmap.getTileWidth()), (int)(grappleHook.getY()/tmap.getTileHeight())); 
             if(hookLocationTileMap=='p' || hookLocationTileMap=='t' || hookLocationTileMap=='b')
             	grappleHook.hide();
-            
             //TODO hide hook after it goes off display
         }
         
@@ -372,6 +377,7 @@ public class Game extends GameCore implements MouseListener
     	{
     		spriteState = ESpriteState.RUN_RIGHT;
     		rightKey = true;
+    		player.setAnimation(movement_Right);
     	}
     	
     	if(key == KeyEvent.VK_LEFT) 
@@ -419,6 +425,7 @@ public class Game extends GameCore implements MouseListener
 			{
 				spriteState = ESpriteState.STANDING;
 				rightKey = false;
+				player.setAnimation(standing);
 				break;
 			}
 			
