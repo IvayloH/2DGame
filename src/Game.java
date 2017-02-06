@@ -288,9 +288,22 @@ public class Game extends GameCore implements MouseListener
         int tileLocationX = (int)(s.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(s.getY()/tmap.getTileHeight());
         
+        int tileLocationXMid = (int)((s.getX()+s.getWidth()/2)/tmap.getTileWidth());
+        @SuppressWarnings("unused")
+        int tileLocationYMid = (int)((s.getY()+s.getHeight()/2)/tmap.getTileHeight());
+        
+        char tileCharAboveMiddle = tmap.getTileChar(tileLocationXMid,tileLocationY);
+        /*
+         * TODO Uncomment if needed
+		char tileCharBelowMiddle = tmap.getTileChar(tileLocationXMid, tileLocationY+s.getHeight()/tmap.getTileHeight());
+        char tileCharRightMiddle = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationYMid);
+        char tileCharLeftMiddle = tmap.getTileChar(tileLocationX, tileLocationYMid);
+         */
+        
+        //Tile char for above/below/right/left of the sprite
         char tileCharAbove = tmap.getTileChar(tileLocationX, tileLocationY);
-        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/32);
-        char tileCharRight = tmap.getTileChar(tileLocationX+s.getWidth()/32, tileLocationY);
+        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/tmap.getTileHeight());
+        char tileCharRight = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationY);
         char tileCharLeft = tmap.getTileChar(tileLocationX, tileLocationY);
         
         //Check Tile underneath the player for collision
@@ -331,12 +344,13 @@ public class Game extends GameCore implements MouseListener
         }
         else 
         {
-        	char possibleSecondTile = tmap.getTileChar(tileLocationX+s.getWidth()/32,tileLocationY);
-        	if(possibleSecondTile == 'p' || possibleSecondTile == 't' || possibleSecondTile == 'b')
+        	//char possibleSecondTile = tmap.getTileChar((tileLocationXMid,tileLocationY);
+        	if(tileCharAboveMiddle == 'p' || tileCharAboveMiddle == 't' || tileCharAboveMiddle == 'b')
         		collisionABOVE = true;
         	else
         		collisionABOVE = false;
         }
+        //TODO ADD COLLISON TEST FOR LOWER RIGHT/LEFT!!! If image is 64 pixels in height -> no detection for lower part...
         
         /*
          *     TODO GRAPPLE HOOK COLLISIONS - HERE OR PASS HOOK AS A SPRITE???
