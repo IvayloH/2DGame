@@ -4,6 +4,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
+import com.sun.media.jfxmedia.events.PlayerStateEvent.PlayerState;
+
 import game2D.*;
 
 // Game demonstrates how we can override the GameCore class
@@ -42,7 +44,7 @@ public class Game extends GameCore implements MouseListener
     boolean rightKey = false;
     boolean spaceKey = false;
     
-    enum ESpriteState
+    enum EPlayerState
     {
     	RUN_LEFT,
     	RUN_RIGHT,
@@ -55,7 +57,7 @@ public class Game extends GameCore implements MouseListener
     	IDLE
     }
    //Sprite State
-    ESpriteState spriteState = ESpriteState.FALLING;
+    EPlayerState playerState = EPlayerState.FALLING;
     
     // Game resources
     Animation standing = null;
@@ -177,7 +179,7 @@ public class Game extends GameCore implements MouseListener
         grappleHook.draw(g);
         // Show score and status information
         String msg = String.format("Lives: %d", lives);
-        g.setColor(Color.darkGray);
+        g.setColor(Color.red);
         g.drawString(msg, getWidth() - 80, 50);
         
         addMouseListener(this);
@@ -193,7 +195,7 @@ public class Game extends GameCore implements MouseListener
     	if (grappleHook.isVisible())
     		grappleHook.update(elapsed);
     	
-    	if(spriteState.equals(ESpriteState.DEAD)) 
+    	if(playerState.equals(EPlayerState.DEAD)) 
     	{
     		lives--;
     		if(lives<1) 
@@ -204,17 +206,17 @@ public class Game extends GameCore implements MouseListener
     		else
     		{
     			resetPlayerPositionAndVelocity(0,100,0,0);
-    			spriteState = ESpriteState.FALLING;
+    			playerState = EPlayerState.FALLING;
     		}
     	}
     		
-    	if(spriteState.equals(ESpriteState.STANDING))
+    	if(playerState.equals(EPlayerState.STANDING))
     	{
     		player.setVelocityX(.0f);
     		player.setVelocityY(.0f);
     	}
     	
-    	if(spriteState.equals(ESpriteState.JUMP))
+    	if(playerState.equals(EPlayerState.JUMP))
     	{
     		if(!collisionABOVE)
     			player.setVelocityY(JUMPSPEED);
@@ -222,17 +224,17 @@ public class Game extends GameCore implements MouseListener
     			player.setVelocityY(-JUMPSPEED);
     			//TODO FIX THIS SO THE SPRITE DOESNT GO UNDERGROUND xD
     	}
-    	if(spriteState.equals(ESpriteState.JUMP_LEFT))
+    	if(playerState.equals(EPlayerState.JUMP_LEFT))
     	{
     		//TODO rotate sprite; stop jump after 1s(or less?)
     	}
-    	if(spriteState.equals(ESpriteState.JUMP_RIGHT))
+    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
     	{
     		//TODO stop jump after 1s(or less?)
     		
     	}
     	
-    	if(spriteState.equals(ESpriteState.RUN_RIGHT))
+    	if(playerState.equals(EPlayerState.RUN_RIGHT))
     	{
     		if(collisionRIGHT) 
     			player.setVelocityX(.0f);
@@ -240,7 +242,7 @@ public class Game extends GameCore implements MouseListener
     			player.setVelocityX(RUNSPEED);
     	}
     	
-    	if(spriteState.equals(ESpriteState.RUN_LEFT))
+    	if(playerState.equals(EPlayerState.RUN_LEFT))
     	{
     		if(collisionLEFT) 
     			player.setVelocityX(.0f);
@@ -248,9 +250,9 @@ public class Game extends GameCore implements MouseListener
     			player.setVelocityX(-RUNSPEED);
     	}
     	
-    	if(collisionBELOW && !spriteState.equals(ESpriteState.JUMP))
+    	if(collisionBELOW && !playerState.equals(EPlayerState.JUMP))
     		player.setVelocityY(.0f);
-    	else if(!spriteState.equals(ESpriteState.JUMP)) 
+    	else if(!playerState.equals(EPlayerState.JUMP)) 
     	{
     		player.setVelocityY(.05f);
     		player.setVelocityY(player.getVelocityY()+(gravity*elapsed)); // Make adjustments to the speed of the sprite due to gravity
@@ -279,7 +281,7 @@ public class Game extends GameCore implements MouseListener
         if (s.getY() + s.getHeight() > tmap.getPixelHeight())
         {
         	if(s.getTag().equals("player")) 
-        		spriteState = ESpriteState.DEAD;
+        		playerState = EPlayerState.DEAD;
         	else
         		s.hide();
         }
@@ -288,26 +290,22 @@ public class Game extends GameCore implements MouseListener
         int tileLocationX = (int)(s.getX()/tmap.getTileWidth());
         int tileLocationY = (int)(s.getY()/tmap.getTileHeight());
         
-        int tileLocationXMid = (int)((s.getX()+s.getWidth()/2)/tmap.getTileWidth());
-        @SuppressWarnings("unused")
-        int tileLocationYMid = (int)((s.getY()+s.getHeight()/2)/tmap.getTileHeight());
-        
-        char tileCharAboveMiddle = tmap.getTileChar(tileLocationXMid,tileLocationY);
-        /*
-         * TODO Uncomment if needed
-		char tileCharBelowMiddle = tmap.getTileChar(tileLocationXMid, tileLocationY+s.getHeight()/tmap.getTileHeight());
+        int tileLocationXMid = (int)((s.getX()+s.getWidth()/2+1)/tmap.getTileWidth());
+        int tileLocationYMid = (int)((s.getY()+s.getHeight()/2+1)/tmap.getTileHeight());
+
+        char tileCharTopMiddle = tmap.getTileChar(tileLocationXMid,tileLocationY);
+		char tileCharBeottomMiddle = tmap.getTileChar(tileLocationXMid, tileLocationY+s.getHeight()/tmap.getTileHeight());
         char tileCharRightMiddle = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationYMid);
         char tileCharLeftMiddle = tmap.getTileChar(tileLocationX, tileLocationYMid);
-         */
         
-        //Tile char for above/below/right/left of the sprite
-        char tileCharAbove = tmap.getTileChar(tileLocationX, tileLocationY);
-        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/tmap.getTileHeight());
-        char tileCharRight = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationY);
-        char tileCharLeft = tmap.getTileChar(tileLocationX, tileLocationY);
-        
+        //Tile char for the corners of the sprite
+        char tileCharTopLeft = tmap.getTileChar(tileLocationX, tileLocationY);
+        char tileCharTopRight = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationY);
+        char tileCharBottomLeft = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/tmap.getTileHeight());
+        char tileCharBottomRight = tmap.getTileChar(tileLocationX+s.getWidth()/tmap.getTileWidth(), tileLocationY+s.getHeight()/tmap.getTileHeight());
+        		
         //Check Tile underneath the player for collision
-        if(tileCharBelow == 'p' || tileCharBelow=='t' || tileCharBelow=='b')
+        if(tileCharBottomLeft == 'p' || tileCharBottomLeft=='t' || tileCharBottomLeft=='b')
         {
         	collisionBELOW = true;
         }
@@ -326,26 +324,34 @@ public class Game extends GameCore implements MouseListener
         }
         
         //Check Tile to the RIGHT of the player for collision
-        if(tileCharRight == 'p' || tileCharRight == 't' || tileCharRight == 'b')
-        	collisionRIGHT = true;
-        else
-        	collisionRIGHT=false;
+        if(playerState.equals(EPlayerState.RUN_RIGHT))
+        {
+	        if(tileCharTopRight == 'p' || tileCharTopRight == 't' || tileCharTopRight == 'b')
+	        	collisionRIGHT = true;
+	        else
+	        {
+	    		if(tileCharRightMiddle=='p' || tileCharRightMiddle == 't' || tileCharRightMiddle == 'b')
+	    			collisionRIGHT=true;
+	    		else
+	    			collisionRIGHT=false;
+	        }
+        }
         
         //Check Tile to the LEFT of the player for collision
-        if(tileCharLeft == 'p' || tileCharLeft == 't' || tileCharLeft == 'b')
+        if(tileCharTopLeft == 'p' || tileCharTopLeft == 't' || tileCharTopLeft == 'b')
         	collisionLEFT = true;
         else
         	collisionLEFT = false;
         
         //Check Tile ABOVE the player for collision
-        if(tileCharAbove == 'p' || tileCharAbove == 't' || tileCharAbove == 'b')
+        if(tileCharTopLeft == 'p' || tileCharTopLeft == 't' || tileCharTopLeft == 'b')
         {
         	collisionABOVE = true;
         }
         else 
         {
         	//char possibleSecondTile = tmap.getTileChar((tileLocationXMid,tileLocationY);
-        	if(tileCharAboveMiddle == 'p' || tileCharAboveMiddle == 't' || tileCharAboveMiddle == 'b')
+        	if(tileCharTopMiddle == 'p' || tileCharTopMiddle == 't' || tileCharTopMiddle == 'b')
         		collisionABOVE = true;
         	else
         		collisionABOVE = false;
@@ -389,25 +395,25 @@ public class Game extends GameCore implements MouseListener
     	}
     	if( key == KeyEvent.VK_RIGHT) 
     	{
-    		spriteState = ESpriteState.RUN_RIGHT;
+    		playerState = EPlayerState.RUN_RIGHT;
     		rightKey = true;
     		player.setAnimation(movement_Right);
     	}
     	
     	if(key == KeyEvent.VK_LEFT) 
     	{	
-    		spriteState = ESpriteState.RUN_LEFT;
+    		playerState = EPlayerState.RUN_LEFT;
     		leftKey=true;
     	}
     	
     	if (key == KeyEvent.VK_UP && collisionBELOW)
     	{
     		if(rightKey)
-    			spriteState = ESpriteState.JUMP_RIGHT;
+    			playerState = EPlayerState.JUMP_RIGHT;
     		else if(leftKey)
-    			spriteState = ESpriteState.JUMP_LEFT;
+    			playerState = EPlayerState.JUMP_LEFT;
     		else 
-    			spriteState = ESpriteState.JUMP;
+    			playerState = EPlayerState.JUMP;
     	}
     	
     	if (key == KeyEvent.VK_S)
@@ -430,14 +436,14 @@ public class Game extends GameCore implements MouseListener
 			}
 			case KeyEvent.VK_UP:
 			{
-				spriteState = ESpriteState.FALLING;
+				playerState = EPlayerState.FALLING;
 				spaceKey = false;
 				break;
 			}
 			
 			case KeyEvent.VK_RIGHT:
 			{
-				spriteState = ESpriteState.STANDING;
+				playerState = EPlayerState.STANDING;
 				rightKey = false;
 				player.setAnimation(standing);
 				break;
@@ -445,7 +451,7 @@ public class Game extends GameCore implements MouseListener
 			
 			case KeyEvent.VK_LEFT:
 			{
-				spriteState = ESpriteState.STANDING;
+				playerState = EPlayerState.STANDING;
 				leftKey = false;
 				break;
 			}
