@@ -40,6 +40,8 @@ public class Sprite {
     // relative to specific on screen position (usually the player)
     private int xoff=0;
     private int yoff=0;
+    
+    private String tag=null;
 
     /**
      *  Creates a new Sprite object with the specified Animation.
@@ -354,5 +356,13 @@ public class Sprite {
     	yoff = y;
     }
     
+    public void setTag(String tag)
+    {
+    	this.tag = tag;
+    }
 
+    public String getTag()
+    {
+    	return tag;
+    }
 }

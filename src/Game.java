@@ -1,5 +1,7 @@
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import game2D.*;
@@ -18,14 +20,8 @@ import game2D.*;
  */
 @SuppressWarnings("serial")
 
-public class Game extends GameCore 
+public class Game extends GameCore implements MouseListener
 {
-	//
-	//  Should images be 31x31 so they fall between tiles? Might Solve Collision Glitch
-	//
-	//
-	
-	
 	// Useful game constants
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
@@ -62,11 +58,13 @@ public class Game extends GameCore
     ESpriteState spriteState = ESpriteState.FALLING;
     
     // Game resources
-    Animation landing;
+    Animation landing = null;
     Sprite	player = null;
+    Animation grapple = null;
+    Sprite grappleHook = null;
     ArrayList<Sprite> clouds = new ArrayList<Sprite>();
     TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
-    long lives;         			// number of lives left
+    int lives = 0;         			// number of lives left
 
 
     /**
@@ -102,6 +100,14 @@ public class Game extends GameCore
         
         // Initialise the player with an animation
         player = new Sprite(landing);
+        player.setTag("player");
+        
+        //Initialise the grapple hook with an animation
+        grapple = new Animation();
+        grapple.addFrame(loadImage("assets/images/grapple.png"), 100);
+        grappleHook = new Sprite(grapple);
+        grappleHook.setTag("grappleHook");
+        grappleHook.hide();
         
         // Load a single cloud animation
         Animation ca = new Animation();
@@ -163,10 +169,13 @@ public class Game extends GameCore
         // Apply offsets to tile map and draw  it
         tmap.draw(g,xo,yo);
         
+        grappleHook.draw(g);
         // Show score and status information
         String msg = String.format("Lives: %d", lives);
         g.setColor(Color.darkGray);
         g.drawString(msg, getWidth() - 80, 50);
+        
+        addMouseListener(this);
     }
 
     /**
@@ -176,6 +185,8 @@ public class Game extends GameCore
      */    
     public void update(long elapsed)
     {
+    	if (grappleHook.isVisible()) grappleHook.update(elapsed);
+    	
     	if(spriteState.equals(ESpriteState.DEAD)) 
     	{
     		lives--;
@@ -259,34 +270,31 @@ public class Game extends GameCore
      */
     public void handleTileMapCollisions(Sprite s, long elapsed)
     {
-        if (player.getY() + player.getHeight() > tmap.getPixelHeight())
+        if (s.getY() + s.getHeight() > tmap.getPixelHeight())
         {
-        	spriteState = ESpriteState.DEAD;
+        	if(s.getTag().equals("player")) 
+        		spriteState = ESpriteState.DEAD;
+        	else
+        		s.hide();
         }
         
-        //Restricts player from going off the top of the screen
-        if(player.getY()<0)
-        {
-        	player.setY(0);
-        }
-        
-       //Getting the sprite's location on the tile map
-        int tileLocationX = (int)(player.getX()/tmap.getTileWidth());
-        int tileLocationY = (int)(player.getY()/tmap.getTileHeight());
+        //Getting the sprite's location on the tile map
+        int tileLocationX = (int)(s.getX()/tmap.getTileWidth());
+        int tileLocationY = (int)(s.getY()/tmap.getTileHeight());
         
         char tileCharAbove = tmap.getTileChar(tileLocationX, tileLocationY);
-        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+player.getHeight()/32);
-        char tileCharRight = tmap.getTileChar(tileLocationX+player.getWidth()/32, tileLocationY);
+        char tileCharBelow = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/32);
+        char tileCharRight = tmap.getTileChar(tileLocationX+s.getWidth()/32, tileLocationY);
         char tileCharLeft = tmap.getTileChar(tileLocationX, tileLocationY);
         
-      //Check Tile underneath the player for collision
+        //Check Tile underneath the player for collision
         if(tileCharBelow == 'p' || tileCharBelow=='t' || tileCharBelow=='b')
         {
         	collisionBELOW = true;
         }
         else
         {
-        	char possibleSecondTile = tmap.getTileChar(tileLocationX+player.getWidth()/32, tileLocationY+player.getHeight()/32);
+        	char possibleSecondTile = tmap.getTileChar(tileLocationX+s.getWidth()/32, tileLocationY+s.getHeight()/32);
         	//check if player is in 2 tiles
         	if(possibleSecondTile == 'p' || possibleSecondTile == 't' || possibleSecondTile == 'b')
         	{
@@ -304,20 +312,40 @@ public class Game extends GameCore
         else
         	collisionRIGHT=false;
         
-      //Check Tile to the LEFT of the player for collision
+        //Check Tile to the LEFT of the player for collision
         if(tileCharLeft == 'p' || tileCharLeft == 't' || tileCharLeft == 'b')
         	collisionLEFT = true;
         else
         	collisionLEFT = false;
         
-      //Check Tile ABOVE the player for collision
+        //Check Tile ABOVE the player for collision
         if(tileCharAbove == 'p' || tileCharAbove == 't' || tileCharAbove == 'b')
         {
-        	//TODO check for second tile pos+width
         	collisionABOVE = true;
         }
         else 
-        	collisionABOVE = false;
+        {
+        	char possibleSecondTile = tmap.getTileChar(tileLocationX+s.getWidth()/32,tileLocationY);
+        	if(possibleSecondTile == 'p' || possibleSecondTile == 't' || possibleSecondTile == 'b')
+        		collisionABOVE = true;
+        	else
+        		collisionABOVE = false;
+        }
+        
+        /*
+         *     TODO GRAPPLE HOOK COLLISIONS - HERE OR PASS HOOK AS A SPRITE???
+         */
+        
+        if(grappleHook.isVisible())
+        {
+            //Getting the grappleHook current location on the tile map
+            char hookLocationTileMap = tmap.getTileChar((int)(grappleHook.getX()/tmap.getTileWidth()), (int)(grappleHook.getY()/tmap.getTileHeight())); 
+            if(hookLocationTileMap=='p' || hookLocationTileMap=='t' || hookLocationTileMap=='b')
+            	grappleHook.hide();
+            
+            //TODO hide hook after it goes off display
+        }
+        
     }
 
      
@@ -370,12 +398,6 @@ public class Game extends GameCore
     	}
     }
 
-    public boolean boundingBoxCollision(Sprite s1, Sprite s2)
-    {
-    	return false;   	
-    }
-
-
 	public void keyReleased(KeyEvent e) 
 	{
 		int key = e.getKeyCode();
@@ -389,6 +411,7 @@ public class Game extends GameCore
 			case KeyEvent.VK_UP:
 			{
 				spriteState = ESpriteState.FALLING;
+				spaceKey = false;
 				break;
 			}
 			
@@ -411,6 +434,32 @@ public class Game extends GameCore
 		}
 	}
 	
+    public boolean boundingBoxCollision(Sprite s1, Sprite s2)
+    {
+    	return false;   	
+    }
+
+	
+	public void mousePressed(MouseEvent e) 
+	{
+		if(!grappleHook.isVisible())
+		{
+			grappleHook.setX(player.getX()+player.getWidth());
+			grappleHook.setY(player.getY()+player.getHeight()/2);
+			
+			Velocity v = new Velocity(0.5f, player.getX() + 90, player.getY() + 15, e.getX(), e.getY());
+			grappleHook.setVelocityX((float)v.getdx());
+			grappleHook.setVelocityY((float)v.getdy());
+			
+			grappleHook.show();
+		}
+	}
+	public void mouseClicked(MouseEvent arg0) {}
+	public void mouseEntered(MouseEvent arg0) {}
+	public void mouseExited(MouseEvent arg0) {}
+	public void mouseReleased(MouseEvent arg0) {}
+	
+	
 	/**
 	 * @param defaultX The value for the X position
 	 * @param defaultY The value for the Y position
@@ -424,4 +473,5 @@ public class Game extends GameCore
 		player.setVelocityX(defaultDX);
 		player.setVelocityY(defaultDY);
 	}
+
 }
