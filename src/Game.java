@@ -4,8 +4,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-import com.sun.media.jfxmedia.events.PlayerStateEvent.PlayerState;
-
 import game2D.*;
 
 // Game demonstrates how we can override the GameCore class
@@ -226,11 +224,11 @@ public class Game extends GameCore implements MouseListener
     	}
     	if(playerState.equals(EPlayerState.JUMP_LEFT))
     	{
-    		//TODO rotate sprite; stop jump after 1s(or less?)
+    		//TODO rotate sprite; stop jump after 2s(or less?)
     	}
     	if(playerState.equals(EPlayerState.JUMP_RIGHT))
     	{
-    		//TODO stop jump after 1s(or less?)
+    		//TODO stop jump after 2s(or less?)
     		
     	}
     	
@@ -278,6 +276,8 @@ public class Game extends GameCore implements MouseListener
      */
     public void handleTileMapCollisions(Sprite s, long elapsed)
     {
+     	//flag indicating whether the sprite has hit a tile 
+    	boolean hit = false;
         if (s.getY() + s.getHeight() > tmap.getPixelHeight())
         {
         	if(s.getTag().equals("player")) 
@@ -286,42 +286,35 @@ public class Game extends GameCore implements MouseListener
         		s.hide();
         }
         
-        //Getting the sprite's location on the tile map
-        int tileLocationX = (int)(s.getX()/tmap.getTileWidth());
-        int tileLocationY = (int)(s.getY()/tmap.getTileHeight());
-        
-        char tileCharBottomLeft = tmap.getTileChar(tileLocationX, tileLocationY+s.getHeight()/tmap.getTileHeight());
-       
         //Check Tile underneath the player for collision
-        if(tileCharBottomLeft == 'p' || tileCharBottomLeft=='t' || tileCharBottomLeft=='b')
+        if(true)
         {
-        	collisionBELOW = true;
-        }
-        else
-        {
-        	char possibleSecondTile = tmap.getTileChar(tileLocationX+s.getWidth()/32, tileLocationY+s.getHeight()/32);
-        	//check if player is in 2 tiles
-        	if(possibleSecondTile == 'p' || possibleSecondTile == 't' || possibleSecondTile == 'b')
+        	for(int i=1; i<player.getWidth()-2; i++)
+        	{
+        		char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+player.getHeight()+1)/tmap.getTileHeight());
+	    		if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b')
+	    			hit =true;
+        	}
+        	
+        	if(hit)
         	{
         		collisionBELOW = true;
         	}
-        	else
-        	{
-        		collisionBELOW = false; //player not standing on a second tile 
-        	}
+        	else 
+        		collisionBELOW=false;
         }
         
         //Check Tile to the RIGHT of the player for collision
-        if(playerState.equals(EPlayerState.RUN_RIGHT))
+        if(playerState.equals(EPlayerState.RUN_RIGHT) || playerState.equals(EPlayerState.JUMP_RIGHT) )
         {
-        	//flag indicating whether the sprite has hit a tile 
-        	boolean hit = false;
+        	hit = false;
         	for(int i=1; i<player.getHeight()-2; i++)
         	{
         		char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
 	    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
 	    			hit =true;
         	}
+        	System.out.println("1:"+playerState.toString()+ "  "+hit);
         	if(hit)
         		collisionRIGHT = true;
         	else 
@@ -329,32 +322,34 @@ public class Game extends GameCore implements MouseListener
         }
         
         //Check Tile to the LEFT of the player for collision
-        if(playerState.equals(EPlayerState.RUN_LEFT))
+        if(playerState.equals(EPlayerState.RUN_LEFT) || playerState.equals(EPlayerState.JUMP_LEFT))
         {
-        	//flag indicating whether the sprite has hit a tile 
-        	boolean hit = false;
+        	hit = false;
         	for(int i=1; i<player.getHeight()-2; i++)
         	{
         		char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
 	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
 	    			hit =true;
         	}
+        	System.out.println("2:"+playerState.toString()+ "  "+hit);
         	if(hit)
         		collisionLEFT = true;
         	else 
         		collisionLEFT=false;
         }
+        
         //Check Tile ABOVE the player for collision
         if(playerState.equals(EPlayerState.JUMP))
         {
         	//flag indicating whether the sprite has hit a tile 
-        	boolean hit = false;
+        	hit = false;
         	for(int i=1; i<player.getWidth()-2; i++)
         	{
         		char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
 	    		if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
 	    			hit =true;
         	}
+        	System.out.println("2:"+playerState.toString()+ "  "+hit);
         	if(hit)
         		collisionABOVE = true;
         	else 
@@ -372,7 +367,7 @@ public class Game extends GameCore implements MouseListener
             char hookLocationTileMap = tmap.getTileChar((int)(grappleHook.getX()/tmap.getTileWidth()), (int)(grappleHook.getY()/tmap.getTileHeight())); 
             if(hookLocationTileMap=='p' || hookLocationTileMap=='t' || hookLocationTileMap=='b')
             	grappleHook.hide();
-            //TODO hide hook after it goes off display
+            //TODO hide hook after it goes off display; update collision detection
         }
         
     }
@@ -412,11 +407,11 @@ public class Game extends GameCore implements MouseListener
     	
     	if (key == KeyEvent.VK_UP && collisionBELOW)
     	{
-    		if(rightKey)
+    		/*if(rightKey)
     			playerState = EPlayerState.JUMP_RIGHT;
     		else if(leftKey)
     			playerState = EPlayerState.JUMP_LEFT;
-    		else 
+    		else*/ 
     			playerState = EPlayerState.JUMP;
     	}
     	
@@ -425,6 +420,11 @@ public class Game extends GameCore implements MouseListener
     		// Example of playing a sound as a thread
     		Sound s = new Sound("sounds/caw.wav");
     		s.start();
+    	}
+    	
+    	if(key==KeyEvent.VK_R)
+    	{
+    		resetPlayerPositionAndVelocity(0,100,0,0);
     	}
     }
 
