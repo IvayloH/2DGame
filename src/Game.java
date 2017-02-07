@@ -58,11 +58,16 @@ public class Game extends GameCore implements MouseListener
     EPlayerState playerState = EPlayerState.FALLING;
     
     // Game resources
-    Animation standing = null;
+    Animation standingFacingLeft = null;
+    Animation standingFacingRight = null;
     Animation movement_Right = null;
-    Sprite	player = null;
+    Animation movement_Left = null;
     Animation grapple = null;
+    
+    Sprite	player = null;
     Sprite grappleHook = null;
+    
+    
     ArrayList<Sprite> clouds = new ArrayList<Sprite>();
     TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
     int lives = 0;         			// number of lives left
@@ -96,14 +101,20 @@ public class Game extends GameCore implements MouseListener
         // Create a set of background sprites that we can 
         // rearrange to give the illusion of motion
         
-        standing = new Animation();
-        standing.addFrame(loadImage("assets/images/Batman.gif"),60);
+        standingFacingRight = new Animation();
+        standingFacingRight.addFrame(loadImage("assets/images/BatmanFacingRight.gif"),60);
+        
+        standingFacingLeft = new Animation();
+        standingFacingLeft.addFrame(loadImage("assets/images/BatmanFacingLeft.gif"), 60);
         
         movement_Right= new Animation();
         movement_Right.addFrame(loadImage("assets/images/BatmanMoveRight.gif"), 60);
         
+        movement_Left = new Animation();
+        movement_Left.addFrame(loadImage("assets/images/BatmanMoveLeft.gif"),60);
+        
         // Initialise the player with an animation
-        player = new Sprite(standing);
+        player = new Sprite(standingFacingRight);
         
         player.setTag("player");
         
@@ -403,6 +414,7 @@ public class Game extends GameCore implements MouseListener
     	{	
     		playerState = EPlayerState.RUN_LEFT;
     		leftKey=true;
+    		player.setAnimation(movement_Left);
     	}
     	
     	if (key == KeyEvent.VK_UP && collisionBELOW)
@@ -449,7 +461,7 @@ public class Game extends GameCore implements MouseListener
 			{
 				playerState = EPlayerState.STANDING;
 				rightKey = false;
-				player.setAnimation(standing);
+				player.setAnimation(standingFacingRight);
 				break;
 			}
 			
@@ -457,6 +469,7 @@ public class Game extends GameCore implements MouseListener
 			{
 				playerState = EPlayerState.STANDING;
 				leftKey = false;
+				player.setAnimation(standingFacingLeft);
 				break;
 			}
 			
