@@ -42,6 +42,9 @@ public class Game extends GameCore implements MouseListener
     boolean rightKey = false;
     boolean spaceKey = false;
     
+    // Batman Direction
+    boolean lookingRight = true;
+    
     enum EPlayerState
     {
     	RUN_LEFT,
@@ -51,8 +54,7 @@ public class Game extends GameCore implements MouseListener
     	JUMP_RIGHT,
     	STANDING,
     	FALLING,
-    	DEAD,
-    	IDLE
+    	DEAD
     }
    //Sprite State
     EPlayerState playerState = EPlayerState.FALLING;
@@ -63,6 +65,8 @@ public class Game extends GameCore implements MouseListener
     Animation movement_Right = null;
     Animation movement_Left = null;
     Animation grapple = null;
+    Animation jump_Right = null;
+    Animation jump_Left = null;
     
     Sprite	player = null;
     Sprite grappleHook = null;
@@ -112,6 +116,12 @@ public class Game extends GameCore implements MouseListener
         
         movement_Left = new Animation();
         movement_Left.addFrame(loadImage("assets/images/BatmanMoveLeft.gif"),60);
+        
+        jump_Right = new Animation();
+        jump_Right.addFrame(loadImage("assets/images/BatmanJumpRight.png"),60);
+        
+        jump_Left = new Animation();
+        jump_Left.addFrame(loadImage("assets/images/BatmanJumpLeft.png"),60);
         
         // Initialise the player with an animation
         player = new Sprite(standingFacingRight);
@@ -228,10 +238,10 @@ public class Game extends GameCore implements MouseListener
     	if(playerState.equals(EPlayerState.JUMP))
     	{
     		if(!collisionABOVE)
+    		{
     			player.setVelocityY(JUMPSPEED);
-    		else
-    			player.setVelocityY(-JUMPSPEED);
-    			//TODO FIX THIS SO THE SPRITE DOESNT GO UNDERGROUND xD
+    		}
+    		
     	}
     	if(playerState.equals(EPlayerState.JUMP_LEFT))
     	{
@@ -300,7 +310,7 @@ public class Game extends GameCore implements MouseListener
         //Check Tile underneath the player for collision
         if(true)
         {
-        	for(int i=1; i<player.getWidth()-2; i++)
+        	for(int i=1; i<player.getWidth()-1; i++)
         	{
         		char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+player.getHeight()+1)/tmap.getTileHeight());
 	    		if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b')
@@ -319,7 +329,7 @@ public class Game extends GameCore implements MouseListener
         if(playerState.equals(EPlayerState.RUN_RIGHT) || playerState.equals(EPlayerState.JUMP_RIGHT) )
         {
         	hit = false;
-        	for(int i=1; i<player.getHeight()-2; i++)
+        	for(int i=1; i<player.getHeight()-1; i++)
         	{
         		char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
 	    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
@@ -336,7 +346,7 @@ public class Game extends GameCore implements MouseListener
         if(playerState.equals(EPlayerState.RUN_LEFT) || playerState.equals(EPlayerState.JUMP_LEFT))
         {
         	hit = false;
-        	for(int i=1; i<player.getHeight()-2; i++)
+        	for(int i=1; i<player.getHeight()-1; i++)
         	{
         		char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
 	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
@@ -354,7 +364,7 @@ public class Game extends GameCore implements MouseListener
         {
         	//flag indicating whether the sprite has hit a tile 
         	hit = false;
-        	for(int i=1; i<player.getWidth()-2; i++)
+        	for(int i=1; i<player.getWidth()-1; i++)
         	{
         		char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
 	    		if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
@@ -366,10 +376,12 @@ public class Game extends GameCore implements MouseListener
         	else 
         		collisionABOVE=false;
         }
-        //TODO ADD COLLISON TEST FOR LOWER RIGHT/LEFT!!! If image is 64 pixels in height -> no detection for lower part...
+       /*
+        *	TODO add collision detection if player+height goes into another tile(a.k.a. player is stuck in a tile underneath so needs to be moved up a bit
+        */
         
         /*
-         *     TODO GRAPPLE HOOK COLLISIONS - HERE OR PASS HOOK AS A SPRITE???
+         *     TODO GRAPPLE HOOK COLLISIONS
          */
         
         if(grappleHook.isVisible())
@@ -397,16 +409,12 @@ public class Game extends GameCore implements MouseListener
     	
     	if (key == KeyEvent.VK_ESCAPE) 
     		stop();
-    	  
-    	if (key==KeyEvent.VK_DOWN) 
-    	{
-    		player.setVelocityX(.0f);
-    		player.setVelocityY(.0f);
-    	}
+    	
     	if( key == KeyEvent.VK_RIGHT) 
     	{
     		playerState = EPlayerState.RUN_RIGHT;
     		rightKey = true;
+    		lookingRight=true;
     		player.setAnimation(movement_Right);
     	}
     	
@@ -414,6 +422,7 @@ public class Game extends GameCore implements MouseListener
     	{	
     		playerState = EPlayerState.RUN_LEFT;
     		leftKey=true;
+    		lookingRight=false;
     		player.setAnimation(movement_Left);
     	}
     	
@@ -424,7 +433,12 @@ public class Game extends GameCore implements MouseListener
     		else if(leftKey)
     			playerState = EPlayerState.JUMP_LEFT;
     		else*/ 
+    		if(lookingRight)
+				player.setAnimation(jump_Right);
+			else
+				player.setAnimation(jump_Left);
     			playerState = EPlayerState.JUMP;
+    			
     	}
     	
     	if (key == KeyEvent.VK_S)
@@ -454,6 +468,10 @@ public class Game extends GameCore implements MouseListener
 			{
 				playerState = EPlayerState.FALLING;
 				spaceKey = false;
+				if(lookingRight)
+					player.setAnimation(standingFacingRight);
+				else
+					player.setAnimation(standingFacingLeft);
 				break;
 			}
 			
@@ -480,6 +498,7 @@ public class Game extends GameCore implements MouseListener
 	
     public boolean boundingBoxCollision(Sprite s1, Sprite s2)
     {
+    	//TODO grappleHook and Box
     	return false;   	
     }
 
