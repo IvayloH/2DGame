@@ -26,10 +26,11 @@ public class Game extends GameCore implements MouseListener
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
 	static final float RUNSPEED = .07f;
-	static final float JUMPSPEED = -.04f;
-
+	static final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
+	
     float 	lift = 0.005f;
     float	gravity = 0.01f;
+    float posY = .0f;  // keep track of jump start
     
     // Game state flags
     boolean collisionRIGHT = false;
@@ -213,7 +214,7 @@ public class Game extends GameCore implements MouseListener
     {
     	if (grappleHook.isVisible())
     		grappleHook.update(elapsed);
-    	
+
     	if(playerState.equals(EPlayerState.DEAD)) 
     	{
     		lives--;
@@ -239,17 +240,19 @@ public class Game extends GameCore implements MouseListener
     	{
     		if(!collisionABOVE)
     		{
-    			player.setVelocityY(JUMPSPEED);
+    			player.setVelocityY(-gravity*elapsed);
+    			if(posY-player.getY()>JUMPHEIGHT)
+    				playerState = EPlayerState.FALLING;
     		}
     		
     	}
     	if(playerState.equals(EPlayerState.JUMP_LEFT))
     	{
-    		//TODO rotate sprite; stop jump after 2s(or less?)
+    		//TODO
     	}
     	if(playerState.equals(EPlayerState.JUMP_RIGHT))
     	{
-    		//TODO stop jump after 2s(or less?)
+    		//TODO
     		
     	}
     	
@@ -393,9 +396,8 @@ public class Game extends GameCore implements MouseListener
             //TODO hide hook after it goes off display; update collision detection
         }
         
-    }
-
-     
+    }    
+    
     /**
      * Override of the keyPressed event defined in GameCore to catch our
      * own events
@@ -428,17 +430,18 @@ public class Game extends GameCore implements MouseListener
     	
     	if (key == KeyEvent.VK_UP && collisionBELOW)
     	{
+    		posY=player.getY();
     		/*if(rightKey)
     			playerState = EPlayerState.JUMP_RIGHT;
     		else if(leftKey)
     			playerState = EPlayerState.JUMP_LEFT;
-    		else*/ 
+    		*/
     		if(lookingRight)
 				player.setAnimation(jump_Right);
 			else
 				player.setAnimation(jump_Left);
     			playerState = EPlayerState.JUMP;
-    			
+    		
     	}
     	
     	if (key == KeyEvent.VK_S)
@@ -452,6 +455,7 @@ public class Game extends GameCore implements MouseListener
     	{
     		resetPlayerPositionAndVelocity(0,100,0,0);
     	}
+    	e.consume();
     }
 
 	public void keyReleased(KeyEvent e) 
