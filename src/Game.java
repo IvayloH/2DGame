@@ -214,7 +214,7 @@ public class Game extends GameCore implements MouseListener
     {
     	if (grappleHook.isVisible())
     		grappleHook.update(elapsed);	
- 
+    	
     	if(playerState.equals(EPlayerState.DEAD)) 
     	{
     		lives--;
@@ -246,9 +246,29 @@ public class Game extends GameCore implements MouseListener
     			else player.setVelocityX(.0f);
     			if(posY-player.getY()>JUMPHEIGHT)
     				playerState = EPlayerState.FALLING;
-    		}
-    		
+    		}	
     	}
+    	
+    	//change the playerState and animation after jump has ended
+    	if(collisionBELOW && playerState.equals(EPlayerState.FALLING))
+		{
+			if(lookingRight && !rightKey)
+				player.setAnimation(standingFacingRight);
+			else if(!lookingRight && !leftKey)
+				player.setAnimation(standingFacingLeft);
+
+			if(rightKey)
+			{
+				player.setAnimation(movement_Right);
+				playerState = EPlayerState.RUN_RIGHT;
+			}
+			else if(leftKey)
+			{
+				player.setAnimation(movement_Left);
+				playerState = EPlayerState.RUN_LEFT;
+			}
+		}
+    	
     	
     	if(playerState.equals(EPlayerState.RUN_RIGHT))
     	{
@@ -315,9 +335,7 @@ public class Game extends GameCore implements MouseListener
         	}
         	
         	if(hit)
-        	{
         		collisionBELOW = true;
-        	}
         	else 
         		collisionBELOW=false;
         }
@@ -332,7 +350,7 @@ public class Game extends GameCore implements MouseListener
 	    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
 	    			hit =true;
         	}
-        	System.out.println("1:"+playerState.toString()+ "  "+hit);
+
         	if(hit)
         		collisionRIGHT = true;
         	else 
@@ -349,7 +367,7 @@ public class Game extends GameCore implements MouseListener
 	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
 	    			hit =true;
         	}
-        	System.out.println("2:"+playerState.toString()+ "  "+hit);
+
         	if(hit)
         		collisionLEFT = true;
         	else 
@@ -367,7 +385,7 @@ public class Game extends GameCore implements MouseListener
 	    		if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
 	    			hit =true;
         	}
-        	System.out.println("2.1:"+playerState.toString()+ "  "+hit);
+
         	if(hit)
         		collisionABOVE = true;
         	else 
@@ -382,7 +400,7 @@ public class Game extends GameCore implements MouseListener
 		    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
 		    			hit2 =true;
 	        	}
-	        	System.out.println("2.2:"+playerState.toString()+ "  "+hit2);
+
 	        	if(hit2)
 	        		collisionRIGHT = true;
 	        	else 
@@ -398,7 +416,7 @@ public class Game extends GameCore implements MouseListener
     	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
     	    			hit =true;
             	}
-            	System.out.println("2:"+playerState.toString()+ "  "+hit);
+
             	if(hit)
             		collisionLEFT = true;
             	else 
@@ -454,7 +472,7 @@ public class Game extends GameCore implements MouseListener
     		player.setAnimation(movement_Left);
     	}
     	
-    	if (key == KeyEvent.VK_UP && collisionBELOW)
+    	if (key == KeyEvent.VK_UP && collisionBELOW && !spaceKey)
     	{
     		posY=player.getY();
     		if(rightKey)
@@ -469,6 +487,7 @@ public class Game extends GameCore implements MouseListener
 			else
 				player.setAnimation(jump_Left);
     		
+    		spaceKey = true;
     		
     	}
     	
@@ -504,7 +523,7 @@ public class Game extends GameCore implements MouseListener
 					player.setAnimation(standingFacingRight);
 				else if(!lookingRight && !leftKey)
 					player.setAnimation(standingFacingLeft);
-				
+
 				if(rightKey)
 				{
 					player.setAnimation(movement_Right);
