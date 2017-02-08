@@ -28,8 +28,8 @@ public class Game extends GameCore implements MouseListener
 	static final float RUNSPEED = .07f;
 	static final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
 	
-    float 	lift = 0.005f;
-    float	gravity = 0.01f;
+    float lift = 0.005f;
+    float gravity = 0.01f;
     float posY = .0f;  // keep track of jump start
     
     // Game state flags
@@ -213,8 +213,8 @@ public class Game extends GameCore implements MouseListener
     public void update(long elapsed)
     {
     	if (grappleHook.isVisible())
-    		grappleHook.update(elapsed);
-
+    		grappleHook.update(elapsed);	
+ 
     	if(playerState.equals(EPlayerState.DEAD)) 
     	{
     		lives--;
@@ -236,23 +236,17 @@ public class Game extends GameCore implements MouseListener
     		player.setVelocityY(.0f);
     	}
     	
-    	if(playerState.equals(EPlayerState.JUMP))
+    	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
     	{
     		if(!collisionABOVE)
     		{
     			player.setVelocityY(-gravity*elapsed);
+    			if(playerState.equals(EPlayerState.JUMP_RIGHT) && !collisionRIGHT) player.setVelocityX(RUNSPEED);
+    			else if(playerState.equals(EPlayerState.JUMP_LEFT) && !collisionLEFT) player.setVelocityX(-RUNSPEED);
+    			else player.setVelocityX(.0f);
     			if(posY-player.getY()>JUMPHEIGHT)
     				playerState = EPlayerState.FALLING;
     		}
-    		
-    	}
-    	if(playerState.equals(EPlayerState.JUMP_LEFT))
-    	{
-    		//TODO
-    	}
-    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
-    	{
-    		//TODO
     		
     	}
     	
@@ -272,9 +266,9 @@ public class Game extends GameCore implements MouseListener
     			player.setVelocityX(-RUNSPEED);
     	}
     	
-    	if(collisionBELOW && !playerState.equals(EPlayerState.JUMP))
+    	if(collisionBELOW && !playerState.equals(EPlayerState.JUMP) && !playerState.equals(EPlayerState.JUMP_LEFT)&& !playerState.equals(EPlayerState.JUMP_RIGHT))
     		player.setVelocityY(.0f);
-    	else if(!playerState.equals(EPlayerState.JUMP)) 
+    	else if(!playerState.equals(EPlayerState.JUMP)&& !playerState.equals(EPlayerState.JUMP_LEFT) && !playerState.equals(EPlayerState.JUMP_RIGHT)) 
     	{
     		player.setVelocityY(.05f);
     		player.setVelocityY(player.getVelocityY()+(gravity*elapsed)); // Make adjustments to the speed of the sprite due to gravity
@@ -329,7 +323,7 @@ public class Game extends GameCore implements MouseListener
         }
         
         //Check Tile to the RIGHT of the player for collision
-        if(playerState.equals(EPlayerState.RUN_RIGHT) || playerState.equals(EPlayerState.JUMP_RIGHT) )
+        if(playerState.equals(EPlayerState.RUN_RIGHT))
         {
         	hit = false;
         	for(int i=1; i<player.getHeight()-1; i++)
@@ -346,7 +340,7 @@ public class Game extends GameCore implements MouseListener
         }
         
         //Check Tile to the LEFT of the player for collision
-        if(playerState.equals(EPlayerState.RUN_LEFT) || playerState.equals(EPlayerState.JUMP_LEFT))
+        if(playerState.equals(EPlayerState.RUN_LEFT))
         {
         	hit = false;
         	for(int i=1; i<player.getHeight()-1; i++)
@@ -363,7 +357,7 @@ public class Game extends GameCore implements MouseListener
         }
         
         //Check Tile ABOVE the player for collision
-        if(playerState.equals(EPlayerState.JUMP))
+        if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
         {
         	//flag indicating whether the sprite has hit a tile 
         	hit = false;
@@ -373,11 +367,43 @@ public class Game extends GameCore implements MouseListener
 	    		if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
 	    			hit =true;
         	}
-        	System.out.println("2:"+playerState.toString()+ "  "+hit);
+        	System.out.println("2.1:"+playerState.toString()+ "  "+hit);
         	if(hit)
         		collisionABOVE = true;
         	else 
         		collisionABOVE=false;
+        	
+        	if(playerState.equals(EPlayerState.JUMP_RIGHT))
+        	{
+        		boolean hit2 = false;
+	        	for(int i=1; i<player.getHeight()-1; i++)
+	        	{
+	        		char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
+		    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
+		    			hit2 =true;
+	        	}
+	        	System.out.println("2.2:"+playerState.toString()+ "  "+hit2);
+	        	if(hit2)
+	        		collisionRIGHT = true;
+	        	else 
+	        		collisionRIGHT=false;
+        	}
+        	
+        	if(playerState.equals(EPlayerState.JUMP_LEFT))
+        	{
+        		hit = false;
+            	for(int i=1; i<player.getHeight()-1; i++)
+            	{
+            		char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
+    	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
+    	    			hit =true;
+            	}
+            	System.out.println("2:"+playerState.toString()+ "  "+hit);
+            	if(hit)
+            		collisionLEFT = true;
+            	else 
+            		collisionLEFT=false;
+        	}
         }
        /*
         *	TODO add collision detection if player+height goes into another tile(a.k.a. player is stuck in a tile underneath so needs to be moved up a bit
@@ -431,16 +457,18 @@ public class Game extends GameCore implements MouseListener
     	if (key == KeyEvent.VK_UP && collisionBELOW)
     	{
     		posY=player.getY();
-    		/*if(rightKey)
+    		if(rightKey)
     			playerState = EPlayerState.JUMP_RIGHT;
     		else if(leftKey)
     			playerState = EPlayerState.JUMP_LEFT;
-    		*/
+    		else
+    			playerState = EPlayerState.JUMP;
+    		
     		if(lookingRight)
 				player.setAnimation(jump_Right);
 			else
 				player.setAnimation(jump_Left);
-    			playerState = EPlayerState.JUMP;
+    		
     		
     	}
     	
@@ -472,10 +500,21 @@ public class Game extends GameCore implements MouseListener
 			{
 				playerState = EPlayerState.FALLING;
 				spaceKey = false;
-				if(lookingRight)
+				if(lookingRight && !rightKey)
 					player.setAnimation(standingFacingRight);
-				else
+				else if(!lookingRight && !leftKey)
 					player.setAnimation(standingFacingLeft);
+				
+				if(rightKey)
+				{
+					player.setAnimation(movement_Right);
+					playerState = EPlayerState.RUN_RIGHT;
+				}
+				else if(leftKey)
+				{
+					player.setAnimation(movement_Left);
+					playerState = EPlayerState.RUN_LEFT;
+				}
 				break;
 			}
 			
@@ -540,5 +579,4 @@ public class Game extends GameCore implements MouseListener
 		player.setVelocityX(defaultDX);
 		player.setVelocityY(defaultDY);
 	}
-
 }
