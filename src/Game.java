@@ -208,12 +208,7 @@ public class Game extends GameCore implements MouseListener
         // Apply offsets to player and draw 
         player.setOffsets(-xo, yo);
         player.draw(g);
-        
-        // draw crate
-        crate.setX(288);
-        crate.setY(256);
-        crate.draw(g);   
-        
+
         // Apply offsets to tile map and draw  it
         tmap.draw(g,xo,yo);
         
@@ -241,6 +236,22 @@ public class Game extends GameCore implements MouseListener
         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2));
         }
         
+        
+        // draw crate
+        crate.setX(288);
+        crate.setY(256);
+        crate.draw(g);
+        //TODO figure this out
+        /*if(playerState.equals(EPlayerState.JUMP))
+        {
+        	Graphics2D gd2 = (Graphics2D) g.create();
+        	gd2.setTransform(crateTransform);
+        	crateTransform.translate(3, 3);
+        	crateTransform.rotate(Math.PI/2);
+        	//gd2.rotate(Math.PI/2);
+        	crate.draw(gd2);
+        	gd2.dispose();
+        }*/
         addMouseListener(this);
     }
 
@@ -253,14 +264,12 @@ public class Game extends GameCore implements MouseListener
     {
     	if (grappleHook.isVisible())
     	{
+    		//hide hook if it goes further than its limit in either direction
     		grappleHook.update(elapsed);
-    		if(grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
-    			grappleHook.hide();
-    		if((grappleHook.getX()<player.getX()-HOOKLIMIT))
-    			grappleHook.hide();
-    		if(grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
-    			grappleHook.hide();
-    		if((grappleHook.getY()<player.getY()-HOOKLIMIT))
+    		if((grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
+    				|| (grappleHook.getX()<player.getX()-HOOKLIMIT)
+    				|| (grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
+    				|| (grappleHook.getY()<player.getY()-HOOKLIMIT))
     			grappleHook.hide();
     	}
     	
@@ -305,7 +314,8 @@ public class Game extends GameCore implements MouseListener
 				player.setAnimation(standingFacingRight);
 			else if(!lookingRight && !leftKey)
 				player.setAnimation(standingFacingLeft);
-
+			playerState = EPlayerState.STANDING;
+			
 			if(rightKey)
 			{
 				player.setAnimation(movement_Right);
@@ -322,15 +332,21 @@ public class Game extends GameCore implements MouseListener
     	if(playerState.equals(EPlayerState.RUN_RIGHT))
     	{
     		if(collisionRIGHT) 
+    		{
     			player.setVelocityX(.0f);
+    			recoverSpriteStuckInRightTile(player);
+    		}
     		else
     			player.setVelocityX(RUNSPEED);
     	}
     	
     	if(playerState.equals(EPlayerState.RUN_LEFT))
     	{
-    		if(collisionLEFT) 
+    		if(collisionLEFT)
+    		{
     			player.setVelocityX(.0f);
+    			recoverSpriteStuckInLeftTile(player);
+    		}
     		else
     			player.setVelocityX(-RUNSPEED);
     	}
@@ -395,14 +411,16 @@ public class Game extends GameCore implements MouseListener
         	collisionABOVE = checkTopSideForCollision(s);
         	collisionRIGHT = checkRightSideForCollision(s);
         	collisionLEFT = checkLeftSideForCollision(s);
+        }       
+        
+        if(playerState.equals(EPlayerState.FALLING))
+        {
+        	collisionRIGHT = checkRightSideForCollision(s);
+        	collisionLEFT = checkLeftSideForCollision(s);
         }
-        
-        
         if(grappleHook.isVisible())
         {
-            //Getting the grappleHook current location on the tile map
-            char hookLocationTileMap = tmap.getTileChar((int)(grappleHook.getX()/tmap.getTileWidth()), (int)(grappleHook.getY()/tmap.getTileHeight())); 
-            if(hookLocationTileMap=='p' || hookLocationTileMap=='t' || hookLocationTileMap=='b')
+           if(checkRightSideForCollision(grappleHook))
             	grappleHook.hide();
             
         	if(boundingBoxCollision(grappleHook, crate))
@@ -416,14 +434,20 @@ public class Game extends GameCore implements MouseListener
 
 	private void recoverSpriteStuckInBottomTile(Sprite s) 
 	{
-		while(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-2)/tmap.getTileHeight())!='.')
+		if(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-2)/tmap.getTileHeight())!='.')
 			s.setY(s.getY()-1);
 	}
-    
+	
 	private void recoverSpriteStuckInRightTile(Sprite s) 
 	{
-		while(tmap.getTileChar(((int)s.getX()+s.getWidth()-2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
+		if(tmap.getTileChar(((int)s.getX()+s.getWidth()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
 			s.setX(s.getX()-1);
+	}
+	
+	private void recoverSpriteStuckInLeftTile(Sprite s) 
+	{
+		if(tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
+			s.setX(s.getX()+1);
 	}
 
 	private boolean checkTopSideForCollision(Sprite s) 
@@ -432,7 +456,7 @@ public class Game extends GameCore implements MouseListener
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
 			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
-			if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
+			if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b' || tileCharTop == 'c')
 				hit =true;
 		}
 
@@ -445,7 +469,7 @@ public class Game extends GameCore implements MouseListener
 		for(int i=1; i<s.getHeight()-1; i++)
 		{
 			char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
-			if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
+			if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b' || tileCharLeft == 'c')
 				hit =true;
 		}
 
@@ -458,7 +482,7 @@ public class Game extends GameCore implements MouseListener
 		for(int i=1; i<s.getHeight()-1; i++)
 		{
 			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
-			if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
+			if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b' || tileCharRight == 'c')
 				hit =true;
 		}
 		return hit;
@@ -470,12 +494,12 @@ public class Game extends GameCore implements MouseListener
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
 			char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()+1)/tmap.getTileHeight());
-			if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b')
+			if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b' || tileCharBottom == 'c')
 				hit =true;
 		}
 		return hit;
 	}
-
+	
     /**
      * Override of the keyPressed event defined in GameCore to catch our
      * own events
