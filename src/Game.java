@@ -2,6 +2,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 
 import game2D.*;
@@ -25,8 +26,10 @@ public class Game extends GameCore implements MouseListener
 	// Useful game constants
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
-	static final float RUNSPEED = .07f;
-	static final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
+	final float RUNSPEED = .07f;
+	final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
+	final float HOOKLIMIT = 150; // in pixels
+	final double crateRotation = 1.5708; //90 degrees
 	
     float lift = 0.005f;
     float gravity = 0.01f;
@@ -37,6 +40,7 @@ public class Game extends GameCore implements MouseListener
     boolean collisionLEFT = false;
     boolean collisionABOVE = false;
     boolean collisionBELOW = false;
+    boolean crateFalling = false;
     
     //Pressed Key flags
     boolean leftKey = false;
@@ -68,15 +72,19 @@ public class Game extends GameCore implements MouseListener
     Animation grapple = null;
     Animation jump_Right = null;
     Animation jump_Left = null;
+    Animation crateAnim = null;
     
     Sprite	player = null;
     Sprite grappleHook = null;
+    Sprite thug = null;
+    Sprite crate = null;
     
+    Image bgImage = null;
     
     ArrayList<Sprite> clouds = new ArrayList<Sprite>();
     TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
     int lives = 0;         			// number of lives left
-
+    AffineTransform crateTransform = new AffineTransform();
 
     /**
 	 * The obligatory main method that creates
@@ -103,8 +111,7 @@ public class Game extends GameCore implements MouseListener
         // Load the tile map and print it out so we can check it is valid
         tmap.loadMap("assets/maps", "map.txt");
 
-        // Create a set of background sprites that we can 
-        // rearrange to give the illusion of motion
+        bgImage = loadImage("assets/images/city.png");
         
         standingFacingRight = new Animation();
         standingFacingRight.addFrame(loadImage("assets/images/BatmanFacingRight.gif"),60);
@@ -124,17 +131,24 @@ public class Game extends GameCore implements MouseListener
         jump_Left = new Animation();
         jump_Left.addFrame(loadImage("assets/images/BatmanJumpLeft.png"),60);
         
+        crateAnim = new Animation();
+        crateAnim.addFrame(loadImage("assets/maps/crate.png"), 60);
+        
+        grapple = new Animation();
+        grapple.addFrame(loadImage("assets/images/grapple.png"), 60);
+        
         // Initialise the player with an animation
         player = new Sprite(standingFacingRight);
-        
         player.setTag("player");
         
         //Initialise the grapple hook with an animation
-        grapple = new Animation();
-        grapple.addFrame(loadImage("assets/images/grapple.png"), 100);
         grappleHook = new Sprite(grapple);
         grappleHook.setTag("grappleHook");
         grappleHook.hide();
+        
+        //Initialise the crate with an animation
+        crate = new Sprite(crateAnim);
+        crate.setTag("crate");
         
         // Load a single cloud animation
         Animation ca = new Animation();
@@ -166,6 +180,7 @@ public class Game extends GameCore implements MouseListener
     	lives = 3;
     	resetPlayerPositionAndVelocity(0,100,0,0);
         player.show();
+        crate.show();
     }
     
     /**
@@ -179,8 +194,9 @@ public class Game extends GameCore implements MouseListener
         int yo = 0;
         
         
-        g.setColor(Color.blue);
-        g.fillRect(0, 0, getWidth(), getHeight());
+        //g.setColor(Color.blue);
+        //g.fillRect(0, 0, getWidth(), getHeight());
+        g.drawImage(bgImage,0,0,null);
         
         // Apply offsets to sprites then draw them
         for (Sprite s: clouds)
@@ -192,15 +208,38 @@ public class Game extends GameCore implements MouseListener
         // Apply offsets to player and draw 
         player.setOffsets(-xo, yo);
         player.draw(g);
-                
+        
+        // draw crate
+        crate.setX(288);
+        crate.setY(256);
+        crate.draw(g);   
+        
         // Apply offsets to tile map and draw  it
         tmap.draw(g,xo,yo);
         
+        //draw hook
         grappleHook.draw(g);
+        
         // Show score and status information
         String msg = String.format("Lives: %d", lives);
         g.setColor(Color.red);
         g.drawString(msg, getWidth() - 80, 50);
+        
+        if(grappleHook.isVisible())
+        {
+        	g.setColor(Color.black);
+        	g.setStroke(new BasicStroke(3));
+        	if(lookingRight)
+        		g.drawLine(	(int)player.getX()+(int)player.getWidth(),
+        					(int)player.getY()+(int)player.getHeight()/2,
+        					(int)grappleHook.getX(),
+        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2));
+        	else
+            	g.drawLine(	(int)player.getX(),
+        					(int)player.getY()+(int)player.getHeight()/2,
+        					(int)grappleHook.getX(),
+        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2));
+        }
         
         addMouseListener(this);
     }
@@ -213,7 +252,17 @@ public class Game extends GameCore implements MouseListener
     public void update(long elapsed)
     {
     	if (grappleHook.isVisible())
-    		grappleHook.update(elapsed);	
+    	{
+    		grappleHook.update(elapsed);
+    		if(grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
+    			grappleHook.hide();
+    		if((grappleHook.getX()<player.getX()-HOOKLIMIT))
+    			grappleHook.hide();
+    		if(grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
+    			grappleHook.hide();
+    		if((grappleHook.getY()<player.getY()-HOOKLIMIT))
+    			grappleHook.hide();
+    	}
     	
     	if(playerState.equals(EPlayerState.DEAD)) 
     	{
@@ -314,8 +363,7 @@ public class Game extends GameCore implements MouseListener
      */
     public void handleTileMapCollisions(Sprite s, long elapsed)
     {
-     	//flag indicating whether the sprite has hit a tile 
-    	boolean hit = false;
+    	//Check if sprite has fallen under screen
         if (s.getY() + s.getHeight() > tmap.getPixelHeight())
         {
         	if(s.getTag().equals("player")) 
@@ -324,112 +372,31 @@ public class Game extends GameCore implements MouseListener
         		s.hide();
         }
         
-        //Check Tile underneath the player for collision
-        if(true)
-        {
-        	for(int i=1; i<player.getWidth()-1; i++)
-        	{
-        		char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+player.getHeight()+1)/tmap.getTileHeight());
-	    		if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b')
-	    			hit =true;
-        	}
-        	
-        	if(hit)
-        		collisionBELOW = true;
-        	else 
-        		collisionBELOW=false;
-        }
+    	//Check Tile underneath the sprite for collision
+        collisionBELOW = checkBottomSideForCollision(s);
+    	if(collisionBELOW)
+    		recoverSpriteStuckInBottomTile(s);
         
-        //Check Tile to the RIGHT of the player for collision
+        //Check Tile to the RIGHT of the sprite for collision
         if(playerState.equals(EPlayerState.RUN_RIGHT))
         {
-        	hit = false;
-        	for(int i=1; i<player.getHeight()-1; i++)
-        	{
-        		char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
-	    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
-	    			hit =true;
-        	}
-
-        	if(hit)
-        		collisionRIGHT = true;
-        	else 
-        		collisionRIGHT=false;
+        	collisionRIGHT = checkRightSideForCollision(s);
         }
         
-        //Check Tile to the LEFT of the player for collision
+        //Check Tile to the LEFT of the sprite for collision
         if(playerState.equals(EPlayerState.RUN_LEFT))
         {
-        	hit = false;
-        	for(int i=1; i<player.getHeight()-1; i++)
-        	{
-        		char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
-	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
-	    			hit =true;
-        	}
-
-        	if(hit)
-        		collisionLEFT = true;
-        	else 
-        		collisionLEFT=false;
+        	collisionLEFT = checkLeftSideForCollision(s);
         }
         
-        //Check Tile ABOVE the player for collision
+        //Check Tile ABOVE the sprite for collision
         if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
         {
-        	//flag indicating whether the sprite has hit a tile 
-        	hit = false;
-        	for(int i=1; i<player.getWidth()-1; i++)
-        	{
-        		char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
-	    		if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
-	    			hit =true;
-        	}
-
-        	if(hit)
-        		collisionABOVE = true;
-        	else 
-        		collisionABOVE=false;
-        	
-        	if(playerState.equals(EPlayerState.JUMP_RIGHT))
-        	{
-        		boolean hit2 = false;
-	        	for(int i=1; i<player.getHeight()-1; i++)
-	        	{
-	        		char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
-		    		if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
-		    			hit2 =true;
-	        	}
-
-	        	if(hit2)
-	        		collisionRIGHT = true;
-	        	else 
-	        		collisionRIGHT=false;
-        	}
-        	
-        	if(playerState.equals(EPlayerState.JUMP_LEFT))
-        	{
-        		hit = false;
-            	for(int i=1; i<player.getHeight()-1; i++)
-            	{
-            		char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
-    	    		if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
-    	    			hit =true;
-            	}
-
-            	if(hit)
-            		collisionLEFT = true;
-            	else 
-            		collisionLEFT=false;
-        	}
+        	collisionABOVE = checkTopSideForCollision(s);
+        	collisionRIGHT = checkRightSideForCollision(s);
+        	collisionLEFT = checkLeftSideForCollision(s);
         }
-       /*
-        *	TODO add collision detection if player+height goes into another tile(a.k.a. player is stuck in a tile underneath so needs to be moved up a bit
-        */
         
-        /*
-         *     TODO GRAPPLE HOOK COLLISIONS
-         */
         
         if(grappleHook.isVisible())
         {
@@ -437,11 +404,78 @@ public class Game extends GameCore implements MouseListener
             char hookLocationTileMap = tmap.getTileChar((int)(grappleHook.getX()/tmap.getTileWidth()), (int)(grappleHook.getY()/tmap.getTileHeight())); 
             if(hookLocationTileMap=='p' || hookLocationTileMap=='t' || hookLocationTileMap=='b')
             	grappleHook.hide();
-            //TODO hide hook after it goes off display; update collision detection
+            
+        	if(boundingBoxCollision(grappleHook, crate))
+        	{
+        		tmap.setTileChar('c',8,10);
+        		crate.hide();
+        	}
         }
         
-    }    
+    }
+
+	private void recoverSpriteStuckInBottomTile(Sprite s) 
+	{
+		while(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-2)/tmap.getTileHeight())!='.')
+			s.setY(s.getY()-1);
+	}
     
+	private void recoverSpriteStuckInRightTile(Sprite s) 
+	{
+		while(tmap.getTileChar(((int)s.getX()+s.getWidth()-2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
+			s.setX(s.getX()-1);
+	}
+
+	private boolean checkTopSideForCollision(Sprite s) 
+	{
+		boolean hit = false;
+		for(int i=1; i<s.getWidth()-1; i++)
+		{
+			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
+			if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b')
+				hit =true;
+		}
+
+		return hit;
+	}
+
+	private boolean checkLeftSideForCollision(Sprite s) 
+	{
+		boolean hit = false;
+		for(int i=1; i<s.getHeight()-1; i++)
+		{
+			char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
+			if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b')
+				hit =true;
+		}
+
+		return hit;
+	}
+
+	private boolean checkRightSideForCollision(Sprite s) 
+	{
+		boolean hit = false;
+		for(int i=1; i<s.getHeight()-1; i++)
+		{
+			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
+			if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b')
+				hit =true;
+		}
+		return hit;
+	}    
+
+	private boolean checkBottomSideForCollision(Sprite s)
+	{
+		boolean hit = false;
+		for(int i=1; i<s.getWidth()-1; i++)
+		{
+			char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()+1)/tmap.getTileHeight());
+			if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b')
+				hit =true;
+		}
+		return hit;
+	}
+
     /**
      * Override of the keyPressed event defined in GameCore to catch our
      * own events
@@ -453,6 +487,13 @@ public class Game extends GameCore implements MouseListener
     	//TODO Flag the keys pressed and decide on the action at the end
     	int key = e.getKeyCode();
     	
+    	if(key==KeyEvent.VK_N)
+    	{
+    		while(tmap.getTileChar(((int)player.getX()+player.getWidth()-2)/tmap.getTileWidth(), (int)(player.getY()+player.getHeight())/tmap.getTileHeight())!='.')
+        	{
+        		player.setX(player.getX()-1);
+        	}
+    	}
     	if (key == KeyEvent.VK_ESCAPE) 
     		stop();
     	
@@ -517,6 +558,7 @@ public class Game extends GameCore implements MouseListener
 			}
 			case KeyEvent.VK_UP:
 			{
+				//TODO modify so player cannot spam jump button 
 				playerState = EPlayerState.FALLING;
 				spaceKey = false;
 				if(lookingRight && !rightKey)
@@ -560,8 +602,17 @@ public class Game extends GameCore implements MouseListener
 	
     public boolean boundingBoxCollision(Sprite s1, Sprite s2)
     {
-    	//TODO grappleHook and Box
-    	return false;   	
+    	return ((s1.getX() + s1.getWidth()) >= s2.getX()) && (s1.getX() <= s2.getX()+ s2.getWidth()) &&
+    			(s1.getY() + s1.getHeight()) >= s2.getY() && (s1.getY() <= s2.getY() + s2.getHeight());
+    }
+    
+    public boolean boundingCircleCollision(Sprite s1, Sprite s2)
+    {
+    	float dx, dy, min;
+    	dx = (s1.getX()-s2.getX());
+    	dy = (s1.getY()-s2.getY());
+    	min = (s1.getRadius()+s2.getRadius());
+    	return ((dx*dx)+(dy*dy))<(min*min);
     }
 
 	
@@ -569,9 +620,16 @@ public class Game extends GameCore implements MouseListener
 	{
 		if(!grappleHook.isVisible())
 		{
-			grappleHook.setX(player.getX()+player.getWidth());
-			grappleHook.setY(player.getY()+player.getHeight()/2);
-			
+			if(lookingRight)
+			{
+				grappleHook.setX(player.getX()+player.getWidth());
+				grappleHook.setY(player.getY()+player.getHeight()/2);
+			}
+			else
+			{
+				grappleHook.setX(player.getX());
+				grappleHook.setY(player.getY()+player.getHeight()/2);
+			}
 			Velocity v = new Velocity(0.5f, player.getX() + 90, player.getY() + 15, e.getX(), e.getY());
 			grappleHook.setVelocityX((float)v.getdx());
 			grappleHook.setVelocityY((float)v.getdy());
