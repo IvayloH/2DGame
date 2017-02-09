@@ -41,6 +41,7 @@ public class Game extends GameCore implements MouseListener
     boolean collisionABOVE = false;
     boolean collisionBELOW = false;
     boolean crateFalling = false;
+    boolean grappleHookFired = false;
     
     //Pressed Key flags
     boolean leftKey = false;
@@ -178,7 +179,7 @@ public class Game extends GameCore implements MouseListener
     public void initialiseGame()
     {
     	lives = 3;
-    	resetPlayerPositionAndVelocity(0,100,0,0);
+    	resetPlayerPositionAndVelocity(250,100,0,0);
         player.show();
         crate.show();
     }
@@ -193,9 +194,6 @@ public class Game extends GameCore implements MouseListener
         int xo = 0;
         int yo = 0;
         
-        
-        //g.setColor(Color.blue);
-        //g.fillRect(0, 0, getWidth(), getHeight());
         g.drawImage(bgImage,0,0,null);
         
         // Apply offsets to sprites then draw them
@@ -206,20 +204,20 @@ public class Game extends GameCore implements MouseListener
         }
 
         // Apply offsets to player and draw 
-        player.setOffsets(-xo, yo);
+        player.setOffsets(xo, yo);
         player.draw(g);
-
+        
         // Apply offsets to tile map and draw  it
         tmap.draw(g,xo,yo);
-        
-        //draw hook
-        grappleHook.draw(g);
-        
+
         // Show score and status information
         String msg = String.format("Lives: %d", lives);
         g.setColor(Color.red);
         g.drawString(msg, getWidth() - 80, 50);
         
+        //draw hook
+        if(grappleHookFired) 
+        	grappleHook.draw(g);
         if(grappleHook.isVisible())
         {
         	g.setColor(Color.black);
@@ -238,9 +236,9 @@ public class Game extends GameCore implements MouseListener
         
         
         // draw crate
-        crate.setX(288);
-        crate.setY(256);
-        crate.draw(g);
+        //crate.setX(288);
+        //crate.setY(256);
+        //  crate.draw(g);
         //TODO figure this out
         /*if(playerState.equals(EPlayerState.JUMP))
         {
@@ -270,7 +268,10 @@ public class Game extends GameCore implements MouseListener
     				|| (grappleHook.getX()<player.getX()-HOOKLIMIT)
     				|| (grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
     				|| (grappleHook.getY()<player.getY()-HOOKLIMIT))
+    		{
     			grappleHook.hide();
+    			grappleHookFired=false;
+    		}
     	}
     	
     	if(playerState.equals(EPlayerState.DEAD)) 
@@ -395,15 +396,13 @@ public class Game extends GameCore implements MouseListener
         
         //Check Tile to the RIGHT of the sprite for collision
         if(playerState.equals(EPlayerState.RUN_RIGHT))
-        {
         	collisionRIGHT = checkRightSideForCollision(s);
-        }
+
         
         //Check Tile to the LEFT of the sprite for collision
         if(playerState.equals(EPlayerState.RUN_LEFT))
-        {
         	collisionLEFT = checkLeftSideForCollision(s);
-        }
+
         
         //Check Tile ABOVE the sprite for collision
         if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
@@ -418,6 +417,7 @@ public class Game extends GameCore implements MouseListener
         	collisionRIGHT = checkRightSideForCollision(s);
         	collisionLEFT = checkLeftSideForCollision(s);
         }
+        
         if(grappleHook.isVisible())
         {
            if(checkRightSideForCollision(grappleHook))
@@ -425,11 +425,188 @@ public class Game extends GameCore implements MouseListener
             
         	if(boundingBoxCollision(grappleHook, crate))
         	{
-        		tmap.setTileChar('c',8,10);
+        		tmap.setTileChar('c',8,11);
         		crate.hide();
         	}
         }
-        
+    }
+
+    /**
+     * Override of the keyPressed event defined in GameCore to catch our
+     * own events
+     * 
+     *  @param e The event that has been generated
+     */
+    public void keyPressed(KeyEvent e) 
+    { 
+    	//TODO Flag the keys pressed and decide on the action at the end
+    	int key = e.getKeyCode();
+    	
+    	if (key == KeyEvent.VK_ESCAPE) 
+    		stop();
+    	
+    	if( key == KeyEvent.VK_RIGHT) 
+    	{
+    		playerState = EPlayerState.RUN_RIGHT;
+    		rightKey = true;
+    		lookingRight=true;
+    		player.setAnimation(movement_Right);
+    	}
+    	
+    	if(key == KeyEvent.VK_LEFT) 
+    	{	
+    		playerState = EPlayerState.RUN_LEFT;
+    		leftKey=true;
+    		lookingRight=false;
+    		player.setAnimation(movement_Left);
+    	}
+    	
+    	if (key == KeyEvent.VK_UP && collisionBELOW && !spaceKey)
+    	{
+    		posY=player.getY();
+    		if(rightKey)
+    			playerState = EPlayerState.JUMP_RIGHT;
+    		else if(leftKey)
+    			playerState = EPlayerState.JUMP_LEFT;
+    		else
+    			playerState = EPlayerState.JUMP;
+    		
+    		if(lookingRight)
+				player.setAnimation(jump_Right);
+			else
+				player.setAnimation(jump_Left);
+    		
+    		spaceKey = true;
+    		
+    	}
+    	
+    	if (key == KeyEvent.VK_S)
+    	{
+    		// Example of playing a sound as a thread
+    		Sound s = new Sound("sounds/caw.wav");
+    		s.start();
+    	}
+    	
+    	if(key==KeyEvent.VK_R)
+    	{
+    		resetPlayerPositionAndVelocity(0,100,0,0);
+    	}
+    }
+
+	public void keyReleased(KeyEvent e) 
+	{
+		int key = e.getKeyCode();
+		switch (key)
+		{
+			case KeyEvent.VK_ESCAPE:
+			{
+				stop(); 
+				break;
+			}
+			case KeyEvent.VK_UP:
+			{
+				//TODO modify so player cannot spam jump button 
+				playerState = EPlayerState.FALLING;
+				spaceKey = false;
+				if(lookingRight && !rightKey)
+					player.setAnimation(standingFacingRight);
+				else if(!lookingRight && !leftKey)
+					player.setAnimation(standingFacingLeft);
+
+				if(rightKey)
+				{
+					player.setAnimation(movement_Right);
+					playerState = EPlayerState.RUN_RIGHT;
+				}
+				else if(leftKey)
+				{
+					player.setAnimation(movement_Left);
+					playerState = EPlayerState.RUN_LEFT;
+				}
+				break;
+			}
+			
+			case KeyEvent.VK_RIGHT:
+			{
+				playerState = EPlayerState.STANDING;
+				rightKey = false;
+				player.setAnimation(standingFacingRight);
+				break;
+			}
+			
+			case KeyEvent.VK_LEFT:
+			{
+				playerState = EPlayerState.STANDING;
+				leftKey = false;
+				player.setAnimation(standingFacingLeft);
+				break;
+			}
+			
+			default:
+				break;
+		}
+	}
+	
+	public void mousePressed(MouseEvent e) 
+	{
+		if(!grappleHook.isVisible())
+		{
+			if(lookingRight)
+			{
+				grappleHook.setX(player.getX()+player.getWidth());
+				grappleHook.setY(player.getY()+player.getHeight()/2);
+			}
+			else
+			{
+				grappleHook.setX(player.getX());
+				grappleHook.setY(player.getY()+player.getHeight()/2);
+			}
+			Velocity v = new Velocity(0.5f, player.getX() + 90, player.getY() + 15, e.getX(), e.getY());
+			grappleHook.setVelocityX((float)v.getdx());
+			grappleHook.setVelocityY((float)v.getdy());
+			
+			grappleHook.show();
+			grappleHookFired=true;
+		}
+	}
+	public void mouseClicked(MouseEvent arg0) {}
+	public void mouseEntered(MouseEvent arg0) {}
+	public void mouseExited(MouseEvent arg0) {}
+	public void mouseReleased(MouseEvent arg0) {}
+	
+	
+	/**
+	 * @param defaultX The value for the X position
+	 * @param defaultY The value for the Y position
+	 * @param defaultDX The value for the Horizontal(X) velocity
+	 * @param defaultDY The value for the Vertical(Y) velocity
+	 */
+	private void resetPlayerPositionAndVelocity(float defaultX, float defaultY, float defaultDX, float defaultDY)
+	{  
+		player.setX(defaultX);
+		player.setY(defaultY);
+		player.setVelocityX(defaultDX);
+		player.setVelocityY(defaultDY);
+	}
+	
+	
+	/*
+	 *		COLLISION DETECTION AND RECOVERY METHODS
+	 */
+	
+    public boolean boundingBoxCollision(Sprite s1, Sprite s2)
+    {
+    	return ((s1.getX() + s1.getWidth()) >= s2.getX()) && (s1.getX() <= s2.getX()+ s2.getWidth()) &&
+    			(s1.getY() + s1.getHeight()) >= s2.getY() && (s1.getY() <= s2.getY() + s2.getHeight());
+    }
+    
+    public boolean boundingCircleCollision(Sprite s1, Sprite s2)
+    {
+    	float dx, dy, min;
+    	dx = (s1.getX()-s2.getX());
+    	dy = (s1.getY()-s2.getY());
+    	min = (s1.getRadius()+s2.getRadius());
+    	return ((dx*dx)+(dy*dy))<(min*min);
     }
 
 	private void recoverSpriteStuckInBottomTile(Sprite s) 
@@ -498,186 +675,5 @@ public class Game extends GameCore implements MouseListener
 				hit =true;
 		}
 		return hit;
-	}
-	
-    /**
-     * Override of the keyPressed event defined in GameCore to catch our
-     * own events
-     * 
-     *  @param e The event that has been generated
-     */
-    public void keyPressed(KeyEvent e) 
-    { 
-    	//TODO Flag the keys pressed and decide on the action at the end
-    	int key = e.getKeyCode();
-    	
-    	if(key==KeyEvent.VK_N)
-    	{
-    		while(tmap.getTileChar(((int)player.getX()+player.getWidth()-2)/tmap.getTileWidth(), (int)(player.getY()+player.getHeight())/tmap.getTileHeight())!='.')
-        	{
-        		player.setX(player.getX()-1);
-        	}
-    	}
-    	if (key == KeyEvent.VK_ESCAPE) 
-    		stop();
-    	
-    	if( key == KeyEvent.VK_RIGHT) 
-    	{
-    		playerState = EPlayerState.RUN_RIGHT;
-    		rightKey = true;
-    		lookingRight=true;
-    		player.setAnimation(movement_Right);
-    	}
-    	
-    	if(key == KeyEvent.VK_LEFT) 
-    	{	
-    		playerState = EPlayerState.RUN_LEFT;
-    		leftKey=true;
-    		lookingRight=false;
-    		player.setAnimation(movement_Left);
-    	}
-    	
-    	if (key == KeyEvent.VK_UP && collisionBELOW && !spaceKey)
-    	{
-    		posY=player.getY();
-    		if(rightKey)
-    			playerState = EPlayerState.JUMP_RIGHT;
-    		else if(leftKey)
-    			playerState = EPlayerState.JUMP_LEFT;
-    		else
-    			playerState = EPlayerState.JUMP;
-    		
-    		if(lookingRight)
-				player.setAnimation(jump_Right);
-			else
-				player.setAnimation(jump_Left);
-    		
-    		spaceKey = true;
-    		
-    	}
-    	
-    	if (key == KeyEvent.VK_S)
-    	{
-    		// Example of playing a sound as a thread
-    		Sound s = new Sound("sounds/caw.wav");
-    		s.start();
-    	}
-    	
-    	if(key==KeyEvent.VK_R)
-    	{
-    		resetPlayerPositionAndVelocity(0,100,0,0);
-    	}
-    	e.consume();
-    }
-
-	public void keyReleased(KeyEvent e) 
-	{
-		int key = e.getKeyCode();
-		switch (key)
-		{
-			case KeyEvent.VK_ESCAPE:
-			{
-				stop(); 
-				break;
-			}
-			case KeyEvent.VK_UP:
-			{
-				//TODO modify so player cannot spam jump button 
-				playerState = EPlayerState.FALLING;
-				spaceKey = false;
-				if(lookingRight && !rightKey)
-					player.setAnimation(standingFacingRight);
-				else if(!lookingRight && !leftKey)
-					player.setAnimation(standingFacingLeft);
-
-				if(rightKey)
-				{
-					player.setAnimation(movement_Right);
-					playerState = EPlayerState.RUN_RIGHT;
-				}
-				else if(leftKey)
-				{
-					player.setAnimation(movement_Left);
-					playerState = EPlayerState.RUN_LEFT;
-				}
-				break;
-			}
-			
-			case KeyEvent.VK_RIGHT:
-			{
-				playerState = EPlayerState.STANDING;
-				rightKey = false;
-				player.setAnimation(standingFacingRight);
-				break;
-			}
-			
-			case KeyEvent.VK_LEFT:
-			{
-				playerState = EPlayerState.STANDING;
-				leftKey = false;
-				player.setAnimation(standingFacingLeft);
-				break;
-			}
-			
-			default:
-				break;
-		}
-	}
-	
-    public boolean boundingBoxCollision(Sprite s1, Sprite s2)
-    {
-    	return ((s1.getX() + s1.getWidth()) >= s2.getX()) && (s1.getX() <= s2.getX()+ s2.getWidth()) &&
-    			(s1.getY() + s1.getHeight()) >= s2.getY() && (s1.getY() <= s2.getY() + s2.getHeight());
-    }
-    
-    public boolean boundingCircleCollision(Sprite s1, Sprite s2)
-    {
-    	float dx, dy, min;
-    	dx = (s1.getX()-s2.getX());
-    	dy = (s1.getY()-s2.getY());
-    	min = (s1.getRadius()+s2.getRadius());
-    	return ((dx*dx)+(dy*dy))<(min*min);
-    }
-
-	
-	public void mousePressed(MouseEvent e) 
-	{
-		if(!grappleHook.isVisible())
-		{
-			if(lookingRight)
-			{
-				grappleHook.setX(player.getX()+player.getWidth());
-				grappleHook.setY(player.getY()+player.getHeight()/2);
-			}
-			else
-			{
-				grappleHook.setX(player.getX());
-				grappleHook.setY(player.getY()+player.getHeight()/2);
-			}
-			Velocity v = new Velocity(0.5f, player.getX() + 90, player.getY() + 15, e.getX(), e.getY());
-			grappleHook.setVelocityX((float)v.getdx());
-			grappleHook.setVelocityY((float)v.getdy());
-			
-			grappleHook.show();
-		}
-	}
-	public void mouseClicked(MouseEvent arg0) {}
-	public void mouseEntered(MouseEvent arg0) {}
-	public void mouseExited(MouseEvent arg0) {}
-	public void mouseReleased(MouseEvent arg0) {}
-	
-	
-	/**
-	 * @param defaultX The value for the X position
-	 * @param defaultY The value for the Y position
-	 * @param defaultDX The value for the Horizontal(X) velocity
-	 * @param defaultDY The value for the Vertical(Y) velocity
-	 */
-	private void resetPlayerPositionAndVelocity(float defaultX, float defaultY, float defaultDX, float defaultDY)
-	{  
-		player.setX(defaultX);
-		player.setY(defaultY);
-		player.setVelocityX(defaultDX);
-		player.setVelocityY(defaultDY);
 	}
 }
