@@ -21,10 +21,11 @@ import game2D.*;
  * @author David Cairns
  *
  */
-@SuppressWarnings("serial")
+
 
 public class Game extends GameCore implements MouseListener, MouseWheelListener
 {
+	private static final long serialVersionUID = 1L;
 	// Useful game constants
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
@@ -195,7 +196,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
     	lifeBars = amountOfDamageBeforeDeath;
     	resetPlayerPositionAndVelocity(50,100,0,0);
         player.show();
-        crate.show();
     }
     
     /**
@@ -208,7 +208,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         int minOffsetX=0;
         int maxOffsetX = tmap.getPixelWidth() - screenWidth;
         
-        xOffset = (int)player.getX() - screenWidth/2;
+        //xOffset = (int)player.getX() - screenWidth/2; FIXME
         if(xOffset>maxOffsetX)
         	xOffset = maxOffsetX;
         else if(xOffset<minOffsetX)
@@ -230,7 +230,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         // Apply offsets to tile map and draw  it
         tmap.draw(g,xOffset,yOffset);
         
-        String msg = String.format("Equipped Gadget: %s", currentGadget); // WILL BE REPLACED WITH AN IMAGE
+        String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
         g.setColor(Color.red);
         g.drawString(msg, 20, 90);
         
@@ -269,13 +269,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         }
 
         // draw crate 
-        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
-        if(player.getX()+screenWidth<p.getX())
+        crate.draw(g);
+        if(currCrate<crateSpawnPositions.size())
         {
-        	crate.setX(p.getX());
-            crate.setY(p.getY());
-            crate.draw(g);
-            currCrate++;   // go to next crate position
+	        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
+	        if(player.getX()+screenWidth>p.getX())
+	        {
+	        	crate.setX(p.getX());
+	            crate.setY(p.getY());	            
+	            crate.show();
+	            currCrate++;   // go to next crate position
+	        }
         }
         
         //FIXME
@@ -301,7 +305,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
     {
     	if(crateHit)
     	{
-    		crate.setVelocityY(-RUNSPEED);
+    		//FIXME
     	}
     	if (grappleHook.isVisible())
     	{
@@ -436,7 +440,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 		player.setVelocityX(defaultDX);
 		player.setVelocityY(defaultDY);
 	}
-	
     
     /**
      * Checks and handles collisions with the tile map for the
@@ -498,16 +501,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         	}
         }
     }
-    
+  
     
     /*
      *         KEY EVENTS
-     */
-    /**
-     * Override of the keyPressed event defined in GameCore to catch our
-     * own events
-     * 
-     *  @param e The event that has been generated
      */
     public void keyPressed(KeyEvent e) 
     { 
@@ -565,7 +562,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
     		lifeBars--;
     	}
     }
-
 	public void keyReleased(KeyEvent e) 
 	{
 		int key = e.getKeyCode();
@@ -653,7 +649,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 				currentGadget = gadgets[count];
 		}
 	}
-	
 	public void mousePressed(MouseEvent e) 
 	{
 		if(currentGadget.equals("Grapple Hook"))
@@ -693,7 +688,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
     	return ((s1.getX() + s1.getWidth()) >= s2.getX()) && (s1.getX() <= s2.getX()+ s2.getWidth()) &&
     			(s1.getY() + s1.getHeight()) >= s2.getY() && (s1.getY() <= s2.getY() + s2.getHeight());
     }
-    
     public boolean boundingCircleCollision(Sprite s1, Sprite s2)
     {
     	float dx, dy, min;
@@ -702,6 +696,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
     	min = (s1.getRadius()+s2.getRadius());
     	return ((dx*dx)+(dy*dy))<(min*min);
     }
+    
     /**
      * Push Sprite UP by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.
@@ -736,7 +731,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
 			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
-			if(tileCharTop=='p' || tileCharTop == 't' || tileCharTop == 'b' || tileCharTop == 'c')
+			if(tileCharTop=='b' || tileCharTop == 'w' || tileCharTop == 'r' || tileCharTop == 'c')
 				hit =true;
 		}
 
@@ -749,7 +744,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 		for(int i=1; i<s.getHeight()-1; i++)
 		{
 			char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
-			if(tileCharLeft=='p' || tileCharLeft == 't' || tileCharLeft == 'b' || tileCharLeft == 'c')
+			if(tileCharLeft=='b' || tileCharLeft == 'w' || tileCharLeft == 'r' || tileCharLeft == 'c')
 				hit =true;
 		}
 
@@ -762,7 +757,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 		for(int i=1; i<s.getHeight()-1; i++)
 		{
 			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
-			if(tileCharRight=='p' || tileCharRight == 't' || tileCharRight == 'b' || tileCharRight == 'c')
+			if(tileCharRight=='b' || tileCharRight == 'w' || tileCharRight == 'r' || tileCharRight == 'c')
 				hit =true;
 		}
 		return hit;
@@ -773,14 +768,15 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
 			char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()+1)/tmap.getTileHeight());
-			if(tileCharBottom=='p' || tileCharBottom == 't' || tileCharBottom == 'b' || tileCharBottom == 'c')
+			if(tileCharBottom=='b' || tileCharBottom == 'w' || tileCharBottom == 'r' || tileCharBottom == 'c')
 				hit =true;
 		}
 		return hit;
 	}
-	
+	@SuppressWarnings("unused")
 	private void log(String s)
 	{
 		System.out.print(s);
+		//TODO DELETE ME AT THE END
 	}
 }
