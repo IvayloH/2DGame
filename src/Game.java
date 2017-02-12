@@ -34,19 +34,23 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 	final double crateRotation = 1.5708; //90 degrees
 	final int amountOfDamageBeforeDeath = 6;
 	final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
+	// list in which the location(x,y) of every crate is added in order to spawn it where needed, when needed
+	final ArrayList<CrateSpawnPosition<Float,Float>> crateSpawnPositions = new ArrayList<CrateSpawnPosition<Float,Float>>(); 
+	
 	
     float lift = 0.005f;
     float gravity = 0.01f;
     float posY = .0f;  // keep track of jump start
     int lifeBars = 0;    // number of lives left
     String currentGadget = "Batarang";  // keep track of the current gadget that has been selected
+    int currCrate = 0; //keep track of the crate and which to spawn next from the list
     
     // Game state flags
     boolean collisionRIGHT = false;
     boolean collisionLEFT = false;
     boolean collisionABOVE = false;
     boolean collisionBELOW = false;
-    boolean crateFalling = false;
+    boolean crateHit = false;
     boolean grappleHookFired = false;
     
     //Pressed Key flags
@@ -159,7 +163,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         
         // Load a single cloud animation
         Animation ca = new Animation();
-        ca.addFrame(loadImage("images/cloud.png"), 1000);
+        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
         
         // Create 3 clouds at random positions off the screen
         // to the right
@@ -174,6 +178,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         }
         addMouseListener(this);
         addMouseWheelListener(this);
+        
+        //TODO generate Crate Spawn positions and add them to the list
+        initialiseCrateSpawnPoints();
         initialiseGame(); 		
         System.out.println(tmap);
     }
@@ -261,11 +268,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         	g.setStroke(new BasicStroke(0));
         }
 
-        // draw crate
-        crate.setX(288);
-        crate.setY(256);
-        crate.draw(g);
-        //TODO figure this out
+        // draw crate 
+        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
+        if(player.getX()+screenWidth<p.getX())
+        {
+        	crate.setX(p.getX());
+            crate.setY(p.getY());
+            crate.draw(g);
+            currCrate++;   // go to next crate position
+        }
+        
+        //FIXME
         /*if(playerState.equals(EPlayerState.JUMP))
         {
         	Graphics2D gd2 = (Graphics2D) g.create();
@@ -286,8 +299,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
      */    
     public void update(long elapsed)
     {
+    	if(crateHit)
+    	{
+    		crate.setVelocityY(-RUNSPEED);
+    	}
     	if (grappleHook.isVisible())
     	{
+    		//TODO add a flag hook retract and make it so the hook goes back
     		//hide hook if it goes further than its limit in either direction
     		grappleHook.update(elapsed);
     		if((grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
@@ -391,11 +409,34 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
        	
         // Now update the sprites animation and position
         player.update(elapsed);
-       
+        
         // Then check for any collisions that may have occurred
         handleTileMapCollisions(player,elapsed);
     }
-    
+  
+	/**
+	 * Create and add all the (x,y) locations to spawn a crate there
+     */
+    private void initialiseCrateSpawnPoints()
+    {
+    	CrateSpawnPosition<Float,Float> p = new CrateSpawnPosition<Float,Float>(288.f,256.f);
+    	crateSpawnPositions.add(p);
+    }
+	
+    /**
+	 * @param defaultX The value for the X position
+	 * @param defaultY The value for the Y position
+	 * @param defaultDX The value for the Horizontal(X) velocity
+	 * @param defaultDY The value for the Vertical(Y) velocity
+	 */
+	private void resetPlayerPositionAndVelocity(float defaultX, float defaultY, float defaultDX, float defaultDY)
+	{  
+		player.setX(defaultX);
+		player.setY(defaultY);
+		player.setVelocityX(defaultDX);
+		player.setVelocityY(defaultDY);
+	}
+	
     
     /**
      * Checks and handles collisions with the tile map for the
@@ -453,10 +494,15 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         	{
         		tmap.setTileChar('c',8,10);
         		crate.hide();
+        		crateHit=true;
         	}
         }
     }
-
+    
+    
+    /*
+     *         KEY EVENTS
+     */
     /**
      * Override of the keyPressed event defined in GameCore to catch our
      * own events
@@ -573,20 +619,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 				break;
 		}
 	}
-
-	/**
-	 * @param defaultX The value for the X position
-	 * @param defaultY The value for the Y position
-	 * @param defaultDX The value for the Horizontal(X) velocity
-	 * @param defaultDY The value for the Vertical(Y) velocity
-	 */
-	private void resetPlayerPositionAndVelocity(float defaultX, float defaultY, float defaultDX, float defaultDY)
-	{  
-		player.setX(defaultX);
-		player.setY(defaultY);
-		player.setVelocityX(defaultDX);
-		player.setVelocityY(defaultDY);
-	}
+    
 	
 	/*
 	 * 			MOUSE EVENTS 
@@ -649,6 +682,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 	public void mouseExited(MouseEvent arg0) {}
 	public void mouseReleased(MouseEvent arg0) {}
 
+	
+	
 	/*
 	 *		COLLISION DETECTION AND RECOVERY METHODS
 	 */
@@ -731,8 +766,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 				hit =true;
 		}
 		return hit;
-	}    
-
+	}
 	private boolean checkBottomSideForCollision(Sprite s)
 	{
 		boolean hit = false;
