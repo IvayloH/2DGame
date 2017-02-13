@@ -2,6 +2,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
@@ -23,7 +24,7 @@ import game2D.*;
  */
 
 
-public class Game extends GameCore implements MouseListener, MouseWheelListener
+public class Game extends GameCore implements MouseListener, MouseWheelListener, MouseMotionListener
 {
 	private static final long serialVersionUID = 1L;
 	// Useful game constants
@@ -179,6 +180,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
         }
         addMouseListener(this);
         addMouseWheelListener(this);
+        addMouseMotionListener(this);
         
         //TODO generate Crate Spawn positions and add them to the list
         initialiseCrateSpawnPoints();
@@ -657,6 +659,33 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 	/*
 	 * 			MOUSE EVENTS 
 	 */
+	public void mouseDragged(MouseEvent e) {}
+	public void mouseMoved(MouseEvent e) 
+	{
+		if(e.getX()<player.getX())
+		{
+			if(playerState.equals(EPlayerState.STANDING))
+			{
+				if(lookingRight)
+				{
+					player.setAnimation(standingFacingLeft);
+					lookingRight=false;
+				}
+			}
+		}
+		else
+		{
+			if(playerState.equals(EPlayerState.STANDING))
+			{
+				if(!lookingRight)
+				{
+					player.setAnimation(standingFacingRight);
+					lookingRight=true;
+				}
+			}
+		}
+			
+	}
 	public void mouseWheelMoved(MouseWheelEvent e) 
 	{
 		//find the index of the currently selected gadget
