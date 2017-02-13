@@ -48,6 +48,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     int lifeBars = 0;    // number of lives left
     String currentGadget = "Grapple Hook";  // keep track of the current gadget that has been selected
     int currCrate = 0; //keep track of the crate and which to spawn next from the list
+    float cratePosX = 0;
+    double grappleHookRotation = 0.0;
     
     int xOffset, yOffset;
     
@@ -128,7 +130,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {         
         Sprite s;	// Temporary reference to a sprite
 
-        // Load the tile map and print it out so we can check it is valid
         tmap.loadMap("assets/maps", "level1.txt");
 
         bgImage = loadImage("assets/images/city.png");
@@ -161,7 +162,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         grappleHookGun_Right.addFrame(loadImage("assets/images/BatmanGrappleHookGunRight.gif"), 60);
         
         grappleHookGun_Left = new Animation();
-        grappleHookGun_Left.addFrame(loadImage("BatmanGrappleHookGunLeft.gif"), 60);
+        grappleHookGun_Left.addFrame(loadImage("assets/images/BatmanGrappleHookGunLeft.gif"), 60);
         
         // Initialise the player with an animation
         player = new Sprite(standingFacingRight);
@@ -260,21 +261,22 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         g.drawLine(68, 36, 68, 68);
         g.drawString(msg, 20, 72);
         
-        //draw hook
-        grappleHook.draw(g);
+        //draw hook and line behind it
         if(grappleHook.isVisible())
         {
+            grappleHook.setRotation(grappleHookRotation);
+            grappleHook.drawTransformed(g);
         	grappleHook.setOffsets(xOffset, yOffset);
         	g.setColor(Color.black);
         	g.setStroke(new BasicStroke(3));
         	if(lookingRight)
         		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
-        					(int)player.getY()+(int)player.getHeight()/2+yOffset,
+        					(int)player.getY()+26+yOffset,
         					(int)grappleHook.getX()+xOffset,
         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
         	else
             	g.drawLine(	(int)player.getX()+xOffset,
-        					(int)player.getY()+(int)player.getHeight()/2+yOffset,
+        					(int)player.getY()+26+yOffset,
         					(int)grappleHook.getX()+xOffset,
         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
         	//reset stroke
@@ -282,8 +284,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
 
         // draw crate 
-        crate.draw(g);
-        if(currCrate<crateSpawnPositions.size())
+        crate.drawTransformed(g);
+        crate.setOffsets(xOffset, yOffset);
+        if(currCrate<crateSpawnPositions.size() && !crateHit)
         {
 	        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
 	        if(player.getX()+screenWidth>p.getX())
@@ -291,29 +294,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	        	crate.setX(p.getX());
 	            crate.setY(p.getY());	            
 	            crate.show();
-	            currCrate++;   // go to next crate position
 	        }
-	        else 
+	        else if(!crateHit)
 	        	crate.hide();
         }
-        if(crateHit)
-        {
-        	crate.setRotation(90);
-        	
-        	crate.drawTransformed(g);
-        	crate.show();
-        }
-        //FIXME - use crate.rotate()
-        /*if(playerState.equals(EPlayerState.JUMP))
-        {
-        	Graphics2D gd2 = (Graphics2D) g.create();
-        	gd2.setTransform(crateTransform);
-        	crateTransform.translate(3, 3);
-        	crateTransform.rotate(Math.PI/2);
-        	//gd2.rotate(Math.PI/2);
-        	crate.draw(gd2);
-        	gd2.dispose();
-        }*/
     }
 
     /**
@@ -325,8 +309,20 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {
     	if(crateHit)
     	{
-    		currCrate++;
-    		//FIXME
+    		if(crate.getRotation()>-90)
+        		crate.setRotation(crate.getRotation()-2.0);
+        	if(crate.getX()>cratePosX-32)
+        		crate.setX(crate.getX()-2);
+        	else if(!checkBottomSideForCollision(crate))
+        		crate.setY(crate.getY()+2);
+        	else
+        	{
+        		crateHit=false;
+        		tmap.setTileChar('c', ((int)crate.getX()+5)/tmap.getTileWidth(), ((int)crate.getY()+5)/tmap.getTileHeight());
+        		crate.hide();
+        		currCrate++;
+        		crate.setRotation(0);
+        	}
     	}
     	
     	if (grappleHook.isVisible())
@@ -508,10 +504,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
             
         	if(boundingBoxCollision(grappleHook, crate))
         	{
-        		tmap.setTileChar('c',8,10);
-        		crate.hide();
         		retractGrappleHook();
-        		crateHit=true;
+        		if(!checkRightSideForCollision(crate))
+        		{//if next to a tile, then crate already fallen
+        			crateHit=true;
+        			cratePosX = crate.getX();
+        		}
         	}
         }
     }
@@ -521,10 +519,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
   	 * Create and add all the (x,y) locations to spawn a crate there
        */
     private void initialiseCrateSpawnPoints()
-      {
+    {
       	CrateSpawnPosition<Float,Float> p = new CrateSpawnPosition<Float,Float>(288.f,256.f);
       	crateSpawnPositions.add(p);
-      }
+      	p = new CrateSpawnPosition<Float,Float>(896.f,256.f);
+      	crateSpawnPositions.add(p);
+    }
     /**
      * Reset player position and velocity.
   	 * @param defaultX The value for the X position
@@ -544,16 +544,16 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
   	private void retractGrappleHook()
     {
-  		
+  		Velocity v = null;
   		if(lookingRight)
 		{
-			Velocity v = new Velocity(0.5f, grappleHook.getX(), grappleHook.getY(), player.getX()+player.getWidth(), player.getY()+player.getHeight()/2);
+			v = new Velocity(0.5f, grappleHook.getX(), grappleHook.getY(), player.getX()+player.getWidth(), player.getY()+20);
 			grappleHook.setVelocityX((float)v.getdx());
 			grappleHook.setVelocityY((float)v.getdy());
 		}
 		else
 		{
-			Velocity v = new Velocity(0.5f,  grappleHook.getX(), grappleHook.getY(),player.getX(), player.getY()+player.getHeight()/2);
+			v = new Velocity(0.5f,  grappleHook.getX(), grappleHook.getY(),player.getX(), player.getY()+player.getHeight()/2);
 			grappleHook.setVelocityX((float)v.getdx());
 			grappleHook.setVelocityY((float)v.getdy());
 		}
@@ -572,7 +572,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		stop();
     	}
-    	
+    	if(key==KeyEvent.VK_DOWN)
+    	{
+    		grappleHook.setVelocityX(0);
+    		grappleHook.setVelocityY(0);
+    	}
     	if( key == KeyEvent.VK_RIGHT) 
     	{
     		playerState = EPlayerState.RUN_RIGHT;
@@ -686,7 +690,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	public void mouseDragged(MouseEvent e) {}
 	public void mouseMoved(MouseEvent e) 
 	{
-		if(e.getX()<player.getX())
+		if(e.getX()<player.getX()+xOffset)
 		{
 			if(playerState.equals(EPlayerState.STANDING))
 			{
@@ -717,7 +721,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(!cursorChanged)
 		{
 			Toolkit tk = Toolkit.getDefaultToolkit();
-			Cursor c = tk.createCustomCursor(loadImage("assets/images/testCube 32x32.png"), new Point(0,0), "custom cursor");
+			Cursor c = tk.createCustomCursor(loadImage("assets/images/crosshairs.png"), new Point(0,0), "custom cursor");
 			setCursor(c);
 			cursorChanged=true;
 		}
@@ -756,12 +760,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(currentGadget.equals("Grapple Hook"))
 			if(!grappleHook.isVisible())
 			{
+				Velocity v;
 				if(lookingRight)
 				{
 					grappleHook.setX(player.getX()+player.getWidth());
-					grappleHook.setY(player.getY()+player.getHeight()/2);
+					grappleHook.setY(player.getY()+20);
 					
-					Velocity v = new Velocity(0.5f, player.getX() + player.getWidth()+xOffset, player.getY() + player.getHeight()/2+yOffset, e.getX(), e.getY());
+					v = new Velocity(0.5f, player.getX() + player.getWidth()+xOffset, player.getY() + 20 +yOffset, e.getX()+10, e.getY()+10);
 					grappleHook.setVelocityX((float)v.getdx());
 					grappleHook.setVelocityY((float)v.getdy());
 					
@@ -770,14 +775,15 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				else
 				{
 					grappleHook.setX(player.getX());
-					grappleHook.setY(player.getY()+player.getHeight()/2);
+					grappleHook.setY(player.getY()+26);
 					
-					Velocity v = new Velocity(0.5f, player.getX()+xOffset, player.getY() + player.getHeight()/2+yOffset, e.getX(), e.getY());
+					v = new Velocity(0.5f, player.getX()+xOffset, player.getY() +26+yOffset, e.getX()+10, e.getY()+10);
 					grappleHook.setVelocityX((float)v.getdx());
 					grappleHook.setVelocityY((float)v.getdy());
 					
 					player.setAnimation(grappleHookGun_Left);
 				}
+				grappleHookRotation = v.getAngle();
 				grappleHook.show();
 			}
 	}
