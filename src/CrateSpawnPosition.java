@@ -1,14 +1,14 @@
-public class CrateSpawnPosition<L,R>
+public class CrateSpawnPosition<X,Y>
 {
-	private final L x;
-	private final R y;
+	private final X x;
+	private final Y y;
 	
-	public CrateSpawnPosition(L x, R y)
+	public CrateSpawnPosition(X x, Y y)
 	{
 		this.x = x;
 		this.y = y;
 	}
 	
-	public L getX() { return x; }
-	public R getY() { return y; }
+	public X getX() { return x; }
+	public Y getY() { return y; }
 }
