@@ -524,9 +524,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
      */
   	private void retractGrappleHook()
     {
-		Velocity v = new Velocity(0.5f, grappleHook.getX(), grappleHook.getY(), player.getX()+player.getWidth(), player.getY()+player.getHeight()/2);
-		grappleHook.setVelocityX((float)v.getdx());
-		grappleHook.setVelocityY((float)v.getdy());
+  		
+  		if(lookingRight)
+		{
+			Velocity v = new Velocity(0.5f, grappleHook.getX(), grappleHook.getY(), player.getX()+player.getWidth(), player.getY()+player.getHeight()/2);
+			grappleHook.setVelocityX((float)v.getdx());
+			grappleHook.setVelocityY((float)v.getdy());
+		}
+		else
+		{
+			Velocity v = new Velocity(0.5f,  grappleHook.getX(), grappleHook.getY(),player.getX(), player.getY()+player.getHeight()/2);
+			grappleHook.setVelocityX((float)v.getdx());
+			grappleHook.setVelocityY((float)v.getdy());
+		}
 		grappleHookRetracting = true;
     }
     
@@ -685,15 +695,20 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener
 				{
 					grappleHook.setX(player.getX()+player.getWidth());
 					grappleHook.setY(player.getY()+player.getHeight()/2);
+					
+					Velocity v = new Velocity(0.5f, player.getX() + player.getWidth(), player.getY() + player.getHeight()/2, e.getX(), e.getY());
+					grappleHook.setVelocityX((float)v.getdx());
+					grappleHook.setVelocityY((float)v.getdy());
 				}
 				else
 				{
 					grappleHook.setX(player.getX());
 					grappleHook.setY(player.getY()+player.getHeight()/2);
+					
+					Velocity v = new Velocity(0.5f, player.getX(), player.getY() + player.getHeight()/2, e.getX(), e.getY());
+					grappleHook.setVelocityX((float)v.getdx());
+					grappleHook.setVelocityY((float)v.getdy());
 				}
-				Velocity v = new Velocity(0.5f, player.getX() + player.getWidth(), player.getY() + player.getHeight()/2, e.getX(), e.getY());
-				grappleHook.setVelocityX((float)v.getdx());
-				grappleHook.setVelocityY((float)v.getdy());
 				
 				grappleHook.show();
 			}
