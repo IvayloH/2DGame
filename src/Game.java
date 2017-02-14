@@ -63,12 +63,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     boolean grappleHookRetracting = false;
     boolean cursorChanged = false;
     boolean invincible = false; // player becomes invincible after being hit
-    boolean flashy = false;
+    boolean flashy = false; // for flashing effect while player is invincible
     
     //Pressed Key flags
     boolean leftKey = false;
     boolean rightKey = false;
-    boolean spaceKey = false;
+    boolean jumpKey = false;
+    boolean crouchKey = false;
     
     // Batman Direction
     boolean lookingRight = true;
@@ -80,6 +81,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	JUMP,
     	JUMP_LEFT,
     	JUMP_RIGHT,
+    	CROUCH,
+    	CROUCH_MOVE_LEFT,
+    	CROUCH_MOVE_RIGHT,
     	STANDING,
     	FALLING,
     	RESPAWN,
@@ -103,6 +107,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     Animation thugProjectileAnim = null;
     Animation batarangAnim = null;
     Animation transparent = null;
+    Animation crouch = null;
+    Animation crouch_move_left=null;
+    Animation crouch_move_right=null;
     
     Sprite	player = null;
     Sprite grappleHook = null;
@@ -260,26 +267,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */    
     public void update(long elapsed)
     {
-    	if(invincible)
-    	{
-    		invincibleTime+=elapsed;
-    		if(flashy)
-    		{
-    			player.setAnimation(getAppropriateAnimation());
-    			flashy=false;
-    		}
-    		else
-    		{
-    			player.setAnimation(transparent);
-    			flashy=true;
-    		}
-    		if(invincibleTime>2000f)
-    		{
-    			invincible=false;
-    			invincibleTime=0f;
-    		}
-    	}
-    	//thugs
+    	//THUG UPD
     	if(thug.isVisible())
     	{
     		if(!checkBottomSideForCollision(thug))
@@ -299,8 +287,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			thug.setVelocityY(.0f);
     			recoverSpriteStuckInBottomTile(thug);
     			//make sure thug is on the ground before shooting
-        		//if(Math.random()>0.3)
-        			//thugShoot(thug);
+        		if(Math.random()>0.3)
+        			if(player.getX()+screenWidth<thug.getX() || thug.getX()>player.getX()-screenWidth) // check to see if player is close or not
+        				thugShoot(thug);
     		}
     		thug.update(elapsed);
     	}
@@ -310,7 +299,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		if(boundingBoxCollision(thugProjectile, player) && !invincible)
     			playerTakeDamage(elapsed);
     	}
-    	//crates
+    	//CRATE UPD
     	if(crateHit)
     	{
     		if(crate.getRotation()>-90)
@@ -328,10 +317,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         		crate.setRotation(0);
         	}
     	}
-    	//grapple hook
+    	//HOOK UPD
     	if (grappleHook.isVisible())
     	{
-    		grappleHook.update(elapsed);
     		if((grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
     				|| (grappleHook.getX()<player.getX()-HOOKLIMIT)
     				|| (grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
@@ -358,9 +346,30 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     				grappleHookRetracting=false;
     			}
     		}
+    		grappleHook.update(elapsed);
     	}
     	
-    	//player updates
+    	//PLAYER UPD
+    	if(invincible)
+    	{
+    		invincibleTime+=elapsed;
+    		if(flashy)
+    		{
+    			player.setAnimation(getAppropriateAnimation());
+    			flashy=false;
+    		}
+    		else
+    		{
+    			player.setAnimation(transparent);
+    			flashy=true;
+    		}
+    		if(invincibleTime>2000f)
+    		{
+    			invincible=false;
+    			invincibleTime=0f;
+    		}
+    	}
+    	
     	if(!grappleHookRetracting && !invincible)
     		player.setAnimation(getAppropriateAnimation());
     	
@@ -383,6 +392,16 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		player.setVelocityY(.0f);
     	}
     	
+    	if(playerState.equals(EPlayerState.CROUCH) || playerState.equals(EPlayerState.CROUCH_MOVE_LEFT) || playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
+    	{
+			if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT) && !collisionRIGHT)
+				player.setVelocityX(RUNSPEED/2);
+			else if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT) && !collisionLEFT)
+				player.setVelocityX(-RUNSPEED/2);
+			else
+				player.setVelocityX(.0f);
+    	}
+    	
     	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
     	{
     		if(!collisionABOVE)
@@ -393,28 +412,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			else player.setVelocityX(.0f);
     			if(posY-player.getY()>JUMPHEIGHT)
     				playerState = EPlayerState.FALLING;
-    		}	
+    		}
     	}
     	
     	//change the playerState and animation after jump has ended
     	if(collisionBELOW && playerState.equals(EPlayerState.FALLING))
 		{
-			if(lookingRight && !rightKey)
-				player.setAnimation(standingFacingRight);
-			else if(!lookingRight && !leftKey)
-				player.setAnimation(standingFacingLeft);
 			playerState = EPlayerState.STANDING;
-			
 			if(rightKey)
-			{
-				player.setAnimation(movement_Right);
 				playerState = EPlayerState.RUN_RIGHT;
-			}
 			else if(leftKey)
-			{
-				player.setAnimation(movement_Left);
 				playerState = EPlayerState.RUN_LEFT;
-			}
+			
+			player.setAnimation(getAppropriateAnimation());
 		}
     	
     	if(playerState.equals(EPlayerState.RUN_RIGHT))
@@ -485,12 +495,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		recoverSpriteStuckInBottomTile(s);
         
         //Check Tile to the RIGHT of the sprite for collision
-        if(playerState.equals(EPlayerState.RUN_RIGHT))
+        if(playerState.equals(EPlayerState.RUN_RIGHT) || playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
         	collisionRIGHT = checkRightSideForCollision(s);
 
         
         //Check Tile to the LEFT of the sprite for collision
-        if(playerState.equals(EPlayerState.RUN_LEFT))
+        if(playerState.equals(EPlayerState.RUN_LEFT) || playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
         	collisionLEFT = checkLeftSideForCollision(s);
 
         
@@ -535,6 +545,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {
     	if(!grappleHook.isVisible())
     	{
+    		if(playerState.equals(EPlayerState.CROUCH))
+    			return crouch;
+    		if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
+    			return crouch_move_left;
+    		if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
+    			return crouch_move_right;
 	    	if(playerState.equals(EPlayerState.RUN_RIGHT))
 	    		return movement_Right;
 	    	if(playerState.equals(EPlayerState.RUN_LEFT))
@@ -637,7 +653,54 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		grappleHook.setVelocityY((float)v.getdy());
 		grappleHookRetracting = true;
     }
-    
+  	/**
+  	 * Return appropriate player state depending on the keys that have been pressed
+     */
+    private EPlayerState getPlayerStateBasedOnKeysPressed()
+    {
+    	if(rightKey && !crouchKey && !jumpKey)
+    	{
+    		lookingRight = true;
+    		return EPlayerState.RUN_RIGHT;
+    	}
+    	
+    	if(leftKey && !crouchKey && !jumpKey)
+    	{
+    		lookingRight = false;
+    		return EPlayerState.RUN_LEFT;
+    	}
+    	
+    	if(crouchKey)
+    	{
+    		if(rightKey) 
+    			return EPlayerState.CROUCH_MOVE_RIGHT;
+    		else if(leftKey) 
+    			return EPlayerState.CROUCH_MOVE_LEFT;
+    		else 
+    			return EPlayerState.CROUCH;
+    	}
+    	
+    	if(jumpKey && collisionBELOW)
+    	{
+    		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
+	    			&& !playerState.equals(EPlayerState.JUMP_LEFT)
+	    			&& !playerState.equals(EPlayerState.JUMP))
+    			posY=player.getY();
+    		if(rightKey)
+    			return EPlayerState.JUMP_RIGHT;
+    		else if(leftKey)
+    			return EPlayerState.JUMP_LEFT;
+    		else
+    			return EPlayerState.JUMP;
+
+    	}
+    	return EPlayerState.STANDING;
+    }
+  	private void drawControls(Graphics2D g)
+  	{
+  		
+  	}
+  	
     /*
      *         KEY EVENTS
      */
@@ -646,54 +709,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	int key = e.getKeyCode();
     	
     	if (key == KeyEvent.VK_ESCAPE)
-    	{
     		stop();
-    	}
-    	if(key==KeyEvent.VK_DOWN)
-    	{
-    		grappleHook.setVelocityX(0);
-    		grappleHook.setVelocityY(0);
-    	}
+
     	if( key == KeyEvent.VK_RIGHT) 
-    	{
-	    	if(!playerState.equals(EPlayerState.JUMP_RIGHT)
-	        			&& !playerState.equals(EPlayerState.JUMP_LEFT)
-	        			&& !playerState.equals(EPlayerState.JUMP))
-	    			playerState = EPlayerState.RUN_RIGHT;
-	    		else 
-	    			playerState = EPlayerState.JUMP_RIGHT;
 	    	rightKey = true;
-	    	lookingRight=true;
-    	}
     	
     	if(key == KeyEvent.VK_LEFT) 
-    	{	
-    		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
-        			&& !playerState.equals(EPlayerState.JUMP_LEFT)
-        			&& !playerState.equals(EPlayerState.JUMP))
-    			playerState = EPlayerState.RUN_LEFT;
-    		else 
-    			playerState = EPlayerState.JUMP_LEFT;
     		leftKey=true;
-    		lookingRight=false;
-    	}
     	
-    	if (key == KeyEvent.VK_UP && collisionBELOW && !spaceKey)
-    	{
-    		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
-    			&& !playerState.equals(EPlayerState.JUMP_LEFT)
-    			&& !playerState.equals(EPlayerState.JUMP))
-    		{
-	    		posY=player.getY();
-	    		if(rightKey)
-	    			playerState = EPlayerState.JUMP_RIGHT;
-	    		else if(leftKey)
-	    			playerState = EPlayerState.JUMP_LEFT;
-	    		else
-    				playerState = EPlayerState.JUMP;
-    			spaceKey = true;
-    		}
-    	}
+    	if (key == KeyEvent.VK_UP && !jumpKey)
+    		jumpKey = true;
+    	
+    	if(key==KeyEvent.VK_DOWN)
+	    	crouchKey = true;
     	
     	if (key == KeyEvent.VK_S)
     	{
@@ -702,9 +730,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	
     	if(key==KeyEvent.VK_R)
-    	{
     		resetSpritePositionAndVelocity(player,0,100,0,0);
-    	}
+
+    	playerState = getPlayerStateBasedOnKeysPressed();
     }
 	public void keyReleased(KeyEvent e) 
 	{
@@ -718,21 +746,38 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			}
 			case KeyEvent.VK_UP:
 			{
-				spaceKey = false;
+				jumpKey = false;
 				break;
 			}
 			
 			case KeyEvent.VK_RIGHT:
 			{
-				playerState = EPlayerState.STANDING;
+				if(!crouchKey)
+					playerState = EPlayerState.STANDING;
+				else
+					playerState = EPlayerState.CROUCH;
 				rightKey = false;
 				break;
 			}
 			
 			case KeyEvent.VK_LEFT:
 			{
-				playerState = EPlayerState.STANDING;
+				if(!crouchKey)
+					playerState = EPlayerState.STANDING;
+				else
+					playerState = EPlayerState.CROUCH;
 				leftKey = false;
+				break;
+			}
+			
+			case KeyEvent.VK_DOWN:
+			{
+				if(!collisionABOVE)
+				{
+					playerState = EPlayerState.STANDING;
+					player.shiftY(-32);
+					crouchKey = false;
+				}
 				break;
 			}
 			
@@ -754,10 +799,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			{
 				if(lookingRight)
 				{
-					if(!grappleHookRetracting)
-						player.setAnimation(standingFacingLeft);
-					else
-						player.setAnimation(grappleHookGun_Left);
+					player.setAnimation(getAppropriateAnimation());
 					lookingRight=false;
 				}
 			}
@@ -768,10 +810,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			{
 				if(!lookingRight)
 				{
-					if(!grappleHookRetracting)
-						player.setAnimation(standingFacingRight);
-					else
-						player.setAnimation(grappleHookGun_Right);
+					player.setAnimation(getAppropriateAnimation());
 					lookingRight=true;
 				}
 			}
@@ -891,7 +930,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
 	private void recoverSpriteStuckInBottomTile(Sprite s) 
 	{
-		if(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-2)/tmap.getTileHeight())!='.')
+		if(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-1)/tmap.getTileHeight())!='.')
 			s.setY(s.getY()-1);
 	}
     /**
@@ -900,7 +939,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
 	private void recoverSpriteStuckInRightTile(Sprite s) 
 	{
-		if(tmap.getTileChar(((int)s.getX()+s.getWidth())/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
+		if(tmap.getTileChar(((int)s.getX()+s.getWidth()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
 			s.setX(s.getX()-1);
 	}
     /**
@@ -912,24 +951,22 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
 			s.setX(s.getX()+1);
 	}
-
 	private boolean checkTopSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
-			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY())/tmap.getTileHeight());
+			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
 			if(tileCharTop=='b' || tileCharTop == 'w' || tileCharTop == 'r' || tileCharTop == 'c')
 				hit =true;
 		}
 
 		return hit;
 	}
-
 	private boolean checkLeftSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
-		for(int i=1; i<s.getHeight()-1; i++)
+		for(int i=1; i<s.getHeight()-3; i++)
 		{
 			char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
 			if(tileCharLeft=='b' || tileCharLeft == 'w' || tileCharLeft == 'r' || tileCharLeft == 'c')
@@ -938,11 +975,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 
 		return hit;
 	}
-
 	private boolean checkRightSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
-		for(int i=1; i<s.getHeight()-1; i++)
+		for(int i=1; i<s.getHeight()-3; i++)
 		{
 			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
 			if(tileCharRight=='b' || tileCharRight == 'w' || tileCharRight == 'r' || tileCharRight == 'c')
@@ -1018,7 +1054,16 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         batarangAnim.addFrame(loadImage(""), 60);
         
         transparent = new Animation();
-        transparent.addFrame(loadImage("assets/images/BatmanStates/1.png"), 60);
+        transparent.addFrame(loadImage("assets/images/BatmanStates/transparent.png"), 60);
+        
+        crouch = new Animation();
+        crouch.addFrame(loadImage("assets/images/testCube.png"), 60);
+        
+        crouch_move_right = new Animation();
+        crouch_move_right.addFrame(loadImage("assets/images/testCube.png"), 60);
+        
+        crouch_move_left = new Animation();
+        crouch_move_left.addFrame(loadImage("assets/images/testCube.png"), 60);
 	}
 	private void loadSprites()
 	{
