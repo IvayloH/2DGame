@@ -157,8 +157,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void initialiseGame()
     {
     	lifeBars = amountOfDamageBeforeDeath;
-    	resetPlayerPositionAndVelocity(player,50,100,0,0);
-    	resetPlayerPositionAndVelocity(thug,500,100,0,0);
+    	resetSpritePositionAndVelocity(player,50,100,0,0);
+    	resetSpritePositionAndVelocity(thug,500,100,0,0);
         player.show();
         thug.show();
     }
@@ -289,11 +289,18 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		}
     		else
     		{
+    			if(player.getX()>thug.getX())
+    			{
+    				thug.setAnimation(grappleHookGun_Right);
+    			}
+    			else
+    				thug.setAnimation(grappleHookGun_Left);
+    			
     			thug.setVelocityY(.0f);
     			recoverSpriteStuckInBottomTile(thug);
     			//make sure thug is on the ground before shooting
-        		if(Math.random()>0.3)
-        			thugShoot();
+        		//if(Math.random()>0.3)
+        			//thugShoot(thug);
     		}
     		thug.update(elapsed);
     	}
@@ -361,7 +368,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(lifeBars<1) 
     		{
-    			resetPlayerPositionAndVelocity(player,0,100,0,0);
+    			resetSpritePositionAndVelocity(player,0,100,0,0);
     			playerState = EPlayerState.FALLING;
     			lifeBars = amountOfDamageBeforeDeath;
     			//stop(); // stop game if player loses all lives
@@ -512,6 +519,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	else if(checkLeftSideForCollision(grappleHook))
         			retractGrappleHook();
         }
+        if(thugProjectile.isVisible())
+        {
+        	if(checkLeftSideForCollision(thugProjectile))
+        		thugProjectile.hide();
+        	if(checkRightSideForCollision(thugProjectile))
+        		thugProjectile.hide();
+        }
     }
     
     /**
@@ -561,14 +575,25 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     /**
      * Handles Shooting by thugs
      */
-    private void thugShoot() 
+    private void thugShoot(Sprite s) 
     {
-    	if(!thugProjectile.isVisible() || thugProjectile.getX()+screenWidth<thug.getX())
+    	if(!thugProjectile.isVisible() || thugProjectile.getX()+screenWidth<thug.getX() || thugProjectile.getX()-screenWidth>thug.getX())
     	{
 			Velocity v;
-			thugProjectile.setX(thug.getX());
-			thugProjectile.setY(thug.getY()+26);
-			v = new Velocity(0.3f,thug.getX()+xOffset,thug.getY()+26+yOffset,thug.getX()+xOffset-50,thug.getY()+26+yOffset);
+			if(player.getX()>s.getX())
+			{
+				thugProjectile.setX(s.getX()+s.getWidth());
+				thugProjectile.setY(s.getY()+20);
+				v = new Velocity(0.3f,thugProjectile.getX()+xOffset,thugProjectile.getY()+yOffset,thug.getX()+xOffset+50,thug.getY()+26+yOffset);
+			}
+			else
+			{
+				thugProjectile.setX(s.getX());
+				thugProjectile.setY(s.getY()+20);
+				v = new Velocity(0.3f,thugProjectile.getX()+xOffset,thugProjectile.getY()+yOffset,thug.getX()+xOffset-50,thug.getY()+26+yOffset);
+			}
+
+			
 			thugProjectile.setVelocityX((float)v.getdx());
 			thugProjectile.show();
     	}
@@ -590,7 +615,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
   	 * @param defaultDX The value for the Horizontal(X) velocity
   	 * @param defaultDY The value for the Vertical(Y) velocity
   	 */
-  	private void resetPlayerPositionAndVelocity(Sprite s, float defaultX, float defaultY, float defaultDX, float defaultDY)
+  	private void resetSpritePositionAndVelocity(Sprite s, float defaultX, float defaultY, float defaultDX, float defaultDY)
   	{  
   		s.setX(defaultX);
   		s.setY(defaultY);
@@ -604,17 +629,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {
   		Velocity v = null;
   		if(lookingRight)
-		{
 			v = new Velocity(0.5f, grappleHook.getX(), grappleHook.getY(), player.getX()+player.getWidth(), player.getY()+20);
-			grappleHook.setVelocityX((float)v.getdx());
-			grappleHook.setVelocityY((float)v.getdy());
-		}
 		else
-		{
 			v = new Velocity(0.5f,  grappleHook.getX(), grappleHook.getY(),player.getX(), player.getY()+player.getHeight()/2);
-			grappleHook.setVelocityX((float)v.getdx());
-			grappleHook.setVelocityY((float)v.getdy());
-		}
+  		
+		grappleHook.setVelocityX((float)v.getdx());
+		grappleHook.setVelocityY((float)v.getdy());
 		grappleHookRetracting = true;
     }
     
@@ -623,7 +643,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void keyPressed(KeyEvent e) 
     { 
-    	//TODO Flag the keys pressed and decide on the action at the end
     	int key = e.getKeyCode();
     	
     	if (key == KeyEvent.VK_ESCAPE)
@@ -637,41 +656,54 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	if( key == KeyEvent.VK_RIGHT) 
     	{
-    		playerState = EPlayerState.RUN_RIGHT;
-    		rightKey = true;
-    		lookingRight=true;
+	    	if(!playerState.equals(EPlayerState.JUMP_RIGHT)
+	        			&& !playerState.equals(EPlayerState.JUMP_LEFT)
+	        			&& !playerState.equals(EPlayerState.JUMP))
+	    			playerState = EPlayerState.RUN_RIGHT;
+	    		else 
+	    			playerState = EPlayerState.JUMP_RIGHT;
+	    	rightKey = true;
+	    	lookingRight=true;
     	}
     	
     	if(key == KeyEvent.VK_LEFT) 
     	{	
-    		playerState = EPlayerState.RUN_LEFT;
+    		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
+        			&& !playerState.equals(EPlayerState.JUMP_LEFT)
+        			&& !playerState.equals(EPlayerState.JUMP))
+    			playerState = EPlayerState.RUN_LEFT;
+    		else 
+    			playerState = EPlayerState.JUMP_LEFT;
     		leftKey=true;
     		lookingRight=false;
     	}
     	
     	if (key == KeyEvent.VK_UP && collisionBELOW && !spaceKey)
     	{
-    		posY=player.getY();
-    		if(rightKey)
-    			playerState = EPlayerState.JUMP_RIGHT;
-    		else if(leftKey)
-    			playerState = EPlayerState.JUMP_LEFT;
-    		else
-    			playerState = EPlayerState.JUMP;
-    		spaceKey = true;
-    		
+    		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
+    			&& !playerState.equals(EPlayerState.JUMP_LEFT)
+    			&& !playerState.equals(EPlayerState.JUMP))
+    		{
+	    		posY=player.getY();
+	    		if(rightKey)
+	    			playerState = EPlayerState.JUMP_RIGHT;
+	    		else if(leftKey)
+	    			playerState = EPlayerState.JUMP_LEFT;
+	    		else
+    				playerState = EPlayerState.JUMP;
+    			spaceKey = true;
+    		}
     	}
     	
     	if (key == KeyEvent.VK_S)
     	{
-    		// Example of playing a sound as a thread
     		Sound s = new Sound("sounds/caw.wav");
     		s.start();
     	}
     	
     	if(key==KeyEvent.VK_R)
     	{
-    		resetPlayerPositionAndVelocity(player,0,100,0,0);
+    		resetSpritePositionAndVelocity(player,0,100,0,0);
     	}
     }
 	public void keyReleased(KeyEvent e) 
@@ -686,13 +718,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			}
 			case KeyEvent.VK_UP:
 			{
-				//TODO modify so player cannot spam jump button 
-				playerState = EPlayerState.FALLING;
 				spaceKey = false;
-				if(rightKey)
-					playerState = EPlayerState.RUN_RIGHT;
-				else if(leftKey)
-					playerState = EPlayerState.RUN_LEFT;
 				break;
 			}
 			
@@ -790,6 +816,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	public void mousePressed(MouseEvent e) 
 	{
 		if(currentGadget.equals("Grapple Hook"))
+		{
 			if(!grappleHook.isVisible())
 			{
 				Velocity v;
@@ -797,27 +824,41 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				{
 					grappleHook.setX(player.getX()+player.getWidth());
 					grappleHook.setY(player.getY()+20);
-					
-					v = new Velocity(0.5f, player.getX() + player.getWidth()+xOffset, player.getY() + 20 +yOffset, e.getX()+10, e.getY()+10);
-					grappleHook.setVelocityX((float)v.getdx());
-					grappleHook.setVelocityY((float)v.getdy());
-					
-					player.setAnimation(grappleHookGun_Right);
 				}
 				else
 				{
 					grappleHook.setX(player.getX());
-					grappleHook.setY(player.getY()+26);
-					
-					v = new Velocity(0.5f, player.getX()+xOffset, player.getY() +26+yOffset, e.getX()+10, e.getY()+10);
-					grappleHook.setVelocityX((float)v.getdx());
-					grappleHook.setVelocityY((float)v.getdy());
-					
-					player.setAnimation(grappleHookGun_Left);
+					grappleHook.setY(player.getY()+20);
 				}
+				v = new Velocity(0.5f, grappleHook.getX()+xOffset, grappleHook.getY()+yOffset, e.getX()+10, e.getY()+10);
+				grappleHook.setVelocityX((float)v.getdx());
+				grappleHook.setVelocityY((float)v.getdy());
 				grappleHookRotation = v.getAngle();
 				grappleHook.show();
 			}
+		}
+		/*
+		if(currentGadget.equals("Batarang"))
+		{
+			if(!batarang.isVisible())
+			{
+				Velocity v;
+				if(lookingRight)
+				{
+					batarang.setX(player.getX()+player.getWidth());
+					batarang.setY(player.getY());
+				}
+				else
+				{
+					batarang.setX(player.getX());
+					batarang.setY(player.getY()+26);	
+				}
+				v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset,e.getX()+10,e.getY()+10);
+				batarang.setVelocityX((float)v.getdx());
+				batarang.setVelocityY((float)v.getdy());
+				batarang.show();
+			}
+		}*/
 	}
 	public void mouseClicked(MouseEvent arg0) {}
 	public void mouseEntered(MouseEvent arg0) {}
@@ -859,7 +900,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
 	private void recoverSpriteStuckInRightTile(Sprite s) 
 	{
-		if(tmap.getTileChar(((int)s.getX()+s.getWidth()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
+		if(tmap.getTileChar(((int)s.getX()+s.getWidth())/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
 			s.setX(s.getX()-1);
 	}
     /**
@@ -877,7 +918,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		boolean hit = false;
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
-			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
+			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY())/tmap.getTileHeight());
 			if(tileCharTop=='b' || tileCharTop == 'w' || tileCharTop == 'r' || tileCharTop == 'c')
 				hit =true;
 		}
@@ -914,7 +955,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		boolean hit = false;
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
-			char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()+1)/tmap.getTileHeight());
+			char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight());
 			if(tileCharBottom=='b' || tileCharBottom == 'w' || tileCharBottom == 'r' || tileCharBottom == 'c')
 				hit =true;
 		}
@@ -968,7 +1009,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         grappleHookGun_Left.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
         
         thugAnim = new Animation();//TODO CHANGE ANIMATION FOR THUG
-        thugAnim.addFrame(loadImage("assets/images/BatmanStates/BatmanFacingLeft.gif"), 60);
+        thugAnim.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
         
         thugProjectileAnim = new Animation();
         thugProjectileAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
