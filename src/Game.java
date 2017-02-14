@@ -50,7 +50,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     int currCrate = 0; //keep track of the crate and which to spawn next from the list
     float cratePosX = 0;
     double grappleHookRotation = 0.0;
-    
+    float invincibleTime = .0f;
+
     int xOffset, yOffset;
     
     // Game state flags
@@ -61,6 +62,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     boolean crateHit = false;
     boolean grappleHookRetracting = false;
     boolean cursorChanged = false;
+    boolean invincible = false; // player becomes invincible after being hit
+    boolean flashy = false;
     
     //Pressed Key flags
     boolean leftKey = false;
@@ -79,7 +82,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	JUMP_RIGHT,
     	STANDING,
     	FALLING,
-    	TAKING_DAMAGE,
+    	RESPAWN,
     	DEAD
     }
    //Sprite State
@@ -96,11 +99,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     Animation crateAnim = null;
     Animation grappleHookGun_Right = null;
     Animation grappleHookGun_Left = null;
+    Animation thugAnim = null;
+    Animation thugProjectileAnim = null;
+    Animation batarangAnim = null;
+    Animation transparent = null;
     
     Sprite	player = null;
     Sprite grappleHook = null;
     Sprite thug = null;
     Sprite crate = null;
+    Sprite thugProjectile = null;
+    Sprite batarang = null;
     
     Image bgImage = null;
     
@@ -128,75 +137,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void init()
     {         
-        Sprite s;	// Temporary reference to a sprite
-
-        tmap.loadMap("assets/maps", "level1.txt");
-
-        bgImage = loadImage("assets/images/city.png");
+        loadAnimations();
+        loadSprites();
         
-        standingFacingRight = new Animation();
-        standingFacingRight.addFrame(loadImage("assets/images/BatmanFacingRight.gif"),60);
-        
-        standingFacingLeft = new Animation();
-        standingFacingLeft.addFrame(loadImage("assets/images/BatmanFacingLeft.gif"), 60);
-        
-        movement_Right= new Animation();
-        movement_Right.addFrame(loadImage("assets/images/BatmanMoveRight.gif"), 60);
-        
-        movement_Left = new Animation();
-        movement_Left.addFrame(loadImage("assets/images/BatmanMoveLeft.gif"),60);
-        
-        jump_Right = new Animation();
-        jump_Right.addFrame(loadImage("assets/images/BatmanJumpRight.png"),60);
-        
-        jump_Left = new Animation();
-        jump_Left.addFrame(loadImage("assets/images/BatmanJumpLeft.png"),60);
-        
-        crateAnim = new Animation();
-        crateAnim.addFrame(loadImage("assets/maps/crate.png"), 60);
-        
-        grapple = new Animation();
-        grapple.addFrame(loadImage("assets/images/grapple.png"), 60);
-        
-        grappleHookGun_Right = new Animation();
-        grappleHookGun_Right.addFrame(loadImage("assets/images/BatmanGrappleHookGunRight.gif"), 60);
-        
-        grappleHookGun_Left = new Animation();
-        grappleHookGun_Left.addFrame(loadImage("assets/images/BatmanGrappleHookGunLeft.gif"), 60);
-        
-        // Initialise the player with an animation
-        player = new Sprite(standingFacingRight);
-        player.setTag("player");
-        
-        //Initialise the grapple hook with an animation
-        grappleHook = new Sprite(grapple);
-        grappleHook.setTag("grappleHook");
-        grappleHook.hide();
-        
-        //Initialise the crate with an animation
-        crate = new Sprite(crateAnim);
-        crate.setTag("crate");
-        
-        // Load a single cloud animation
-        Animation ca = new Animation();
-        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
-        
-        // Create 3 clouds at random positions off the screen
-        // to the right
-        for (int c=0; c<3; c++)
-        {
-        	s = new Sprite(ca);
-        	s.setX(screenWidth + (int)(Math.random()*200.0f));
-        	s.setY(30 + (int)(Math.random()*150.0f));
-        	s.setVelocityX(-0.02f);
-        	s.show();
-        	clouds.add(s);
-        }
         addMouseListener(this);
         addMouseWheelListener(this);
         addMouseMotionListener(this);
         
-        //TODO generate Crate Spawn positions and add them to the list
         initialiseCrateSpawnPoints();
         initialiseGame(); 		
         System.out.println(tmap);
@@ -210,8 +157,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void initialiseGame()
     {
     	lifeBars = amountOfDamageBeforeDeath;
-    	resetPlayerPositionAndVelocity(50,100,0,0);
+    	resetPlayerPositionAndVelocity(player,50,100,0,0);
+    	resetPlayerPositionAndVelocity(thug,500,100,0,0);
         player.show();
+        thug.show();
     }
 
     /**
@@ -219,8 +168,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void draw(Graphics2D g)
     {
-    	xOffset = screenWidth/2-(int)player.getX(); //FIXME
-    	//yOffset=screenHeight/2-(int)player.getY();
+    	xOffset = screenWidth/2-(int)player.getX();
+    	//yOffset = screenHeight/2-(int)player.getY();
     	yOffset = 0;
         int minOffsetX= screenWidth-tmap.getPixelWidth();
         int maxOffsetX = 0;
@@ -242,7 +191,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         // Apply offsets to player and draw 
         player.setOffsets(xOffset, yOffset);
         player.draw(g);
-        
+
         // Apply offsets to tile map and draw  it
         tmap.draw(g,xOffset,yOffset);
         
@@ -286,6 +235,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         // draw crate 
         crate.drawTransformed(g);
         crate.setOffsets(xOffset, yOffset);
+        //setup next spawn position
         if(currCrate<crateSpawnPositions.size() && !crateHit)
         {
 	        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
@@ -295,9 +245,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	            crate.setY(p.getY());	            
 	            crate.show();
 	        }
-	        else if(!crateHit)
-	        	crate.hide();
         }
+        
+        thug.setOffsets(xOffset, yOffset);
+        thug.draw(g);
+        thugProjectile.setOffsets(xOffset, yOffset);
+        thugProjectile.draw(g);
     }
 
     /**
@@ -307,6 +260,50 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */    
     public void update(long elapsed)
     {
+    	if(invincible)
+    	{
+    		invincibleTime+=elapsed;
+    		if(flashy)
+    		{
+    			player.setAnimation(getAppropriateAnimation());
+    			flashy=false;
+    		}
+    		else
+    		{
+    			player.setAnimation(transparent);
+    			flashy=true;
+    		}
+    		if(invincibleTime>2000f)
+    		{
+    			invincible=false;
+    			invincibleTime=0f;
+    		}
+    	}
+    	//thugs
+    	if(thug.isVisible())
+    	{
+    		if(!checkBottomSideForCollision(thug))
+    		{
+    			thug.setVelocityY(.5f);
+        		thug.setVelocityY(thug.getVelocityY()+(gravity*elapsed)); // gravity adjustment
+    		}
+    		else
+    		{
+    			thug.setVelocityY(.0f);
+    			recoverSpriteStuckInBottomTile(thug);
+    			//make sure thug is on the ground before shooting
+        		if(Math.random()>0.3)
+        			thugShoot();
+    		}
+    		thug.update(elapsed);
+    	}
+    	if(thugProjectile.isVisible())
+    	{
+    		thugProjectile.update(elapsed);
+    		if(boundingBoxCollision(thugProjectile, player) && !invincible)
+    			playerTakeDamage(elapsed);
+    	}
+    	//crates
     	if(crateHit)
     	{
     		if(crate.getRotation()>-90)
@@ -324,7 +321,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         		crate.setRotation(0);
         	}
     	}
-    	
+    	//grapple hook
     	if (grappleHook.isVisible())
     	{
     		grappleHook.update(elapsed);
@@ -333,7 +330,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     				|| (grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
     				|| (grappleHook.getY()<player.getY()-HOOKLIMIT))
     			retractGrappleHook();
-    		
+
+        	if(boundingBoxCollision(grappleHook, crate))
+        	{
+        		retractGrappleHook();
+        		if(!checkRightSideForCollision(crate))
+        		{//if next to a tile, then crate already fallen
+        			crateHit=true;
+        			cratePosX = crate.getX();
+        		}
+        	}
+        	
     		if(grappleHookRetracting)
     		{
     			if(boundingBoxCollision(player, grappleHook))
@@ -346,19 +353,20 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		}
     	}
     	
-    	if(playerState.equals(EPlayerState.TAKING_DAMAGE)) 
+    	//player updates
+    	if(!grappleHookRetracting && !invincible)
+    		player.setAnimation(getAppropriateAnimation());
+    	
+    	if(playerState.equals(EPlayerState.RESPAWN)) 
     	{
-    		lifeBars--;
     		if(lifeBars<1) 
     		{
-    			stop(); // stop game if player loses all lives
+    			resetPlayerPositionAndVelocity(player,0,100,0,0);
+    			playerState = EPlayerState.FALLING;
+    			lifeBars = amountOfDamageBeforeDeath;
+    			//stop(); // stop game if player loses all lives
     			//TODO add an end game state
     			//playerState = EPlayerState.DEAD;
-    		}
-    		else
-    		{
-    			resetPlayerPositionAndVelocity(0,100,0,0);
-    			playerState = EPlayerState.FALLING;
     		}
     	}
     		
@@ -442,7 +450,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         handleTileMapCollisions(player,elapsed);
     }
 
-    /**
+
+	/**
      * Checks and handles collisions with the tile map for the
      * given sprite 's'. Initial functionality is limited...
      * 
@@ -455,7 +464,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         if (s.getY() + s.getHeight() > tmap.getPixelHeight())
         {
         	if(s.getTag().equals("player")) 
-        		playerState = EPlayerState.TAKING_DAMAGE;
+        	{
+        		playerTakeDamage(elapsed);
+        		playerState = EPlayerState.RESPAWN;
+        	}
         	else
         		s.hide();
         }
@@ -497,24 +509,70 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         		if(checkRightSideForCollision(grappleHook))
         			retractGrappleHook();
         	}
-        	else
-        		if(checkLeftSideForCollision(grappleHook))
+        	else if(checkLeftSideForCollision(grappleHook))
         			retractGrappleHook();
-        			
-            
-        	if(boundingBoxCollision(grappleHook, crate))
-        	{
-        		retractGrappleHook();
-        		if(!checkRightSideForCollision(crate))
-        		{//if next to a tile, then crate already fallen
-        			crateHit=true;
-        			cratePosX = crate.getX();
-        		}
-        	}
         }
     }
-
     
+    /**
+     * Used to determine which Animation should be played depending on the player state
+      */
+    private Animation getAppropriateAnimation()
+    {
+    	if(!grappleHook.isVisible())
+    	{
+	    	if(playerState.equals(EPlayerState.RUN_RIGHT))
+	    		return movement_Right;
+	    	if(playerState.equals(EPlayerState.RUN_LEFT))
+	    		return movement_Left;
+	    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
+	    		return jump_Right;
+	    	if(playerState.equals(EPlayerState.JUMP_LEFT))
+	    		return jump_Left;
+	    	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.FALLING))
+	    		if(lookingRight)
+	    			return jump_Right;
+	    		else 
+	    			return jump_Left;
+			if(lookingRight)
+				return standingFacingRight;
+			else 
+				return standingFacingLeft;
+    	}
+    	else
+    	{
+	    	if(lookingRight)
+				return grappleHookGun_Right;
+			else 
+				return grappleHookGun_Left;
+
+    	}
+    }
+    /**
+     * Occurs when the player takes damage from any source
+     */
+    private void playerTakeDamage(long elapsed)
+    {
+    	lifeBars--;
+    	invincible=true;
+    	if(lifeBars<1)
+    		playerState = EPlayerState.RESPAWN;
+    }
+    /**
+     * Handles Shooting by thugs
+     */
+    private void thugShoot() 
+    {
+    	if(!thugProjectile.isVisible() || thugProjectile.getX()+screenWidth<thug.getX())
+    	{
+			Velocity v;
+			thugProjectile.setX(thug.getX());
+			thugProjectile.setY(thug.getY()+26);
+			v = new Velocity(0.3f,thug.getX()+xOffset,thug.getY()+26+yOffset,thug.getX()+xOffset-50,thug.getY()+26+yOffset);
+			thugProjectile.setVelocityX((float)v.getdx());
+			thugProjectile.show();
+    	}
+	}
   	/**
   	 * Create and add all the (x,y) locations to spawn a crate there
        */
@@ -532,12 +590,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
   	 * @param defaultDX The value for the Horizontal(X) velocity
   	 * @param defaultDY The value for the Vertical(Y) velocity
   	 */
-  	private void resetPlayerPositionAndVelocity(float defaultX, float defaultY, float defaultDX, float defaultDY)
+  	private void resetPlayerPositionAndVelocity(Sprite s, float defaultX, float defaultY, float defaultDX, float defaultDY)
   	{  
-  		player.setX(defaultX);
-  		player.setY(defaultY);
-  		player.setVelocityX(defaultDX);
-  		player.setVelocityY(defaultDY);
+  		s.setX(defaultX);
+  		s.setY(defaultY);
+  		s.setVelocityX(defaultDX);
+  		s.setVelocityY(defaultDY);
   	}
     /**
      * Simulate the effect that the grapple hook retracts back into the grapple gun.
@@ -582,8 +640,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		playerState = EPlayerState.RUN_RIGHT;
     		rightKey = true;
     		lookingRight=true;
-    		if(!grappleHookRetracting)// so player does not move right while grapple gun should be out
-    			player.setAnimation(movement_Right);
     	}
     	
     	if(key == KeyEvent.VK_LEFT) 
@@ -591,8 +647,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		playerState = EPlayerState.RUN_LEFT;
     		leftKey=true;
     		lookingRight=false;
-    		if(!grappleHookRetracting) // so player does not move left while grapple gun should be out
-    			player.setAnimation(movement_Left);
     	}
     	
     	if (key == KeyEvent.VK_UP && collisionBELOW && !spaceKey)
@@ -604,14 +658,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			playerState = EPlayerState.JUMP_LEFT;
     		else
     			playerState = EPlayerState.JUMP;
-    		
-    		if(!grappleHookRetracting)
-    		{
-    			if(lookingRight)
-    				player.setAnimation(jump_Right);
-				else
-					player.setAnimation(jump_Left);
-    		}
     		spaceKey = true;
     		
     	}
@@ -625,8 +671,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if(key==KeyEvent.VK_R)
     	{
-    		resetPlayerPositionAndVelocity(0,100,0,0);
-    		lifeBars--;
+    		resetPlayerPositionAndVelocity(player,0,100,0,0);
     	}
     }
 	public void keyReleased(KeyEvent e) 
@@ -644,21 +689,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				//TODO modify so player cannot spam jump button 
 				playerState = EPlayerState.FALLING;
 				spaceKey = false;
-				if(lookingRight && !rightKey)
-					player.setAnimation(standingFacingRight);
-				else if(!lookingRight && !leftKey)
-					player.setAnimation(standingFacingLeft);
-
 				if(rightKey)
-				{
-					player.setAnimation(movement_Right);
 					playerState = EPlayerState.RUN_RIGHT;
-				}
 				else if(leftKey)
-				{
-					player.setAnimation(movement_Left);
 					playerState = EPlayerState.RUN_LEFT;
-				}
 				break;
 			}
 			
@@ -666,7 +700,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			{
 				playerState = EPlayerState.STANDING;
 				rightKey = false;
-				player.setAnimation(standingFacingRight);
 				break;
 			}
 			
@@ -674,7 +707,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			{
 				playerState = EPlayerState.STANDING;
 				leftKey = false;
-				player.setAnimation(standingFacingLeft);
 				break;
 			}
 			
@@ -721,7 +753,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(!cursorChanged)
 		{
 			Toolkit tk = Toolkit.getDefaultToolkit();
-			Cursor c = tk.createCustomCursor(loadImage("assets/images/crosshairs.png"), new Point(0,0), "custom cursor");
+			Cursor c = tk.createCustomCursor(loadImage("assets/images/CrossHair/crosshair.png"), new Point(0,0), "custom cursor");
 			setCursor(c);
 			cursorChanged=true;
 		}
@@ -894,4 +926,90 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		System.out.print(s);
 		//TODO DELETE ME AT THE END
 	}
+	
+	
+	/*
+	 *     LOAD MAP,IMAGES,ANIMATIONS
+	 */
+	private void loadAnimations()
+	{
+		tmap.loadMap("assets/maps", "level1.txt");
+
+        bgImage = loadImage("assets/images/city.png");
+        
+        standingFacingRight = new Animation();
+        standingFacingRight.addFrame(loadImage("assets/images/BatmanStates/BatmanFacingRight.gif"),60);
+        
+        standingFacingLeft = new Animation();
+        standingFacingLeft.addFrame(loadImage("assets/images/BatmanStates/BatmanFacingLeft.gif"), 60);
+        
+        movement_Right= new Animation();
+        movement_Right.addFrame(loadImage("assets/images/BatmanStates/BatmanMoveRight.gif"), 60);
+        
+        movement_Left = new Animation();
+        movement_Left.addFrame(loadImage("assets/images/BatmanStates/BatmanMoveLeft.gif"),60);
+        
+        jump_Right = new Animation();
+        jump_Right.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpRight.png"),60);
+        
+        jump_Left = new Animation();
+        jump_Left.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpLeft.png"),60);
+        
+        crateAnim = new Animation();
+        crateAnim.addFrame(loadImage("assets/maps/crate.png"), 60);
+        
+        grapple = new Animation();
+        grapple.addFrame(loadImage("assets/images/Projectiles/GrappleHook.png"), 60);
+        
+        grappleHookGun_Right = new Animation();
+        grappleHookGun_Right.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunRight.gif"), 60);
+        
+        grappleHookGun_Left = new Animation();
+        grappleHookGun_Left.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
+        
+        thugAnim = new Animation();//TODO CHANGE ANIMATION FOR THUG
+        thugAnim.addFrame(loadImage("assets/images/BatmanStates/BatmanFacingLeft.gif"), 60);
+        
+        thugProjectileAnim = new Animation();
+        thugProjectileAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
+        
+        batarangAnim = new Animation();
+        batarangAnim.addFrame(loadImage(""), 60);
+        
+        transparent = new Animation();
+        transparent.addFrame(loadImage("assets/images/BatmanStates/1.png"), 60);
+	}
+	private void loadSprites()
+	{
+		  player = new Sprite(standingFacingRight);
+	        player.setTag("player");
+	        
+	        grappleHook = new Sprite(grapple);
+	        grappleHook.setTag("grappleHook");
+	        grappleHook.hide();
+	        
+	        crate = new Sprite(crateAnim);
+	        crate.setTag("crate");
+	        
+	        thug = new Sprite(thugAnim);
+	        thug.setTag("thug");
+	        
+	        thugProjectile = new Sprite(thugProjectileAnim);
+	        thugProjectile.setTag("thugProjectile");
+	        
+	        Animation ca = new Animation();
+	        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
+	        
+	        Sprite s;
+	        for (int c=0; c<3; c++)
+	        {
+	        	s = new Sprite(ca);
+	        	s.setX(screenWidth + (int)(Math.random()*200.0f));
+	        	s.setY(30 + (int)(Math.random()*150.0f));
+	        	s.setVelocityX(-0.02f);
+	        	s.show();
+	        	clouds.add(s);
+	        }
+	}
+
 }
