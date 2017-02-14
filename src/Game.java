@@ -7,8 +7,6 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
-import java.awt.Cursor;
-import java.awt.Toolkit;
 
 import game2D.*;
 
@@ -64,7 +62,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     boolean cursorChanged = false;
     boolean invincible = false; // player becomes invincible after being hit
     boolean flashy = false; // for flashing effect while player is invincible
-    
+
     //Pressed Key flags
     boolean leftKey = false;
     boolean rightKey = false;
@@ -164,8 +162,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void initialiseGame()
     {
     	lifeBars = amountOfDamageBeforeDeath;
-    	resetSpritePositionAndVelocity(player,50,100,0,0);
-    	resetSpritePositionAndVelocity(thug,500,100,0,0);
+    	resetSpritePositionAndVelocity(player,75,50,0,0);
+    	resetSpritePositionAndVelocity(thug,500,50,0,0);
         player.show();
         thug.show();
     }
@@ -176,15 +174,21 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void draw(Graphics2D g)
     {
     	xOffset = screenWidth/2-(int)player.getX();
-    	//yOffset = screenHeight/2-(int)player.getY();
-    	yOffset = 0;
+    	yOffset = screenHeight/2-(int)player.getY();
         int minOffsetX= screenWidth-tmap.getPixelWidth();
         int maxOffsetX = 0;
+        int minOffsetY = screenHeight-tmap.getPixelHeight();
+        int maxOffsetY = 0;
         
         if(xOffset>maxOffsetX)
         	xOffset = maxOffsetX;
         else if(xOffset<minOffsetX)
         	xOffset=minOffsetX;
+        
+        if(yOffset>maxOffsetY)
+        	yOffset=maxOffsetY;
+        else if(yOffset<minOffsetY)
+        	yOffset=minOffsetY;
                  
         g.drawImage(bgImage,0,0,null);
         
@@ -198,66 +202,22 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         // Apply offsets to player and draw 
         player.setOffsets(xOffset, yOffset);
         player.draw(g);
-
-        // Apply offsets to tile map and draw  it
-        tmap.draw(g,xOffset,yOffset);
-        
-        String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
-        g.setColor(Color.red);
-        g.drawString(msg, 20, 90);
-        
-        //Life Bars
-        msg="------------";
-        g.setColor(Color.black);
-        g.drawString(msg, 20, 40);
-        for(int i=0,j=20; i<lifeBars; i++,j+=8)
-        {
-        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
-        }
-        g.drawLine(68, 36, 68, 68);
-        g.drawString(msg, 20, 72);
-        
-        //draw hook and line behind it
-        if(grappleHook.isVisible())
-        {
-            grappleHook.setRotation(grappleHookRotation);
-            grappleHook.drawTransformed(g);
-        	grappleHook.setOffsets(xOffset, yOffset);
-        	g.setColor(Color.black);
-        	g.setStroke(new BasicStroke(3));
-        	if(lookingRight)
-        		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
-        					(int)player.getY()+26+yOffset,
-        					(int)grappleHook.getX()+xOffset,
-        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-        	else
-            	g.drawLine(	(int)player.getX()+xOffset,
-        					(int)player.getY()+26+yOffset,
-        					(int)grappleHook.getX()+xOffset,
-        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-        	//reset stroke
-        	g.setStroke(new BasicStroke(0));
-        }
-
-        // draw crate 
-        crate.drawTransformed(g);
-        crate.setOffsets(xOffset, yOffset);
-        //setup next spawn position
-        if(currCrate<crateSpawnPositions.size() && !crateHit)
-        {
-	        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
-	        if(player.getX()+screenWidth>p.getX())
-	        {
-	        	crate.setX(p.getX());
-	            crate.setY(p.getY());	            
-	            crate.show();
-	        }
-        }
         
         thug.setOffsets(xOffset, yOffset);
         thug.draw(g);
+        
         thugProjectile.setOffsets(xOffset, yOffset);
         thugProjectile.draw(g);
+        
+        batarang.setOffsets(xOffset, yOffset);
+        batarang.draw(g);
+        
+        // Apply offsets to tile map and draw  it
+        tmap.draw(g,xOffset,yOffset);
+        
+        drawHUD(g);
+        drawGrappleHook(g);
+        drawCrate(g);
     }
 
     /**
@@ -298,6 +258,18 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		thugProjectile.update(elapsed);
     		if(boundingBoxCollision(thugProjectile, player) && !invincible)
     			playerTakeDamage(elapsed);
+    	}
+    	if(batarang.isVisible())
+    	{
+    		batarang.update(elapsed);
+    		if(boundingBoxCollision(batarang,thug))
+    			thug.hide();
+    		if(checkBottomSideForCollision(batarang) || checkRightSideForCollision(batarang) || checkLeftSideForCollision(batarang))
+    		{
+    			batarang.hide();
+    		}
+    		if(batarang.getX()>player.getX()+screenWidth || batarang.getX()<player.getX()-screenWidth)
+    			batarang.hide();
     	}
     	//CRATE UPD
     	if(crateHit)
@@ -377,7 +349,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(lifeBars<1) 
     		{
-    			resetSpritePositionAndVelocity(player,0,100,0,0);
+    			resetSpritePositionAndVelocity(player,75,50,0,0);
     			playerState = EPlayerState.FALLING;
     			lifeBars = amountOfDamageBeforeDeath;
     			//stop(); // stop game if player loses all lives
@@ -467,7 +439,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         handleTileMapCollisions(player,elapsed);
     }
 
-
 	/**
      * Checks and handles collisions with the tile map for the
      * given sprite 's'. Initial functionality is limited...
@@ -477,7 +448,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void handleTileMapCollisions(Sprite s, long elapsed)
     {
-    	//Check if sprite has fallen under screen
+    	//Check if sprite has fallen off screen
         if (s.getY() + s.getHeight() > tmap.getPixelHeight())
         {
         	if(s.getTag().equals("player")) 
@@ -538,6 +509,64 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
     }
     
+    
+    private void drawHUD(Graphics2D g)
+    {
+    	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
+        g.setColor(Color.red);
+        g.drawString(msg, 20, 90);
+        
+        //Life Bars
+        msg="------------";
+        g.setColor(Color.black);
+        g.drawString(msg, 20, 40);
+        for(int i=0,j=20; i<lifeBars; i++,j+=8)
+        {
+        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
+        }
+        g.drawLine(68, 36, 68, 68);
+        g.drawString(msg, 20, 72);
+        
+    }
+    private void drawGrappleHook(Graphics2D g)
+    {
+        if(grappleHook.isVisible())
+        {
+            grappleHook.setRotation(grappleHookRotation);
+            grappleHook.drawTransformed(g);
+        	grappleHook.setOffsets(xOffset, yOffset);
+        	g.setColor(Color.black);
+        	g.setStroke(new BasicStroke(3));
+        	if(lookingRight)
+        		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
+        					(int)player.getY()+26+yOffset,
+        					(int)grappleHook.getX()+xOffset,
+        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+        	else
+            	g.drawLine(	(int)player.getX()+xOffset,
+        					(int)player.getY()+26+yOffset,
+        					(int)grappleHook.getX()+xOffset,
+        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+        	//reset stroke
+        	g.setStroke(new BasicStroke(0));
+        }
+    }
+    private void drawCrate(Graphics2D g)
+    {
+        crate.drawTransformed(g);
+        crate.setOffsets(xOffset, yOffset);
+        //setup next spawn position
+        if(currCrate<crateSpawnPositions.size() && !crateHit)
+        {
+	        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
+	        if(player.getX()+screenWidth>p.getX())
+	        {
+	        	crate.setX(p.getX());
+	            crate.setY(p.getY());	            
+	            crate.show();
+	        }
+        }
+    }
     /**
      * Used to determine which Animation should be played depending on the player state
       */
@@ -619,9 +648,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
        */
     private void initialiseCrateSpawnPoints()
     {
-      	CrateSpawnPosition<Float,Float> p = new CrateSpawnPosition<Float,Float>(288.f,256.f);
+      	CrateSpawnPosition<Float,Float> p = new CrateSpawnPosition<Float,Float>(704.f,160.f);
       	crateSpawnPositions.add(p);
-      	p = new CrateSpawnPosition<Float,Float>(896.f,256.f);
+      	p = new CrateSpawnPosition<Float,Float>(1408.f,160.f);
       	crateSpawnPositions.add(p);
     }
     /**
@@ -696,10 +725,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	return EPlayerState.STANDING;
     }
-  	private void drawControls(Graphics2D g)
-  	{
-  		
-  	}
+
   	
     /*
      *         KEY EVENTS
@@ -876,7 +902,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				grappleHook.show();
 			}
 		}
-		/*
+		
 		if(currentGadget.equals("Batarang"))
 		{
 			if(!batarang.isVisible())
@@ -885,7 +911,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				if(lookingRight)
 				{
 					batarang.setX(player.getX()+player.getWidth());
-					batarang.setY(player.getY());
+					batarang.setY(player.getY()+26);
 				}
 				else
 				{
@@ -897,7 +923,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				batarang.setVelocityY((float)v.getdy());
 				batarang.show();
 			}
-		}*/
+		}
 	}
 	public void mouseClicked(MouseEvent arg0) {}
 	public void mouseEntered(MouseEvent arg0) {}
@@ -1051,7 +1077,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         thugProjectileAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
         
         batarangAnim = new Animation();
-        batarangAnim.addFrame(loadImage(""), 60);
+        batarangAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
         
         transparent = new Animation();
         transparent.addFrame(loadImage("assets/images/BatmanStates/transparent.png"), 60);
@@ -1067,7 +1093,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	}
 	private void loadSprites()
 	{
-		  player = new Sprite(standingFacingRight);
+		  	player = new Sprite(standingFacingRight);
 	        player.setTag("player");
 	        
 	        grappleHook = new Sprite(grapple);
@@ -1082,6 +1108,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	        
 	        thugProjectile = new Sprite(thugProjectileAnim);
 	        thugProjectile.setTag("thugProjectile");
+	        
+	        batarang = new Sprite(batarangAnim);
+	        batarang.setTag("batarang");
 	        
 	        Animation ca = new Animation();
 	        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
