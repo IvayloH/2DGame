@@ -5,7 +5,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 
 import game2D.*;
@@ -35,12 +34,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	final double crateRotation = 1.5708; //90 degrees
 	final int amountOfDamageBeforeDeath = 6;
 	final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
-	// list in which the location(x,y) of every crate is added in order to spawn it where needed, when needed
-	final ArrayList<SpawnPosition<Float,Float>> crateSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
-	final ArrayList<SpawnPosition<Float,Float>> thugSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
-	final ArrayList<SpawnPosition<Float,Float>> turretSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
 	
-    float lift = 0.005f;
+	// list in which the location(x,y) of every crate is added in order to spawn it where needed, when needed
+	ArrayList<SpawnPosition<Float,Float>> crateSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
+	ArrayList<SpawnPosition<Float,Float>> thugSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
+	ArrayList<SpawnPosition<Float,Float>> turretSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
+	
     float gravity = 0.01f;
     float posY = .0f;  // keep track of jump start
     int lifeBars = 0;    // number of lives left
@@ -50,7 +49,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     double grappleHookRotation = 0.0;
     float invincibleTime = .0f;
 
-    int xOffset, yOffset;
+    int xOffset, yOffset; // made global as they are needed in the mouse press events
     
     // Game state flags
     boolean collisionRIGHT = false;
@@ -109,6 +108,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     Animation crouch = null;
     Animation crouch_move_left=null;
     Animation crouch_move_right=null;
+    Animation gunfire = null;
     
     Sprite	player = null;
     Sprite grappleHook = null;
@@ -121,7 +121,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     
     ArrayList<Sprite> clouds = new ArrayList<Sprite>();
     TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
-    AffineTransform crateTransform = new AffineTransform();
 
     /**
 	 * The obligatory main method that creates
@@ -175,32 +174,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void draw(Graphics2D g)
     {
     	calculateOffsets();
-    	
-        g.drawImage(bgImage,0,0,null);
-        
-        for (Sprite s: clouds)
-        {
-        	s.setOffsets(xOffset,yOffset);
-        	s.draw(g);
-        }
-
-        player.setOffsets(xOffset, yOffset);
-        player.draw(g);
-        
-        thug.setOffsets(xOffset, yOffset);
-        thug.draw(g);
-        
-        thugProjectile.setOffsets(xOffset, yOffset);
-        thugProjectile.draw(g);
-        
-        batarang.setOffsets(xOffset, yOffset);
-        batarang.draw(g);
-
-        tmap.draw(g,xOffset,yOffset);
-        
+        setOffsetsAndDrawSprites(g);
         drawHUD(g);
         drawGrappleHook(g);
         drawCrate(g);
+        
         if(helpKey)
         	drawHELP(g);
         else
@@ -214,101 +192,119 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */    
     public void update(long elapsed)
     {
-    	//THUG UPD
     	if(thug.isVisible())
     	{
-    		if(!checkBottomSideForCollision(thug))
-    		{
-    			thug.setVelocityY(.5f);
-        		thug.setVelocityY(thug.getVelocityY()+(gravity*elapsed)); // gravity adjustment
-    		}
-    		else
-    		{
-    			if(player.getX()>thug.getX())
-    			{
-    				thug.setAnimation(grappleHookGun_Right);
-    			}
-    			else
-    				thug.setAnimation(grappleHookGun_Left);
-    			
-    			thug.setVelocityY(.0f);
-    			recoverSpriteStuckInBottomTile(thug);
-    			//make sure thug is on the ground before shooting
-        		if(Math.random()>0.3)
-        			if(player.getX()+screenWidth<thug.getX() || thug.getX()>player.getX()-screenWidth) // check to see if player is close or not
-        				thugShoot(thug);
-    		}
-    		thug.update(elapsed);
+			updateThug(elapsed);
+			thug.update(elapsed);
     	}
+    	
     	if(thugProjectile.isVisible())
     	{
-    		thugProjectile.update(elapsed);
     		if(boundingBoxCollision(thugProjectile, player) && !invincible)
     			playerTakeDamage(elapsed);
+    		thugProjectile.update(elapsed);
     	}
+    	
     	if(batarang.isVisible())
     	{
+    		updateBatarang();
     		batarang.update(elapsed);
-    		if(boundingBoxCollision(batarang,thug))
-    			thug.hide();
-    		if(checkBottomSideForCollision(batarang) || checkRightSideForCollision(batarang) || checkLeftSideForCollision(batarang))
-    		{
-    			batarang.hide();
-    		}
-    		if(batarang.getX()>player.getX()+screenWidth || batarang.getX()<player.getX()-screenWidth)
-    			batarang.hide();
     	}
-    	//CRATE UPD
+    	
     	if(crateHit)
-    	{
-    		if(crate.getRotation()>-90)
-        		crate.setRotation(crate.getRotation()-2.0);
-        	if(crate.getX()>cratePosX-32)
-        		crate.setX(crate.getX()-2);
-        	else if(!checkBottomSideForCollision(crate))
-        		crate.setY(crate.getY()+2);
-        	else
-        	{
-        		crateHit=false;
-        		tmap.setTileChar('c', ((int)crate.getX()+5)/tmap.getTileWidth(), ((int)crate.getY()+5)/tmap.getTileHeight());
-        		crate.hide();
-        		currCrate++;
-        		crate.setRotation(0);
-        	}
-    	}
-    	//HOOK UPD
+    		updateCrate();
+
     	if (grappleHook.isVisible())
     	{
-    		if((grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
-    				|| (grappleHook.getX()<player.getX()-HOOKLIMIT)
-    				|| (grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
-    				|| (grappleHook.getY()<player.getY()-HOOKLIMIT))
-    			retractGrappleHook();
-
-        	if(boundingBoxCollision(grappleHook, crate))
-        	{
-        		retractGrappleHook();
-        		if(!checkRightSideForCollision(crate))
-        		{//if next to a tile, then crate already fallen
-        			crateHit=true;
-        			cratePosX = crate.getX();
-        		}
-        	}
-        	
-    		if(grappleHookRetracting)
-    		{
-    			if(boundingBoxCollision(player, grappleHook))
-    			{
-    				grappleHook.setVelocityX(.0f);
-    				grappleHook.setVelocityY(.0f);
-    				grappleHook.hide();
-    				grappleHookRetracting=false;
-    			}
-    		}
+    		updateGrappleHook();
     		grappleHook.update(elapsed);
     	}
     	
-    	//PLAYER UPD
+       	for (Sprite s: clouds)
+       		s.update(elapsed);
+       	
+       	updatePlayer(elapsed);
+        player.update(elapsed);
+
+        handleTileMapCollisions(player,elapsed);
+    }
+
+	/**
+     * Checks and handles collisions with the tile map for the
+     * given sprite 's'. Initial functionality is limited...
+     * 
+     * @param s			The Sprite to check collisions for
+     * @param elapsed	How time has gone by
+     */
+    public void handleTileMapCollisions(Sprite s, long elapsed)
+    {
+    	//Check if sprite has fallen off screen
+        if (s.getY() + s.getHeight() > tmap.getPixelHeight())
+        {
+        	if(s.getTag().equals("player")) 
+        	{
+        		playerTakeDamage(elapsed);
+        		playerState = EPlayerState.RESPAWN;
+        	}
+        	else
+        		s.hide();
+        }
+        
+    	//Check Tile underneath the sprite for collision
+        collisionBELOW = checkBottomSideForCollision(s);
+    	if(collisionBELOW)
+    		recoverSpriteStuckInBottomTile(s);
+        
+        //Check Tile to the RIGHT of the sprite for collision
+        if(playerState.equals(EPlayerState.RUN_RIGHT) || playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
+        	collisionRIGHT = checkRightSideForCollision(s);
+
+        
+        //Check Tile to the LEFT of the sprite for collision
+        if(playerState.equals(EPlayerState.RUN_LEFT) || playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
+        	collisionLEFT = checkLeftSideForCollision(s);
+
+        
+        //Check Tile ABOVE the sprite for collision
+        if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
+        {
+        	collisionABOVE = checkTopSideForCollision(s);
+        	collisionRIGHT = checkRightSideForCollision(s);
+        	collisionLEFT = checkLeftSideForCollision(s);
+        }       
+        
+        if(playerState.equals(EPlayerState.FALLING))
+        {
+        	collisionRIGHT = checkRightSideForCollision(s);
+        	collisionLEFT = checkLeftSideForCollision(s);
+        }
+        
+        if(grappleHook.isVisible())
+        {
+        	//check for right/left collision depending on which way the hook is going
+        	if(grappleHook.getVelocityX()>0)
+        	{
+        		if(checkRightSideForCollision(grappleHook))
+        			retractGrappleHook();
+        	}
+        	else if(checkLeftSideForCollision(grappleHook))
+        			retractGrappleHook();
+        }
+        if(thugProjectile.isVisible())
+        {
+        	if(checkLeftSideForCollision(thugProjectile))
+        		thugProjectile.hide();
+        	if(checkRightSideForCollision(thugProjectile))
+        		thugProjectile.hide();
+        }
+    }
+    
+    
+    /*
+     *         PRIVATE METHODS FOR EASE OF READING AND DEBUGGING CODE
+     */
+    private void updatePlayer(float elapsed)
+    {
     	if(invincible)
     	{
     		invincibleTime+=elapsed;
@@ -415,150 +411,88 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		player.setVelocityY(.05f);
     		player.setVelocityY(player.getVelocityY()+(gravity*elapsed)); // gravity adjustment
     	}
+    }
+    private void updateBatarang()
+    {
+		if(boundingBoxCollision(batarang,thug))
+			thug.hide();
+		if(checkBottomSideForCollision(batarang) || checkRightSideForCollision(batarang) || checkLeftSideForCollision(batarang))
+		{
+			batarang.hide();
+		}
+		if(batarang.getX()>player.getX()+screenWidth || batarang.getX()<player.getX()-screenWidth)
+			batarang.hide();
+		
+    }
+    private void updateCrate()
+    {
+		if(crate.getRotation()>-90)
+    		crate.setRotation(crate.getRotation()-2.0);
+    	if(crate.getX()>cratePosX-32)
+    		crate.setX(crate.getX()-2);
+    	else if(!checkBottomSideForCollision(crate))
+    		crate.setY(crate.getY()+2);
+    	else
+    	{
+    		crateHit=false;
+    		tmap.setTileChar('c', ((int)crate.getX()+5)/tmap.getTileWidth(), ((int)crate.getY()+5)/tmap.getTileHeight());
+    		crate.hide();
+    		currCrate++;
+    		crate.setRotation(0);
+    	}
+    }
+    private void updateGrappleHook()
+    {
+    	if((grappleHook.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
+				|| (grappleHook.getX()<player.getX()-HOOKLIMIT)
+				|| (grappleHook.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
+				|| (grappleHook.getY()<player.getY()-HOOKLIMIT))
+			retractGrappleHook();
+
+    	if(boundingBoxCollision(grappleHook, crate))
+    	{
+    		retractGrappleHook();
+    		if(!checkRightSideForCollision(crate))
+    		{//if next to a tile, then crate already fallen
+    			crateHit=true;
+    			cratePosX = crate.getX();
+    		}
+    	}
     	
-       	for (Sprite s: clouds)
-       		s.update(elapsed);
-       	
-        // Now update the sprites animation and position
-        player.update(elapsed);
-        
-        // Then check for any collisions that may have occurred
-        handleTileMapCollisions(player,elapsed);
+		if(grappleHookRetracting)
+		{
+			if(boundingBoxCollision(player, grappleHook))
+			{
+				grappleHook.setVelocityX(.0f);
+				grappleHook.setVelocityY(.0f);
+				grappleHook.hide();
+				grappleHookRetracting=false;
+			}
+		}
     }
-
-	/**
-     * Checks and handles collisions with the tile map for the
-     * given sprite 's'. Initial functionality is limited...
-     * 
-     * @param s			The Sprite to check collisions for
-     * @param elapsed	How time has gone by
-     */
-    public void handleTileMapCollisions(Sprite s, long elapsed)
+    private void updateThug(float elapsed)
     {
-    	//Check if sprite has fallen off screen
-        if (s.getY() + s.getHeight() > tmap.getPixelHeight())
-        {
-        	if(s.getTag().equals("player")) 
-        	{
-        		playerTakeDamage(elapsed);
-        		playerState = EPlayerState.RESPAWN;
-        	}
-        	else
-        		s.hide();
-        }
-        
-    	//Check Tile underneath the sprite for collision
-        collisionBELOW = checkBottomSideForCollision(s);
-    	if(collisionBELOW)
-    		recoverSpriteStuckInBottomTile(s);
-        
-        //Check Tile to the RIGHT of the sprite for collision
-        if(playerState.equals(EPlayerState.RUN_RIGHT) || playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
-        	collisionRIGHT = checkRightSideForCollision(s);
-
-        
-        //Check Tile to the LEFT of the sprite for collision
-        if(playerState.equals(EPlayerState.RUN_LEFT) || playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
-        	collisionLEFT = checkLeftSideForCollision(s);
-
-        
-        //Check Tile ABOVE the sprite for collision
-        if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.JUMP_RIGHT) || playerState.equals(EPlayerState.JUMP_LEFT))
-        {
-        	collisionABOVE = checkTopSideForCollision(s);
-        	collisionRIGHT = checkRightSideForCollision(s);
-        	collisionLEFT = checkLeftSideForCollision(s);
-        }       
-        
-        if(playerState.equals(EPlayerState.FALLING))
-        {
-        	collisionRIGHT = checkRightSideForCollision(s);
-        	collisionLEFT = checkLeftSideForCollision(s);
-        }
-        
-        if(grappleHook.isVisible())
-        {
-        	//check for right/left collision depending on which way the hook is going
-        	if(grappleHook.getVelocityX()>0)
-        	{
-        		if(checkRightSideForCollision(grappleHook))
-        			retractGrappleHook();
-        	}
-        	else if(checkLeftSideForCollision(grappleHook))
-        			retractGrappleHook();
-        }
-        if(thugProjectile.isVisible())
-        {
-        	if(checkLeftSideForCollision(thugProjectile))
-        		thugProjectile.hide();
-        	if(checkRightSideForCollision(thugProjectile))
-        		thugProjectile.hide();
-        }
-    }
-    
-    private void drawHELP(Graphics2D g)
-    {
-    	g.drawString("Controls: Action   -  Key", screenWidth-250, 50);
-    	g.drawString("Move - Arrows", screenWidth-198, 65);
-    	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
-    	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
-    }
-    private void drawHUD(Graphics2D g)
-    {
-    	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
-        g.setColor(Color.red);
-        g.drawString(msg, 20, 90);
-        
-        //Life Bars
-        msg="------------";
-        g.setColor(Color.black);
-        g.drawString(msg, 20, 40);
-        for(int i=0,j=20; i<lifeBars; i++,j+=8)
-        {
-        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
-        }
-        g.drawLine(68, 36, 68, 68);
-        g.drawString(msg, 20, 72);
-        
-    }
-    private void drawGrappleHook(Graphics2D g)
-    {
-        if(grappleHook.isVisible())
-        {
-            grappleHook.setRotation(grappleHookRotation);
-            grappleHook.drawTransformed(g);
-        	grappleHook.setOffsets(xOffset, yOffset);
-        	g.setColor(Color.black);
-        	g.setStroke(new BasicStroke(3));
-        	if(lookingRight)
-        		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
-        					(int)player.getY()+26+yOffset,
-        					(int)grappleHook.getX()+xOffset,
-        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-        	else
-            	g.drawLine(	(int)player.getX()+xOffset,
-        					(int)player.getY()+26+yOffset,
-        					(int)grappleHook.getX()+xOffset,
-        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-        	//reset stroke
-        	g.setStroke(new BasicStroke(0));
-        }
-    }
-    private void drawCrate(Graphics2D g)
-    {
-        crate.drawTransformed(g);
-        crate.setOffsets(xOffset, yOffset);
-        //setup next spawn position
-        if(currCrate<crateSpawnPositions.size() && !crateHit)
-        {
-	        SpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
-	        if(player.getX()+screenWidth>p.getX())
-	        {
-	        	crate.setX(p.getX());
-	            crate.setY(p.getY());	            
-	            crate.show();
-	        }
-        }
+    	//make sure thug is on the ground before shooting
+		if(!checkBottomSideForCollision(thug))
+		{
+			thug.setVelocityY(.5f);
+    		thug.setVelocityY(thug.getVelocityY()+(gravity*elapsed)); // gravity adjustment
+		}
+		else
+		{
+			if(player.getX()>thug.getX())
+			{
+				thug.setAnimation(grappleHookGun_Right);
+			}
+			else
+				thug.setAnimation(grappleHookGun_Left);
+			
+			thug.setVelocityY(.0f);
+			recoverSpriteStuckInBottomTile(thug);
+    		if(Math.random()>0.3)
+    			if(player.getX()+screenWidth<thug.getX() || thug.getX()>player.getX()-screenWidth) // check to see if player is close or not
+    				thugShoot(thug);
+		}
     }
     private void calculateOffsets()
     {
@@ -642,15 +576,16 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				thugProjectile.setX(s.getX()+s.getWidth());
 				thugProjectile.setY(s.getY()+20);
 				v = new Velocity(0.3f,thugProjectile.getX()+xOffset,thugProjectile.getY()+yOffset,thug.getX()+xOffset+50,thug.getY()+26+yOffset);
+				thugProjectile.setRotation(180);
 			}
 			else
 			{
 				thugProjectile.setX(s.getX());
 				thugProjectile.setY(s.getY()+20);
 				v = new Velocity(0.3f,thugProjectile.getX()+xOffset,thugProjectile.getY()+yOffset,thug.getX()+xOffset-50,thug.getY()+26+yOffset);
+				thugProjectile.setRotation(0);
 			}
 
-			
 			thugProjectile.setVelocityX((float)v.getdx());
 			thugProjectile.show();
     	}
@@ -1049,7 +984,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	
 	
 	/*
-	 *     LOAD MAP,IMAGES,ANIMATIONS
+	 *     LOAD MAP,IMAGES,ANIMATIONS,DRAW
 	 */
 	private void loadAnimations()
 	{
@@ -1143,4 +1078,92 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	        	clouds.add(s);
 	        }
 	}
+    private void setOffsetsAndDrawSprites(Graphics2D g)
+    {
+        g.drawImage(bgImage,0,0,null);
+
+        player.setOffsets(xOffset, yOffset);
+        player.draw(g);
+        
+        thug.setOffsets(xOffset, yOffset);
+        thug.draw(g);
+        
+        thugProjectile.setOffsets(xOffset, yOffset);
+        thugProjectile.drawTransformed(g);
+                
+        batarang.setOffsets(xOffset, yOffset);
+        batarang.draw(g);
+        
+        for (Sprite s: clouds)
+        {
+        	s.setOffsets(xOffset,yOffset);
+        	s.draw(g);
+        }
+
+        tmap.draw(g,xOffset,yOffset);
+    }
+	private void drawHELP(Graphics2D g)
+    {
+    	g.drawString("Controls: Action   -  Key", screenWidth-250, 50);
+    	g.drawString("Move - Arrows", screenWidth-198, 65);
+    	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
+    	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
+    }
+    private void drawHUD(Graphics2D g)
+    {
+    	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
+        g.setColor(Color.red);
+        g.drawString(msg, 20, 90);
+        
+        //Life Bars
+        msg="------------";
+        g.setColor(Color.black);
+        g.drawString(msg, 20, 40);
+        for(int i=0,j=20; i<lifeBars; i++,j+=8)
+        {
+        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
+        }
+        g.drawLine(68, 36, 68, 68);
+        g.drawString(msg, 20, 72);
+        
+    }
+    private void drawGrappleHook(Graphics2D g)
+    {
+        if(grappleHook.isVisible())
+        {
+            grappleHook.setRotation(grappleHookRotation);
+            grappleHook.drawTransformed(g);
+        	grappleHook.setOffsets(xOffset, yOffset);
+        	g.setColor(Color.black);
+        	g.setStroke(new BasicStroke(3));
+        	if(lookingRight)
+        		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
+        					(int)player.getY()+26+yOffset,
+        					(int)grappleHook.getX()+xOffset,
+        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+        	else
+            	g.drawLine(	(int)player.getX()+xOffset,
+        					(int)player.getY()+26+yOffset,
+        					(int)grappleHook.getX()+xOffset,
+        					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+        	//reset stroke
+        	g.setStroke(new BasicStroke(0));
+        }
+    }
+    private void drawCrate(Graphics2D g)
+    {
+        crate.drawTransformed(g);
+        crate.setOffsets(xOffset, yOffset);
+        //setup next spawn position
+        if(currCrate<crateSpawnPositions.size() && !crateHit)
+        {
+	        SpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
+	        if(player.getX()+screenWidth>p.getX())
+	        {
+	        	crate.setX(p.getX());
+	            crate.setY(p.getY());	            
+	            crate.show();
+	        }
+        }
+    }
 }
