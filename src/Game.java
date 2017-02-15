@@ -23,7 +23,6 @@ import game2D.*;
  *
  */
 
-
 public class Game extends GameCore implements MouseListener, MouseWheelListener, MouseMotionListener
 {
 	private static final long serialVersionUID = 1L;
@@ -38,7 +37,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
 	// list in which the location(x,y) of every crate is added in order to spawn it where needed, when needed
 	final ArrayList<CrateSpawnPosition<Float,Float>> crateSpawnPositions = new ArrayList<CrateSpawnPosition<Float,Float>>(); 
-	
 	
     float lift = 0.005f;
     float gravity = 0.01f;
@@ -173,33 +171,16 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void draw(Graphics2D g)
     {
-    	xOffset = screenWidth/2-(int)player.getX();
-    	yOffset = screenHeight/2-(int)player.getY();
-        int minOffsetX= screenWidth-tmap.getPixelWidth();
-        int maxOffsetX = 0;
-        int minOffsetY = screenHeight-tmap.getPixelHeight();
-        int maxOffsetY = 0;
-        
-        if(xOffset>maxOffsetX)
-        	xOffset = maxOffsetX;
-        else if(xOffset<minOffsetX)
-        	xOffset=minOffsetX;
-        
-        if(yOffset>maxOffsetY)
-        	yOffset=maxOffsetY;
-        else if(yOffset<minOffsetY)
-        	yOffset=minOffsetY;
-                 
+    	calculateOffsets();
+    	
         g.drawImage(bgImage,0,0,null);
         
-        // Apply offsets to sprites then draw them
         for (Sprite s: clouds)
         {
         	s.setOffsets(xOffset,yOffset);
         	s.draw(g);
         }
 
-        // Apply offsets to player and draw 
         player.setOffsets(xOffset, yOffset);
         player.draw(g);
         
@@ -211,8 +192,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         
         batarang.setOffsets(xOffset, yOffset);
         batarang.draw(g);
-        
-        // Apply offsets to tile map and draw  it
+
         tmap.draw(g,xOffset,yOffset);
         
         drawHUD(g);
@@ -357,11 +337,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			//playerState = EPlayerState.DEAD;
     		}
     	}
-    		
     	if(playerState.equals(EPlayerState.STANDING))
     	{
     		player.setVelocityX(.0f);
     		player.setVelocityY(.0f);
+    		jumpKey=false;
+    		log("\n "+jumpKey);
     	}
     	
     	if(playerState.equals(EPlayerState.CROUCH) || playerState.equals(EPlayerState.CROUCH_MOVE_LEFT) || playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
@@ -385,6 +366,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			if(posY-player.getY()>JUMPHEIGHT)
     				playerState = EPlayerState.FALLING;
     		}
+    		else
+    			playerState = EPlayerState.FALLING;
     	}
     	
     	//change the playerState and animation after jump has ended
@@ -395,7 +378,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				playerState = EPlayerState.RUN_RIGHT;
 			else if(leftKey)
 				playerState = EPlayerState.RUN_LEFT;
-			
 			player.setAnimation(getAppropriateAnimation());
 		}
     	
@@ -567,6 +549,25 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	        }
         }
     }
+    private void calculateOffsets()
+    {
+    	xOffset = screenWidth/2-(int)player.getX();
+    	yOffset = screenHeight/2-(int)player.getY();
+        int minOffsetX= screenWidth-tmap.getPixelWidth();
+        int maxOffsetX = 0;
+        int minOffsetY = screenHeight-tmap.getPixelHeight();
+        int maxOffsetY = 0;
+        
+        if(xOffset>maxOffsetX)
+        	xOffset = maxOffsetX;
+        else if(xOffset<minOffsetX)
+        	xOffset=minOffsetX;
+        
+        if(yOffset>maxOffsetY)
+        	yOffset=maxOffsetY;
+        else if(yOffset<minOffsetY)
+        	yOffset=minOffsetY;
+    }
     /**
      * Used to determine which Animation should be played depending on the player state
       */
@@ -687,16 +688,21 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     private EPlayerState getPlayerStateBasedOnKeysPressed()
     {
-    	if(rightKey && !crouchKey && !jumpKey)
+    	if((rightKey || leftKey) && !crouchKey && !jumpKey)
     	{
-    		lookingRight = true;
-    		return EPlayerState.RUN_RIGHT;
-    	}
-    	
-    	if(leftKey && !crouchKey && !jumpKey)
-    	{
-    		lookingRight = false;
-    		return EPlayerState.RUN_LEFT;
+      		if(!playerState.equals(EPlayerState.JUMP_RIGHT) && !playerState.equals(EPlayerState.JUMP_LEFT))
+      		{
+      			if(rightKey)
+      			{
+      				lookingRight=true;
+      				return EPlayerState.RUN_RIGHT;
+      			}
+      			if(leftKey)
+      			{
+      				lookingRight = false;
+      				return EPlayerState.RUN_LEFT;
+      			}
+      		}
     	}
     	
     	if(crouchKey)
@@ -714,16 +720,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
 	    			&& !playerState.equals(EPlayerState.JUMP_LEFT)
 	    			&& !playerState.equals(EPlayerState.JUMP))
+    		{
     			posY=player.getY();
-    		if(rightKey)
-    			return EPlayerState.JUMP_RIGHT;
-    		else if(leftKey)
-    			return EPlayerState.JUMP_LEFT;
-    		else
-    			return EPlayerState.JUMP;
-
+	    		if(rightKey)
+	    			return EPlayerState.JUMP_RIGHT;
+	    		else if(leftKey)
+	    			return EPlayerState.JUMP_LEFT;
+	    		else
+	    			return EPlayerState.JUMP;
+    		}
     	}
-    	return EPlayerState.STANDING;
+
+    	log("\n1 "+jumpKey);
+		return EPlayerState.STANDING;
     }
 
   	
@@ -745,7 +754,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if (key == KeyEvent.VK_UP && !jumpKey)
     		jumpKey = true;
-    	
     	if(key==KeyEvent.VK_DOWN)
 	    	crouchKey = true;
     	
@@ -806,7 +814,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				}
 				break;
 			}
-			
 			default:
 				break;
 		}
@@ -1126,5 +1133,4 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	        	clouds.add(s);
 	        }
 	}
-
 }
