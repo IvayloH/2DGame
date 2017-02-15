@@ -36,7 +36,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	final int amountOfDamageBeforeDeath = 6;
 	final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
 	// list in which the location(x,y) of every crate is added in order to spawn it where needed, when needed
-	final ArrayList<CrateSpawnPosition<Float,Float>> crateSpawnPositions = new ArrayList<CrateSpawnPosition<Float,Float>>(); 
+	final ArrayList<SpawnPosition<Float,Float>> crateSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
+	final ArrayList<SpawnPosition<Float,Float>> thugSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
+	final ArrayList<SpawnPosition<Float,Float>> turretSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
 	
     float lift = 0.005f;
     float gravity = 0.01f;
@@ -66,6 +68,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     boolean rightKey = false;
     boolean jumpKey = false;
     boolean crouchKey = false;
+    boolean helpKey = false;
     
     // Batman Direction
     boolean lookingRight = true;
@@ -198,6 +201,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         drawHUD(g);
         drawGrappleHook(g);
         drawCrate(g);
+        if(helpKey)
+        	drawHELP(g);
+        else
+        	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
     }
 
     /**
@@ -341,8 +348,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		player.setVelocityX(.0f);
     		player.setVelocityY(.0f);
-    		jumpKey=false;
-    		log("\n "+jumpKey);
     	}
     	
     	if(playerState.equals(EPlayerState.CROUCH) || playerState.equals(EPlayerState.CROUCH_MOVE_LEFT) || playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
@@ -491,7 +496,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
     }
     
-    
+    private void drawHELP(Graphics2D g)
+    {
+    	g.drawString("Controls: Action   -  Key", screenWidth-250, 50);
+    	g.drawString("Move - Arrows", screenWidth-198, 65);
+    	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
+    	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
+    }
     private void drawHUD(Graphics2D g)
     {
     	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
@@ -540,7 +551,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         //setup next spawn position
         if(currCrate<crateSpawnPositions.size() && !crateHit)
         {
-	        CrateSpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
+	        SpawnPosition<Float, Float> p = crateSpawnPositions.get(currCrate);
 	        if(player.getX()+screenWidth>p.getX())
 	        {
 	        	crate.setX(p.getX());
@@ -649,9 +660,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
        */
     private void initialiseCrateSpawnPoints()
     {
-      	CrateSpawnPosition<Float,Float> p = new CrateSpawnPosition<Float,Float>(704.f,160.f);
+      	SpawnPosition<Float,Float> p = new SpawnPosition<Float,Float>(704.f,160.f);
       	crateSpawnPositions.add(p);
-      	p = new CrateSpawnPosition<Float,Float>(1408.f,160.f);
+      	p = new SpawnPosition<Float,Float>(1408.f,160.f);
       	crateSpawnPositions.add(p);
     }
     /**
@@ -717,9 +728,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if(jumpKey && collisionBELOW)
     	{
-    		if(!playerState.equals(EPlayerState.JUMP_RIGHT)
-	    			&& !playerState.equals(EPlayerState.JUMP_LEFT)
-	    			&& !playerState.equals(EPlayerState.JUMP))
     		{
     			posY=player.getY();
 	    		if(rightKey)
@@ -730,8 +738,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	    			return EPlayerState.JUMP;
     		}
     	}
-
-    	log("\n1 "+jumpKey);
 		return EPlayerState.STANDING;
     }
 
@@ -754,19 +760,23 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if (key == KeyEvent.VK_UP && !jumpKey)
     		jumpKey = true;
+    	
     	if(key==KeyEvent.VK_DOWN)
 	    	crouchKey = true;
-    	
-    	if (key == KeyEvent.VK_S)
-    	{
-    		Sound s = new Sound("sounds/caw.wav");
-    		s.start();
-    	}
-    	
-    	if(key==KeyEvent.VK_R)
-    		resetSpritePositionAndVelocity(player,0,100,0,0);
 
-    	playerState = getPlayerStateBasedOnKeysPressed();
+    	if(key==KeyEvent.VK_R)
+    		resetSpritePositionAndVelocity(player,50,100,0,0);
+    	
+    	if(key==KeyEvent.VK_H)
+    	{
+    		if(!helpKey)
+    			helpKey=true;
+    		else
+    			helpKey=false;
+    	}
+    	//if player is already in a jump motion and do nothing
+		if(!playerState.equals(EPlayerState.JUMP_RIGHT) && !playerState.equals(EPlayerState.JUMP_LEFT) && !playerState.equals(EPlayerState.JUMP))
+			playerState = getPlayerStateBasedOnKeysPressed();
     }
 	public void keyReleased(KeyEvent e) 
 	{

@@ -1,9 +1,9 @@
-public class CrateSpawnPosition<X,Y>
+public class SpawnPosition<X,Y>
 {
 	private final X x;
 	private final Y y;
 	
-	public CrateSpawnPosition(X x, Y y)
+	public SpawnPosition(X x, Y y)
 	{
 		this.x = x;
 		this.y = y;
