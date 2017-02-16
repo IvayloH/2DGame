@@ -101,21 +101,24 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     Animation crateAnim = null;
     Animation grappleHookGun_Right = null;
     Animation grappleHookGun_Left = null;
-    Animation thugAnim = null;
+    Animation thugLeftAnim = null;
+    Animation thugRightAnim = null;
+    Animation thugFireLeftAnim = null;
+    Animation thugFireRightAnim = null;
     Animation thugProjectileAnim = null;
     Animation batarangAnim = null;
     Animation transparent = null;
     Animation crouch = null;
     Animation crouch_move_left=null;
     Animation crouch_move_right=null;
-    Animation gunfire = null;
+    
     
     Sprite	player = null;
     Sprite grappleHook = null;
-    Sprite thug = null;
     Sprite crate = null;
-    Sprite thugProjectile = null;
     Sprite batarang = null;
+    Thug th = null;
+    EnemyProjectile ep = null;
     
     Image bgImage = null;
     
@@ -163,9 +166,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {
     	lifeBars = amountOfDamageBeforeDeath;
     	resetSpritePositionAndVelocity(player,75,50,0,0);
-    	resetSpritePositionAndVelocity(thug,500,50,0,0);
+    	//resetSpritePositionAndVelocity(thug,450,50,0,0);
         player.show();
-        thug.show();
+        //thug.show();
+        ep = new EnemyProjectile(thugProjectileAnim);
+        th = new Thug(thugLeftAnim, thugRightAnim, thugFireLeftAnim, thugFireRightAnim, ep, this);
+        resetSpritePositionAndVelocity(th,450,50,0,0);
+        th.show();
     }
 
     /**
@@ -192,17 +199,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */    
     public void update(long elapsed)
     {
-    	if(thug.isVisible())
+    	if(th.isVisible())
     	{
-			updateThug(elapsed);
-			thug.update(elapsed);
+    		th.update(elapsed,gravity,player);
+    		th.update(elapsed);
     	}
     	
-    	if(thugProjectile.isVisible())
+    	if(ep.isVisible())
     	{
-    		if(boundingBoxCollision(thugProjectile, player) && !invincible)
+    		if(boundingBoxCollision(ep,player) && !invincible)
     			playerTakeDamage(elapsed);
-    		thugProjectile.update(elapsed);
+    		ep.update(elapsed);
     	}
     	
     	if(batarang.isVisible())
@@ -290,12 +297,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	else if(checkLeftSideForCollision(grappleHook))
         			retractGrappleHook();
         }
-        if(thugProjectile.isVisible())
+        if(ep.isVisible())
         {
-        	if(checkLeftSideForCollision(thugProjectile))
-        		thugProjectile.hide();
-        	if(checkRightSideForCollision(thugProjectile))
-        		thugProjectile.hide();
+        	if(checkLeftSideForCollision(ep))
+        		ep.hide();
+        	if(checkRightSideForCollision(ep))
+        		ep.hide();
         }
     }
     
@@ -414,8 +421,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     }
     private void updateBatarang()
     {
-		if(boundingBoxCollision(batarang,thug))
-			thug.hide();
+		if(boundingBoxCollision(batarang,th))
+			th.hide();
 		if(checkBottomSideForCollision(batarang) || checkRightSideForCollision(batarang) || checkLeftSideForCollision(batarang))
 		{
 			batarang.hide();
@@ -470,7 +477,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			}
 		}
     }
-    private void updateThug(float elapsed)
+   /* private void updateThug(float elapsed)
     {
     	//make sure thug is on the ground before shooting
 		if(!checkBottomSideForCollision(thug))
@@ -480,20 +487,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		}
 		else
 		{
-			if(player.getX()>thug.getX())
-			{
-				thug.setAnimation(grappleHookGun_Right);
-			}
-			else
-				thug.setAnimation(grappleHookGun_Left);
-			
+			if(player.getX()>thug.getX() && !enemyProjectile.isVisible())
+				thug.setAnimation(thugRightAnim);
+			else if(player.getX()<thug.getX() && !enemyProjectile.isVisible())
+				thug.setAnimation(thugLeftAnim);
 			thug.setVelocityY(.0f);
+			
 			recoverSpriteStuckInBottomTile(thug);
     		if(Math.random()>0.3)
     			if(player.getX()+screenWidth<thug.getX() || thug.getX()>player.getX()-screenWidth) // check to see if player is close or not
-    				thugShoot(thug);
+    				if(player.getY()+player.getHeight()-10>thug.getY() || player.getY()-player.getHeight()+10<thug.getY()) //player is near the same height
+    					thugShoot(thug);
 		}
-    }
+    }*/
     private void calculateOffsets()
     {
     	xOffset = screenWidth/2-(int)player.getX();
@@ -566,30 +572,33 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     /**
      * Handles Shooting by thugs
      */
-    private void thugShoot(Sprite s) 
+ /*   private void thugShoot(Sprite s) 
     {
-    	if(!thugProjectile.isVisible() || thugProjectile.getX()+screenWidth<thug.getX() || thugProjectile.getX()-screenWidth>thug.getX())
+    	if(!enemyProjectile.isVisible() || enemyProjectile.getX()+screenWidth<thug.getX() || enemyProjectile.getX()-screenWidth>thug.getX())
     	{
+    		enemyProjectile.setScale(0.8f);
 			Velocity v;
 			if(player.getX()>s.getX())
 			{
-				thugProjectile.setX(s.getX()+s.getWidth());
-				thugProjectile.setY(s.getY()+20);
-				v = new Velocity(0.3f,thugProjectile.getX()+xOffset,thugProjectile.getY()+yOffset,thug.getX()+xOffset+50,thug.getY()+26+yOffset);
-				thugProjectile.setRotation(180);
+				thug.setAnimation(thugFireRightAnim);
+				enemyProjectile.setX(s.getX()+s.getWidth());
+				enemyProjectile.setY(s.getY()+15);
+				v = new Velocity(0.7f,enemyProjectile.getX()+xOffset,enemyProjectile.getY()+yOffset,thug.getX()+xOffset+50,thug.getY()+26+yOffset);
+				enemyProjectile.setRotation(180);
 			}
 			else
 			{
-				thugProjectile.setX(s.getX());
-				thugProjectile.setY(s.getY()+20);
-				v = new Velocity(0.3f,thugProjectile.getX()+xOffset,thugProjectile.getY()+yOffset,thug.getX()+xOffset-50,thug.getY()+26+yOffset);
-				thugProjectile.setRotation(0);
+				thug.setAnimation(thugFireLeftAnim);
+				enemyProjectile.setX(s.getX());
+				enemyProjectile.setY(s.getY()+15);
+				v = new Velocity(0.7f,enemyProjectile.getX()+xOffset,enemyProjectile.getY()+yOffset,thug.getX()+xOffset-50,thug.getY()+26+yOffset);
+				enemyProjectile.setRotation(0);
 			}
 
-			thugProjectile.setVelocityX((float)v.getdx());
-			thugProjectile.show();
+			enemyProjectile.setVelocityX((float)v.getdx());
+			enemyProjectile.show();
     	}
-	}
+	}*/
   	/**
   	 * Create and add all the (x,y) locations to spawn a crate there
        */
@@ -676,7 +685,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		return EPlayerState.STANDING;
     }
 
+    
+    
+    public int getXOffset(){return xOffset;}
+    public int getYOffset() {return yOffset;}
   	
+    
+    
     /*
      *         KEY EVENTS
      */
@@ -834,7 +849,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	{
 		if(currentGadget.equals("Grapple Hook"))
 		{
-			if(!grappleHook.isVisible())
+			if(!grappleHook.isVisible() && !playerState.equals(EPlayerState.CROUCH))
 			{
 				Velocity v;
 				if(lookingRight)
@@ -906,7 +921,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * Push Sprite UP by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.
      * */
-	private void recoverSpriteStuckInBottomTile(Sprite s) 
+	public void recoverSpriteStuckInBottomTile(Sprite s) 
 	{
 		if(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-1)/tmap.getTileHeight())!='.')
 			s.setY(s.getY()-1);
@@ -915,7 +930,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * Push Sprite LEFT by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.
      * */
-	private void recoverSpriteStuckInRightTile(Sprite s) 
+	public void recoverSpriteStuckInRightTile(Sprite s) 
 	{
 		if(tmap.getTileChar(((int)s.getX()+s.getWidth()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
 			s.setX(s.getX()-1);
@@ -924,12 +939,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * Push Sprite RIGHT by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.
      * */
-	private void recoverSpriteStuckInLeftTile(Sprite s) 
+	public void recoverSpriteStuckInLeftTile(Sprite s) 
 	{
 		if(tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
 			s.setX(s.getX()+1);
 	}
-	private boolean checkTopSideForCollision(Sprite s) 
+	public boolean checkTopSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
 		for(int i=1; i<s.getWidth()-1; i++)
@@ -941,7 +956,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 
 		return hit;
 	}
-	private boolean checkLeftSideForCollision(Sprite s) 
+	public boolean checkLeftSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
 		for(int i=1; i<s.getHeight()-3; i++)
@@ -953,7 +968,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 
 		return hit;
 	}
-	private boolean checkRightSideForCollision(Sprite s) 
+	public boolean checkRightSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
 		for(int i=1; i<s.getHeight()-3; i++)
@@ -964,7 +979,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		}
 		return hit;
 	}
-	private boolean checkBottomSideForCollision(Sprite s)
+	public boolean checkBottomSideForCollision(Sprite s)
 	{
 		boolean hit = false;
 		for(int i=1; i<s.getWidth()-1; i++)
@@ -1022,12 +1037,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         grappleHookGun_Left = new Animation();
         grappleHookGun_Left.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
         
-        thugAnim = new Animation();//TODO CHANGE ANIMATION FOR THUG
-        thugAnim.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
-        
-        thugProjectileAnim = new Animation();
-        thugProjectileAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
-        
         batarangAnim = new Animation();
         batarangAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
         
@@ -1042,6 +1051,21 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         
         crouch_move_left = new Animation();
         crouch_move_left.addFrame(loadImage("assets/images/testCube.png"), 60);
+        
+        thugLeftAnim = new Animation();
+        thugLeftAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);
+        
+        thugRightAnim = new Animation();
+        thugRightAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_sr.gif"), 60);
+        
+        thugProjectileAnim = new Animation();
+        thugProjectileAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
+        
+        thugFireRightAnim = new Animation();
+        thugFireRightAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_fire_right.gif"), 60);
+
+        thugFireLeftAnim = new Animation();
+        thugFireLeftAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_fire_left.gif"), 60);
 	}
 	private void loadSprites()
 	{
@@ -1055,11 +1079,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	        crate = new Sprite(crateAnim);
 	        crate.setTag("crate");
 	        
-	        thug = new Sprite(thugAnim);
-	        thug.setTag("thug");
-	        
-	        thugProjectile = new Sprite(thugProjectileAnim);
-	        thugProjectile.setTag("thugProjectile");
+	        //thug = new Sprite(thugLeftAnim);
+	        //thug.setTag("thug");
 	        
 	        batarang = new Sprite(batarangAnim);
 	        batarang.setTag("batarang");
@@ -1085,12 +1106,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         player.setOffsets(xOffset, yOffset);
         player.draw(g);
         
-        thug.setOffsets(xOffset, yOffset);
-        thug.draw(g);
+        th.setOffsets(xOffset, yOffset);
+        th.draw(g);
         
-        thugProjectile.setOffsets(xOffset, yOffset);
-        thugProjectile.drawTransformed(g);
-                
+        ep.setOffsets(xOffset, yOffset);
+        ep.drawTransformed(g);
+        
         batarang.setOffsets(xOffset, yOffset);
         batarang.draw(g);
         
