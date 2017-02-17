@@ -3,39 +3,40 @@ import java.awt.*;
 import game2D.*;
 public class Player extends Sprite
 {
-	Animation standingLeft;
-	Animation standingRight;
-    Animation crouch;
-    Animation crouchMoveLeft;
-    Animation crouchMoveRight;
-    Animation runRight;
-    Animation runLeft;
-    Animation jumpRight;
-    Animation jumpLeft;
-    Animation grappleHookLeft;
-    Animation grappleHookRight;
-    Animation transparent;
+	private Animation standingLeft;
+	private Animation standingRight;
+	private Animation crouch;
+	private Animation crouchMoveLeft;
+	private Animation crouchMoveRight;
+	private Animation runRight;
+	private Animation runLeft;
+	private Animation jumpRight;
+	private Animation jumpLeft;
+	private Animation grappleHookLeft;
+	private Animation grappleHookRight;
+	private Animation transparent;
     
-    boolean lookingRight = true;
-	boolean invincible = false;
-	boolean flashy = false;
-	boolean collisionABOVE = false;
-	boolean collisionBELOW = false;
-	boolean collisionRIGHT = false;
-	boolean collisionLEFT = false;
+	private boolean lookingRight = true;
+	private boolean invincible = false;
+	private boolean flashy = false;
+	private boolean collisionABOVE = false;
+	private boolean collisionBELOW = false;
+	private boolean collisionRIGHT = false;
+	private boolean collisionLEFT = false;
+	private boolean gameOver = false;
 	
-	
-	final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
-	String currentGadget = "Grapple Hook";
-	
-	int lifeBars;
-	int amountOfDamageBeforeDeath;
-	final float RUNSPEED = .07f;
-	final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
-	float invincibleTime = .0f;
-    float gravity = 0.01f;
-	float jumpStartPoint = .0f;
+	private final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
+	private String currentGadget = "Grapple Hook";
 
+	private float startingX, startingY;
+	private int lifeBars;
+	private int amountOfDamageBeforeDeath;
+	private final float RUNSPEED = .07f;
+	private final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
+	private float invincibleTime = .0f;
+	private float gravity = 0.01f;
+
+	private Game gct;
 	
     public enum EPlayerState
     {
@@ -54,12 +55,17 @@ public class Player extends Sprite
     }
     EPlayerState playerState = EPlayerState.FALLING;
     
-	public Player(Animation standingRight, int maxHP)
+	public Player(Animation standingRight, int maxHP, float startingX, float startingY, Game gct)
 	{
 		super(standingRight);
 		this.standingRight = standingRight;
 		this.amountOfDamageBeforeDeath = maxHP;
 		lifeBars = amountOfDamageBeforeDeath;
+		this.startingX = startingX;
+		this.startingY = startingY;
+		setX(startingX);
+		setY(startingY);
+		this.gct = gct;
 	}
 	
 	public boolean isLookingRight() { return lookingRight; }
@@ -69,6 +75,7 @@ public class Player extends Sprite
 	public boolean isInvincible() { return invincible; }
 	public int getLifeBars() { return lifeBars; }
 	public void setMaxHealth(int amountOfDamageBeforeDeath) { this.amountOfDamageBeforeDeath = amountOfDamageBeforeDeath; }
+	public boolean isGameOver() { return gameOver; }
 	/**
 	 * Returns currently equipped gadget.
 	 * */
@@ -90,7 +97,7 @@ public class Player extends Sprite
 		this.grappleHookRight = grappleHookRight;
 		this.transparent = transparent;
 	}	
-	public void update(float elapsed, boolean isGrappleHookVisible, float jumpStartPoint, TileMap tmap, Game gct)
+	public void update(float elapsed, boolean isGrappleHookVisible, float jumpStartPoint, TileMap tmap)
 	{
 		collisionABOVE = gct.checkTopSideForCollision(this);
 		collisionBELOW = gct.checkBottomSideForCollision(this);
@@ -116,17 +123,9 @@ public class Player extends Sprite
     		}
     	}
     	
-    	if(playerState.equals(EPlayerState.RESPAWN)) 
+    	if(playerState.equals(EPlayerState.DEAD)) 
     	{
-    		if(lifeBars<1) 
-    		{
-    			gct.resetSpritePositionAndVelocity(this,75,50,0,0);
-    			playerState = EPlayerState.FALLING;
-    			lifeBars = amountOfDamageBeforeDeath;
-    			//stop(); // stop game if player loses all lives
-    			//TODO add an end game state
-    			//playerState = EPlayerState.DEAD;
-    		}
+    		gameOver = true;
     	}
     	if(playerState.equals(EPlayerState.STANDING))
     	{
@@ -203,9 +202,9 @@ public class Player extends Sprite
     	if(!invincible)
     		setAnimation(getAppropriateAnimation(isGrappleHookVisible));
     	
-    	handleTileMapCollisions(elapsed,tmap,gct);
+    	handleTileMapCollisions(elapsed,tmap);
 	}
-    private void handleTileMapCollisions(float elapsed, TileMap tmap, Game gct)
+    private void handleTileMapCollisions(float elapsed, TileMap tmap)
     {
     	//Check if sprite has fallen off screen
         if (this.getY() + this.getHeight() > tmap.getPixelHeight())
@@ -213,7 +212,7 @@ public class Player extends Sprite
         	if(this.equals(this)) 
         	{
         		this.takeDamage(elapsed);
-        		this.setState(Player.EPlayerState.RESPAWN);
+        		this.setState(Player.EPlayerState.DEAD);
         	}
         	else
         		this.hide();
@@ -257,7 +256,7 @@ public class Player extends Sprite
     	lifeBars--;
     	invincible=true;
     	if(lifeBars<1)
-    		playerState = EPlayerState.RESPAWN;
+    		playerState = EPlayerState.DEAD;
 	}
 	/**
 	 * Returns an animation depending on the State of the player.
@@ -309,15 +308,18 @@ public class Player extends Sprite
         g.drawString(msg, 20, 90);
         
         //Life Bars
-        msg="------------";
         g.setColor(Color.black);
-        g.drawString(msg, 20, 40);
-        for(int i=0,j=20; i<getLifeBars(); i++,j+=8)
+        int i=0, j=20;
+        for(; i<getLifeBars(); i++,j+=8)
         {
         	g.fillRoundRect(j, 40, 5, 25, 6, 6);
         }
-        g.drawLine(68, 36, 68, 68);
-        g.drawString(msg, 20, 72);
+        for(i=0, j=20; i<amountOfDamageBeforeDeath; i++, j+=8)
+        {
+        	g.drawString("--", j, 40); //top line
+        	g.drawString("--", j, 72); //bottom line
+        }
+        g.drawLine(j, 36, j, 68); // side line
 	}
 	/**
 	 * Switches to the next or previous gadget depending on the number of mouse wheel scrolls.
@@ -351,5 +353,40 @@ public class Player extends Sprite
 			else 
 				currentGadget = gadgets[count];
 		}
+	}
+	public void updateDirectionBasedOnMouseLocation(int mouseX, boolean isGrappleHookVisible)
+	{
+		if(mouseX<this.getX()+gct.getXOffset())
+		{
+			if(this.getState().equals(Player.EPlayerState.STANDING))
+			{
+				if(this.isLookingRight())
+				{
+					this.setAnimation(this.getAppropriateAnimation(isGrappleHookVisible));
+					this.setLookingRight(false);
+				}
+			}
+		}
+		else
+		{
+			if(this.getState().equals(Player.EPlayerState.STANDING))
+			{
+				if(!this.isLookingRight())
+				{
+					this.setAnimation(this.getAppropriateAnimation(isGrappleHookVisible));
+					this.setLookingRight(true);
+				}
+			}
+		}
+	}
+	
+	public void reset()
+	{
+		lifeBars = amountOfDamageBeforeDeath;
+		playerState = EPlayerState.FALLING;
+		this.setX(startingX);
+		this.setY(startingY);
+		this.show();
+		gameOver=false;
 	}
 }

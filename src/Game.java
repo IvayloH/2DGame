@@ -29,53 +29,54 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
 
-    float jumpStartPos = .0f;  // keep track of jump start
-    int xOffset, yOffset; // made global as they are needed in the mouse press events
+    private float jumpStartPos = .0f;  // keep track of jump start
+    private int xOffset, yOffset; // made global as they are needed in the mouse press events
     
     // Game state flags
-    boolean cursorChanged = false;
+    private boolean cursorChanged = false;
 
     //Pressed Key flags
-    boolean leftKey = false;
-    boolean rightKey = false;
-    boolean jumpKey = false;
-    boolean crouchKey = false;
-    boolean helpKey = false;
+    private boolean leftKey = false;
+    private boolean rightKey = false;
+    private boolean jumpKey = false;
+    private boolean crouchKey = false;
+    private boolean helpKey = false;
+    private boolean nextLevel = false; //TODO implement a next level method
     
     // Game resources
-    Animation standingFacingLeft = null;
-    Animation standingFacingRight = null;
-    Animation movement_Right = null;
-    Animation movement_Left = null;
-    Animation jump_Right = null;
-    Animation jump_Left = null;
-    Animation crateAnim = null;
-    Animation grapple = null;
-    Animation grappleHookGun_Right = null;
-    Animation grappleHookGun_Left = null;
-    Animation thugLeftAnim = null;
-    Animation thugRightAnim = null;
-    Animation thugFireLeftAnim = null;
-    Animation thugFireRightAnim = null;
-    Animation thugProjectileAnim = null;
-    Animation batarangAnim = null;
-    Animation transparent = null;
-    Animation crouch = null;
-    Animation crouch_move_left=null;
-    Animation crouch_move_right=null;
+    private Animation standingFacingLeft = null;
+    private Animation standingFacingRight = null;
+    private Animation movement_Right = null;
+    private Animation movement_Left = null;
+    private Animation jump_Right = null;
+    private Animation jump_Left = null;
+    private Animation crateAnim = null;
+    private Animation grapple = null;
+    private Animation grappleHookGun_Right = null;
+    private Animation grappleHookGun_Left = null;
+    private Animation thugLeftAnim = null;
+    private Animation thugRightAnim = null;
+    private Animation thugFireLeftAnim = null;
+    private Animation thugFireRightAnim = null;
+    private Animation thugProjectileAnim = null;
+    private Animation batarangAnim = null;
+    private Animation transparent = null;
+    private Animation crouch = null;
+    private Animation crouch_move_left=null;
+    private Animation crouch_move_right=null;
     
     
-    Player player = null;
-    GrappleHook grappleHook = null;
-    Crate crate = null;
-    Batarang batarang = null;
-    Thug thug_one = null;
-    Sprite enemyProjectile = null;
+    private Player player = null;
+    private GrappleHook grappleHook = null;
+    private Crate crate = null;
+    private Batarang batarang = null;
+    private  Thug thug_one = null;
+    private EnemyProjectile enemyProjectile = null;
     
-    Image bgImage = null;
+    private Image bgImage = null;
     
-    ArrayList<Sprite> clouds = new ArrayList<Sprite>();
-    TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
+    private ArrayList<Sprite> clouds = new ArrayList<Sprite>();
+    private TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
 
     /**
 	 * The obligatory main method that creates
@@ -103,7 +104,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         addMouseWheelListener(this);
         addMouseMotionListener(this);
         
-        crate.initialiseCrateSpawnPoints();
+        setUpThugSpawnPositionsLevelOne();
+        setUpCrateSpawnPositionsLevelOne();
         initialiseGame(); 		
         System.out.println(tmap);
     }
@@ -115,11 +117,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-    	resetSpritePositionAndVelocity(player,75,50,0,0);
         player.show();
-        
-        resetSpritePositionAndVelocity(thug_one,450,50,0,0);
-        thug_one.show();
     }
 
     /**
@@ -130,13 +128,24 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	calculateOffsets();
         setOffsetsAndDrawSprites(g);
         player.drawHUD(g);
-        grappleHook.drawGrappleHook(player,this,g);
-        crate.drawCrate(player, this, g);
+        grappleHook.drawGrappleHook(player, g);
+        crate.drawCrate(player, g);
+        thug_one.drawThugAtNextPosition(player, g);
+        batarang.draw(g);
+        enemyProjectile.draw(g);
         
         if(helpKey)
         	drawHELP(g);
         else
         	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
+        if(player.isGameOver())
+        {
+        	g.setColor(Color.red);
+        	g.drawString("GAME OVER", screenWidth/2, screenHeight/2);
+        	g.drawString("Press Esc to Quit", screenWidth/2-15, screenHeight/2+15);
+        	g.drawString("       or", screenWidth/2, screenHeight/2+30);
+        	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
+        }
     }
 
     /**
@@ -156,65 +165,38 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(boundingBoxCollision(enemyProjectile,player) && !player.isInvincible())
     			player.takeDamage(elapsed);
+            enemyProjectile.handleTileMapCollision();
     		enemyProjectile.update(elapsed);
     	}
     	
     	if(batarang.isVisible())
     	{
-    		batarang.update(thug_one, player, this);
+    		batarang.update(thug_one, player);
     		batarang.update(elapsed);
     	}
     	
     	if(crate.isHit())
-    		crate.update(elapsed, tmap, this);
+    		crate.update(elapsed, player, tmap);
 
     	if (grappleHook.isVisible())
     	{
-    		grappleHook.update(player, crate, this);
+    		grappleHook.update(player, crate);
     		grappleHook.update(elapsed);
     	}
     	
        	for (Sprite s: clouds)
        		s.update(elapsed);
        	
-       	player.update(elapsed, grappleHook.isVisible(),jumpStartPos,tmap,this);
-        player.update(elapsed);
-
-        handleTileMapCollisions(player,elapsed);
+       	player.update(elapsed, grappleHook.isVisible(),jumpStartPos,tmap);
+        if(!player.isGameOver())
+        	player.update(elapsed);
+        else
+        	player.hide();
     }
 
-	/**
-     * Checks and handles collisions with the tile map for the
-     * given sprite 's'. Initial functionality is limited...
-     * 
-     * @param s			The Sprite to check collisions for
-     * @param elapsed	How time has gone by
+    /*
+     *         PRIVATE METHODS
      */
-    public void handleTileMapCollisions(Sprite s, long elapsed)
-    {
-        if(enemyProjectile.isVisible())
-        {
-        	if(checkLeftSideForCollision(enemyProjectile))
-        		enemyProjectile.hide();
-        	if(checkRightSideForCollision(enemyProjectile))
-        		enemyProjectile.hide();
-        }
-    }
-
-    /**
-     * Reset player position and velocity.
-  	 * @param defaultX The value for the X position
-  	 * @param defaultY The value for the Y position
-  	 * @param defaultDX The value for the Horizontal(X) velocity
-  	 * @param defaultDY The value for the Vertical(Y) velocity
-  	 */
-  	public void resetSpritePositionAndVelocity(Sprite s, float defaultX, float defaultY, float defaultDX, float defaultDY)
-  	{  
-  		s.setX(defaultX);
-  		s.setY(defaultY);
-  		s.setVelocityX(defaultDX);
-  		s.setVelocityY(defaultDY);
-  	}
   	/**
   	 * Return appropriate player state depending on the keys that have been pressed
      */
@@ -261,9 +243,26 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
 		return Player.EPlayerState.STANDING;
     }
-
+    private void setUpCrateSpawnPositionsLevelOne()
+    {
+    	crate.addCrateSpawnPoint(704.f, 160.f);
+    	crate.addCrateSpawnPoint(1408.f, 160.f);
+    }
+    private void setUpThugSpawnPositionsLevelOne()
+    {
+    	thug_one.addThugSpawnPoint(450.f,50.f);
+    	thug_one.addThugSpawnPoint(894.f, 50.f);
+    	thug_one.addThugSpawnPoint(1440.f, 50.f);
+    }
+    private void restartGame()
+    {
+    	thug_one.reset();
+    	crate.reset();
+    	player.reset();
+    	tmap.loadMap("assets/maps/", "level1.txt");
+    	enemyProjectile.hide();
+    }
     
-
     
     /*
      *         KEY EVENTS
@@ -288,7 +287,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	    	crouchKey = true;
 
     	if(key==KeyEvent.VK_R)
-    		resetSpritePositionAndVelocity(player,50,100,0,0);
+    	{
+    		if(player.isGameOver())
+    			restartGame();
+    	}
     	
     	if(key==KeyEvent.VK_H)
     	{
@@ -363,28 +365,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	public void mouseDragged(MouseEvent e) {}
 	public void mouseMoved(MouseEvent e) 
 	{
-		if(e.getX()<player.getX()+xOffset)
-		{
-			if(player.getState().equals(Player.EPlayerState.STANDING))
-			{
-				if(player.isLookingRight())
-				{
-					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
-					player.setLookingRight(false);
-				}
-			}
-		}
-		else
-		{
-			if(player.getState().equals(Player.EPlayerState.STANDING))
-			{
-				if(!player.isLookingRight())
-				{
-					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
-					player.setLookingRight(true);
-				}
-			}
-		}
+		player.updateDirectionBasedOnMouseLocation(e.getX(), grappleHook.isVisible());
 		if(!cursorChanged)
 		{
 			Toolkit tk = Toolkit.getDefaultToolkit();
@@ -542,16 +523,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		}
 		return hit;
 	}
-	@SuppressWarnings("unused")
-	private void log(String s)
-	{
-		System.out.print(s);
-		//TODO DELETE ME AT THE END
-	}
+
 	
 	
 	/*
-	 *     LOAD MAP,IMAGES,ANIMATIONS,DRAW
+	 *     LOAD MAP,IMAGES,ANIMATIONS,DRAW,OFFSETS
 	 */
 	private void loadAnimations()
 	{
@@ -621,34 +597,33 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	}
 	private void loadSprites()
 	{
-		  	player = new Player(standingFacingRight, 6);
-	        player.loadAdditionalAnimations(standingFacingLeft, movement_Left, movement_Right, jump_Left, jump_Right, 
-	        					 crouch_move_right, crouch, crouch_move_right, grappleHookGun_Left, grappleHookGun_Right, transparent);
-	       
-	        grappleHook = new GrappleHook(grapple,150);
-	        grappleHook.hide();
-	        
-	        //crate = new Sprite(crateAnim);
-	        crate = new Crate(crateAnim);
-	        batarang = new Batarang(batarangAnim);
-	        
-	        enemyProjectile = new Sprite(thugProjectileAnim);
-	        
-	        thug_one = new Thug(thugLeftAnim, thugRightAnim, thugFireLeftAnim, thugFireRightAnim, enemyProjectile, this);
-	        
-	        Animation ca = new Animation();
-	        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
-	        
-	        Sprite s;
-	        for (int c=0; c<3; c++)
-	        {
-	        	s = new Sprite(ca);
-	        	s.setX(screenWidth + (int)(Math.random()*200.0f));
-	        	s.setY(30 + (int)(Math.random()*150.0f));
-	        	s.setVelocityX(-0.02f);
-	        	s.show();
-	        	clouds.add(s);
-	        }
+	  	player = new Player(standingFacingRight, 6,75.f,50.f, this);
+        player.loadAdditionalAnimations(standingFacingLeft, movement_Left, movement_Right, jump_Left, jump_Right, 
+        					 crouch_move_right, crouch, crouch_move_right, grappleHookGun_Left, grappleHookGun_Right, transparent);
+       
+        grappleHook = new GrappleHook(grapple,150,this);
+        grappleHook.hide();
+        
+        crate = new Crate(crateAnim,this);
+        batarang = new Batarang(batarangAnim,this);
+        
+        enemyProjectile = new EnemyProjectile(thugProjectileAnim, this);
+        
+        thug_one = new Thug(thugLeftAnim, thugRightAnim, thugFireLeftAnim, thugFireRightAnim, enemyProjectile, this);
+        
+        Animation ca = new Animation();
+        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
+        
+        Sprite s;
+        for (int c=0; c<3; c++)
+        {
+        	s = new Sprite(ca);
+        	s.setX(screenWidth + (int)(Math.random()*200.0f));
+        	s.setY(30 + (int)(Math.random()*150.0f));
+        	s.setVelocityX(-0.02f);
+        	s.show();
+        	clouds.add(s);
+        }
 	}
     private void setOffsetsAndDrawSprites(Graphics2D g)
     {
@@ -656,15 +631,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 
         player.setOffsets(xOffset, yOffset);
         player.draw(g);
-        
-        thug_one.setOffsets(xOffset, yOffset);
-        thug_one.draw(g);
-        
-        enemyProjectile.setOffsets(xOffset, yOffset);
-        enemyProjectile.drawTransformed(g);
-        
-        batarang.setOffsets(xOffset, yOffset);
-        batarang.draw(g);
         
         for (Sprite s: clouds)
         {

@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import game2D.*;
 public class Turret extends Sprite
 {
-	ArrayList<SpawnPosition<Float,Float>> turretSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
+	ArrayList<Position<Float,Float>> turretSpawnPositions = new ArrayList<Position<Float,Float>>();
 	
 	Animation turretLeft;
 	Animation turretRight;

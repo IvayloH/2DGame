@@ -1,16 +1,26 @@
+import java.awt.Graphics2D;
+
 import game2D.*;
 
 public class Batarang extends Sprite
 {
-	public Batarang(Animation anim)
+	Game gct;
+	public Batarang(Animation anim, Game gct)
 	{
 		super(anim);
+		this.gct = gct;
 	}
 	
-	public void update(Sprite enemy, Sprite player, Game gct)
+	public void draw(Graphics2D g)
+	{
+		setOffsets(gct.getXOffset(), gct.getYOffset());
+		drawTransformed(g);
+	}
+	
+	public void update(Thug enemy, Sprite player )
 	{
 		if(gct.boundingBoxCollision(this,enemy))
-			enemy.hide();
+			enemy.kill();
 		if(gct.checkBottomSideForCollision(this) || gct.checkRightSideForCollision(this) || gct.checkLeftSideForCollision(this))
 		{
 			this.hide();

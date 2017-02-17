@@ -1,9 +1,9 @@
-public class SpawnPosition<X,Y>
+public class Position<X,Y>
 {
 	private final X x;
 	private final Y y;
 	
-	public SpawnPosition(X x, Y y)
+	public Position(X x, Y y)
 	{
 		this.x = x;
 		this.y = y;

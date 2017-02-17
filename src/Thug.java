@@ -1,8 +1,12 @@
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 import game2D.*;
 public class Thug extends Sprite
 {
+	ArrayList<Position<Float,Float>> thugSpawnPositions = new ArrayList<Position<Float,Float>>();
+	int currThug=0;
+	boolean killed = true;
 	Game gct;
     float gravity = 0.01f;
 	Sprite enemyProjectile;
@@ -10,7 +14,6 @@ public class Thug extends Sprite
 	Animation animRight;
 	Animation shootLeft;
 	Animation shootRight;
-	ArrayList<SpawnPosition<Float,Float>> thugSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
 	
 	public Thug(Animation animLeft, Animation animRight, Animation shootLeft, Animation shootRight, Sprite enemyProjectile, Game gct)
 	{
@@ -22,7 +25,24 @@ public class Thug extends Sprite
 		this.shootRight = shootRight;
 		this.enemyProjectile = enemyProjectile;
 	}
-	public void update(float elapsed, Sprite player)
+	public void drawThugAtNextPosition(Player player, Graphics2D g)
+	{
+        this.drawTransformed(g);
+        this.setOffsets(gct.getXOffset(), gct.getYOffset());
+
+		if(currThug<thugSpawnPositions.size() && killed)
+		{
+			Position<Float, Float> p = thugSpawnPositions.get(currThug);
+			if(player.getX()+gct.getWidth()>p.getX())
+		    {
+				this.setX(p.getX());
+				this.setY(p.getY());	            
+				this.show();
+				killed=false;
+		    }
+		}
+	}
+	public void update(float elapsed, Player player)
 	{
 		if(!gct.checkBottomSideForCollision(this))
 		{
@@ -38,40 +58,66 @@ public class Thug extends Sprite
 			this.setVelocityY(.0f);
 			gct.recoverSpriteStuckInBottomTile(this);
     		if(Math.random()>0.3)
-    			if(player.getX()+gct.getWidth()<this.getX() || this.getX()>player.getX()-gct.getHeight()) // check to see if player is close or not
-    				if(player.getY()+player.getHeight()-10>this.getY() || player.getY()-player.getHeight()+10>this.getY()) //player is near the same height
-    					Shoot(player);
+    			if(player.getX()+gct.getWidth()/2>this.getX() || this.getX()<player.getX()-gct.getWidth()/2) // check to see if player is close or not
+    				if(player.getY()+player.getHeight()-20>this.getY() || player.getY()-player.getHeight()+20>this.getY()) //player is near the same height
+    						Shoot(player);
+    		
+    		if(player.getX()>this.getX()+gct.getWidth()/2)
+    		{
+    			this.kill();
+    		}
 		}
 	}
-	
+	public void addThugSpawnPoint(float x, float y)
+	{
+		Position<Float,Float> p = new Position<Float,Float>(x,y);
+		thugSpawnPositions.add(p);
+	}
+	public void kill()
+	{
+		if(!killed)
+		{
+			currThug++;
+			killed = true;
+			this.hide();
+		}
+	}
 	/**
 	 * Handles the shooting animation and action.
 	 */
-	private void Shoot(Sprite player)
+	private void Shoot(Player player)
 	{
-    	if(!enemyProjectile.isVisible() || enemyProjectile.getX()+gct.getWidth()<this.getX() || enemyProjectile.getX()-gct.getWidth()>this.getX())
-    	{
-    		enemyProjectile.setScale(0.8f);
-			Velocity v;
-			if(player.getX()>this.getX())
-			{
-				this.setAnimation(shootRight);
-				enemyProjectile.setX(this.getX()+this.getWidth());
-				enemyProjectile.setY(this.getY()+15);
-				v = new Velocity(0.7f,enemyProjectile.getX()+gct.getXOffset(),enemyProjectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()+50,this.getY()+26+gct.getYOffset());
-				enemyProjectile.setRotation(180);
-			}
-			else
-			{
-				this.setAnimation(shootLeft);
-				enemyProjectile.setX(this.getX());
-				enemyProjectile.setY(this.getY()+15);
-				v = new Velocity(0.7f,enemyProjectile.getX()+gct.getXOffset(),enemyProjectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()-50,this.getY()+26+gct.getYOffset());
-				enemyProjectile.setRotation(0);
-			}
-
-			enemyProjectile.setVelocityX((float)v.getdx());
-			enemyProjectile.show();
-    	}
+		if(!player.isGameOver())//stop shooting after game is over
+		{
+	    	if(!enemyProjectile.isVisible() || enemyProjectile.getX()+gct.getWidth()<this.getX() || enemyProjectile.getX()-gct.getWidth()>this.getX())
+	    	{
+	    		enemyProjectile.setScale(0.8f);
+				Velocity v;
+				if(player.getX()>this.getX())
+				{
+					this.setAnimation(shootRight);
+					enemyProjectile.setX(this.getX()+this.getWidth());
+					enemyProjectile.setY(this.getY()+15);
+					v = new Velocity(0.7f,enemyProjectile.getX()+gct.getXOffset(),enemyProjectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()+50,this.getY()+26+gct.getYOffset());
+					enemyProjectile.setRotation(180);
+				}
+				else
+				{
+					this.setAnimation(shootLeft);
+					enemyProjectile.setX(this.getX());
+					enemyProjectile.setY(this.getY()+15);
+					v = new Velocity(0.7f,enemyProjectile.getX()+gct.getXOffset(),enemyProjectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()-50,this.getY()+26+gct.getYOffset());
+					enemyProjectile.setRotation(0);
+				}
+	
+				enemyProjectile.setVelocityX((float)v.getdx());
+				enemyProjectile.show();
+	    	}
+		}
+	}
+	public void reset()
+	{
+		currThug = 0;
+		killed=true;
 	}
 }

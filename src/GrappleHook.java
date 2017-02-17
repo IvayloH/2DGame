@@ -5,17 +5,19 @@ import java.awt.Graphics2D;
 import game2D.*;
 public class GrappleHook extends Sprite
 {
+	Game gct;
 	boolean grappleHookRetracting = false;
 	float HOOKLIMIT;
 	
-	public GrappleHook(Animation anim, float limit)
+	public GrappleHook(Animation anim, float limit, Game gct)
 	{
 		super(anim);
 		HOOKLIMIT = limit;
+		this.gct = gct;
 	}
-	public void update(Player player, Crate crate, Game gct)
+	public void update(Player player, Crate crate)
 	{
-		checkForCollision(player,gct);
+		checkForCollision(player);
     	if((this.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
 				|| (this.getX()<player.getX()-HOOKLIMIT)
 				|| (this.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
@@ -62,7 +64,7 @@ public class GrappleHook extends Sprite
   	/**
   	 * Draws the Grapple Hook and a line behind.
   	 */
-  	public void drawGrappleHook(Player player, Game gct,Graphics2D g)
+  	public void drawGrappleHook(Player player, Graphics2D g)
   	{
         if(this.isVisible())
         {
@@ -88,7 +90,7 @@ public class GrappleHook extends Sprite
   	/**
   	 * Check for collision against the tile maps on the Left and Right side of the grappleHook.
   	 */
-  	private void checkForCollision(Player player, Game gct)
+  	private void checkForCollision(Player player)
   	{
     	//check for right/left collision depending on which way the hook is going
     	if(this.getVelocityX()>0)
