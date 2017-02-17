@@ -1,3 +1,5 @@
+import java.awt.*;
+
 import game2D.*;
 public class Player extends Sprite
 {
@@ -13,6 +15,7 @@ public class Player extends Sprite
     Animation grappleHookLeft;
     Animation grappleHookRight;
     Animation transparent;
+    
     boolean lookingRight = true;
 	boolean invincible = false;
 	boolean flashy = false;
@@ -22,7 +25,9 @@ public class Player extends Sprite
 	boolean collisionLEFT = false;
 	
 	
-
+	final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
+	String currentGadget = "Grapple Hook";
+	
 	int lifeBars;
 	int amountOfDamageBeforeDeath;
 	final float RUNSPEED = .07f;
@@ -30,8 +35,9 @@ public class Player extends Sprite
 	float invincibleTime = .0f;
     float gravity = 0.01f;
 	float jumpStartPoint = .0f;
+
 	
-    enum EPlayerState
+    public enum EPlayerState
     {
     	RUN_LEFT,
     	RUN_RIGHT,
@@ -46,16 +52,29 @@ public class Player extends Sprite
     	RESPAWN,
     	DEAD
     }
-   //Sprite State
     EPlayerState playerState = EPlayerState.FALLING;
     
-	public Player(Animation standingRight)
+	public Player(Animation standingRight, int maxHP)
 	{
 		super(standingRight);
 		this.standingRight = standingRight;
+		this.amountOfDamageBeforeDeath = maxHP;
+		lifeBars = amountOfDamageBeforeDeath;
 	}
 	
-	public void setAnimations(Animation standingLeft, Animation runLeft, Animation runRight,
+	public boolean isLookingRight() { return lookingRight; }
+	public void setLookingRight(boolean b) { lookingRight = b; }
+	public void setState(EPlayerState pState) { playerState = pState; }
+	public EPlayerState getState() { return playerState; }
+	public boolean isInvincible() { return invincible; }
+	public int getLifeBars() { return lifeBars; }
+	public void setMaxHealth(int amountOfDamageBeforeDeath) { this.amountOfDamageBeforeDeath = amountOfDamageBeforeDeath; }
+	/**
+	 * Returns currently equipped gadget.
+	 * */
+	public String getCurrentGadget() { return currentGadget; }
+	
+	public void loadAdditionalAnimations(Animation standingLeft, Animation runLeft, Animation runRight,
 			Animation jumpLeft, Animation jumpRight, Animation crouch, Animation crouchLeft, Animation crouchRight,
 			Animation grappleHookLeft, Animation grappleHookRight, Animation transparent)
 	{
@@ -70,15 +89,8 @@ public class Player extends Sprite
 		this.grappleHookLeft = grappleHookLeft;
 		this.grappleHookRight = grappleHookRight;
 		this.transparent = transparent;
-	}
-	
-	public void setDetails(int amountOfDamageBeforeDeath)
-	{
-		this.amountOfDamageBeforeDeath = amountOfDamageBeforeDeath;
-		lifeBars = amountOfDamageBeforeDeath;
-	}
-	
-	public void update(float elapsed, boolean isGrappleHookVisible, Game gct, float jumpStartPoint)
+	}	
+	public void update(float elapsed, boolean isGrappleHookVisible, float jumpStartPoint, TileMap tmap, Game gct)
 	{
 		collisionABOVE = gct.checkTopSideForCollision(this);
 		collisionBELOW = gct.checkBottomSideForCollision(this);
@@ -89,7 +101,7 @@ public class Player extends Sprite
     		invincibleTime+=elapsed;
     		if(flashy)
     		{
-    			setAppropriateAnimation(isGrappleHookVisible);
+    			this.setAnimation(getAppropriateAnimation(isGrappleHookVisible));
     			flashy=false;
     		}
     		else
@@ -103,9 +115,6 @@ public class Player extends Sprite
     			invincibleTime=0f;
     		}
     	}
-    	
-    	if(!isGrappleHookVisible && !invincible)
-    		setAppropriateAnimation(isGrappleHookVisible);
     	
     	if(playerState.equals(EPlayerState.RESPAWN)) 
     	{
@@ -159,7 +168,7 @@ public class Player extends Sprite
 			else if(this.getVelocityX()<0)
 				playerState = EPlayerState.RUN_LEFT;
 			
-			setAppropriateAnimation(isGrappleHookVisible);
+			setAnimation(getAppropriateAnimation(isGrappleHookVisible));
 		}
     	
     	if(playerState.equals(EPlayerState.RUN_RIGHT))
@@ -191,64 +200,156 @@ public class Player extends Sprite
     		this.setVelocityY(.05f);
     		this.setVelocityY(this.getVelocityY()+(gravity*elapsed)); // gravity adjustment
     	}
+    	if(!invincible)
+    		setAnimation(getAppropriateAnimation(isGrappleHookVisible));
+    	
+    	handleTileMapCollisions(elapsed,tmap,gct);
 	}
-	
-	public void takeDamage(long elapsed)
+    private void handleTileMapCollisions(float elapsed, TileMap tmap, Game gct)
+    {
+    	//Check if sprite has fallen off screen
+        if (this.getY() + this.getHeight() > tmap.getPixelHeight())
+        {
+        	if(this.equals(this)) 
+        	{
+        		this.takeDamage(elapsed);
+        		this.setState(Player.EPlayerState.RESPAWN);
+        	}
+        	else
+        		this.hide();
+        }
+        
+    	//Check Tile underneath the sprite for collision
+        collisionBELOW = gct.checkBottomSideForCollision(this);
+    	if(collisionBELOW)
+    		gct.recoverSpriteStuckInBottomTile(this);
+        
+        //Check Tile to the RIGHT of the sprite for collision
+        if(this.getState().equals(Player.EPlayerState.RUN_RIGHT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_RIGHT))
+        	collisionRIGHT = gct.checkRightSideForCollision(this);
+
+        
+        //Check Tile to the LEFT of the sprite for collision
+        if(this.getState().equals(Player.EPlayerState.RUN_LEFT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_LEFT))
+        	collisionLEFT = gct.checkLeftSideForCollision(this);
+
+        
+        //Check Tile ABOVE the sprite for collision
+        if(this.getState().equals(Player.EPlayerState.JUMP) || this.getState().equals(Player.EPlayerState.JUMP_RIGHT) || this.getState().equals(Player.EPlayerState.JUMP_LEFT))
+        {
+        	collisionABOVE = gct.checkTopSideForCollision(this);
+        	collisionRIGHT = gct.checkRightSideForCollision(this);
+        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        }       
+        
+        if(this.getState().equals(Player.EPlayerState.FALLING))
+        {
+        	collisionRIGHT = gct.checkRightSideForCollision(this);
+        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        }
+    }
+    
+	/**
+	 * Occurs when the player takes damage and reduces his health by 1.
+	 */
+	public void takeDamage(float elapsed)
 	{
     	lifeBars--;
     	invincible=true;
     	if(lifeBars<1)
     		playerState = EPlayerState.RESPAWN;
 	}
-	
-	public void setAppropriateAnimation(boolean isGrappleHookVisible)
+	/**
+	 * Returns an animation depending on the State of the player.
+	 */
+	public Animation getAppropriateAnimation(boolean isGrappleHookVisible)
 	{
-	    {
-	    	if(!isGrappleHookVisible)
-	    	{
-	    		if(playerState.equals(EPlayerState.CROUCH))
-	    			this.setAnimation(crouch);
-	    		if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
-	    			this.setAnimation(crouchMoveLeft);
-	    		if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
-	    			this.setAnimation(crouchMoveRight);
-		    	if(playerState.equals(EPlayerState.RUN_RIGHT))
-		    		this.setAnimation(runRight);
-		    	if(playerState.equals(EPlayerState.RUN_LEFT))
-		    		this.setAnimation(runLeft);
-		    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
-		    		this.setAnimation(jumpRight);
-		    	if(playerState.equals(EPlayerState.JUMP_LEFT))
-		    		this.setAnimation(jumpLeft);
-		    	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.FALLING))
-		    		if(lookingRight)
-		    			this.setAnimation(jumpRight);
-		    		else 
-		    			this.setAnimation(jumpLeft);
-				if(lookingRight)
-					this.setAnimation(standingRight);
-				else 
-					this.setAnimation(standingLeft);
-	    	}
-	    	else
-	    	{
-		    	if(lookingRight)
-		    		this.setAnimation(grappleHookRight);
-				else 
-					this.setAnimation(grappleHookLeft);
+    	if(!isGrappleHookVisible)
+    	{
+    		if(playerState.equals(EPlayerState.CROUCH))
+    			return crouch;
+    		if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
+    			return crouchMoveLeft;
+    		if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
+    			return crouchMoveRight;
+	    	if(playerState.equals(EPlayerState.RUN_RIGHT))
+	    		return runRight;
+	    	if(playerState.equals(EPlayerState.RUN_LEFT))
+	    		return runLeft;
+	    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
+	    		return jumpRight;
+	    	if(playerState.equals(EPlayerState.JUMP_LEFT))
+	    		return jumpLeft;
+	    	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.FALLING))
+	    		if(lookingRight)
+	    			return jumpRight;
+	    		else 
+	    			return jumpLeft;
+			if(lookingRight)
+				return standingRight;
+			else 
+				return standingLeft;
+    	}
+    	else
+    	{
+	    	if(lookingRight)
+	    		return grappleHookRight;
+			else 
+				return grappleHookLeft;
 
-	    	}
-	    }
+    	}
 	}
-	
-	public EPlayerState getState()
+	/**
+	 * Draws the HUD for the player's Life Bars/Gadgets
+	 */
+	public void drawHUD(Graphics2D g)
 	{
-		return playerState;
+    	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
+        g.setColor(Color.red);
+        g.drawString(msg, 20, 90);
+        
+        //Life Bars
+        msg="------------";
+        g.setColor(Color.black);
+        g.drawString(msg, 20, 40);
+        for(int i=0,j=20; i<getLifeBars(); i++,j+=8)
+        {
+        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
+        }
+        g.drawLine(68, 36, 68, 68);
+        g.drawString(msg, 20, 72);
 	}
-	
-	public void setState(EPlayerState pState)
+	/**
+	 * Switches to the next or previous gadget depending on the number of mouse wheel scrolls.
+	 */
+	public void switchGadget(int wheelCount)
 	{
-		playerState = pState;
+		//find the index of the currently selected gadget
+		int count=0;
+		for(String s:gadgets)
+		{
+			if(currentGadget.equals(s)) 
+				break;
+			count++;
+		}
+		
+		//get the next gadget
+		if(wheelCount>0)
+		{
+			count++;
+			if(count==gadgets.length)
+				currentGadget = gadgets[0];
+			else 
+				currentGadget = gadgets[count];
+		}
+		//get the previous gadget
+		if(wheelCount<0)
+		{
+			count--;
+			if(count==-1)
+				currentGadget = gadgets[gadgets.length-1];
+			else 
+				currentGadget = gadgets[count];
+		}
 	}
-	
 }

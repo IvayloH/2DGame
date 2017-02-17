@@ -1,12 +1,16 @@
+import java.util.ArrayList;
+
 import game2D.*;
 public class Thug extends Sprite
 {
 	Game gct;
+    float gravity = 0.01f;
 	Sprite enemyProjectile;
 	Animation animLeft;
 	Animation animRight;
 	Animation shootLeft;
 	Animation shootRight;
+	ArrayList<SpawnPosition<Float,Float>> thugSpawnPositions = new ArrayList<SpawnPosition<Float,Float>>();
 	
 	public Thug(Animation animLeft, Animation animRight, Animation shootLeft, Animation shootRight, Sprite enemyProjectile, Game gct)
 	{
@@ -18,8 +22,7 @@ public class Thug extends Sprite
 		this.shootRight = shootRight;
 		this.enemyProjectile = enemyProjectile;
 	}
-	
-	public void update(float elapsed, float gravity, Sprite player)
+	public void update(float elapsed, Sprite player)
 	{
 		if(!gct.checkBottomSideForCollision(this))
 		{
@@ -41,6 +44,9 @@ public class Thug extends Sprite
 		}
 	}
 	
+	/**
+	 * Handles the shooting animation and action.
+	 */
 	private void Shoot(Sprite player)
 	{
     	if(!enemyProjectile.isVisible() || enemyProjectile.getX()+gct.getWidth()<this.getX() || enemyProjectile.getX()-gct.getWidth()>this.getX())
