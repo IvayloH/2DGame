@@ -2,13 +2,13 @@ import game2D.*;
 public class Thug extends Sprite
 {
 	Game gct;
-	EnemyProjectile enemyProjectile;
+	Sprite enemyProjectile;
 	Animation animLeft;
 	Animation animRight;
 	Animation shootLeft;
 	Animation shootRight;
 	
-	public Thug(Animation animLeft, Animation animRight, Animation shootLeft, Animation shootRight, EnemyProjectile enemyProjectile, Game gct)
+	public Thug(Animation animLeft, Animation animRight, Animation shootLeft, Animation shootRight, Sprite enemyProjectile, Game gct)
 	{
 		super(animLeft);
 		this.animLeft = animLeft;
@@ -36,12 +36,12 @@ public class Thug extends Sprite
 			gct.recoverSpriteStuckInBottomTile(this);
     		if(Math.random()>0.3)
     			if(player.getX()+gct.getWidth()<this.getX() || this.getX()>player.getX()-gct.getHeight()) // check to see if player is close or not
-    				if(player.getY()+player.getHeight()-10>this.getY() || player.getY()-player.getHeight()+10<this.getY()) //player is near the same height
+    				if(player.getY()+player.getHeight()-10>this.getY() || player.getY()-player.getHeight()+10>this.getY()) //player is near the same height
     					Shoot(player);
 		}
 	}
 	
-	public void Shoot(Sprite player)
+	private void Shoot(Sprite player)
 	{
     	if(!enemyProjectile.isVisible() || enemyProjectile.getX()+gct.getWidth()<this.getX() || enemyProjectile.getX()-gct.getWidth()>this.getX())
     	{
