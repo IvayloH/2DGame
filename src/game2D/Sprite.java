@@ -53,6 +53,13 @@ public class Sprite {
         scale = 1.0f;
         rotation = 0.0f;
     }
+    
+    public Sprite()
+    {
+    	render = false;
+    	scale = 1.0f;
+    	rotation = 0.0f;
+    }
 
     /**
      * Change the animation for the sprite to 'a'.

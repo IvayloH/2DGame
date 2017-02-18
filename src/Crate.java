@@ -10,18 +10,24 @@ public class Crate extends Sprite
 	int currCrate=0;
 	boolean crateHit = false;
 	float crateHitX;
+	Animation crateAnim;
 	
-	public Crate(Animation anim, Game gct)
+	public Crate(Game gct)
 	{
-		super(anim);
+		super();
 		this.gct = gct;
+		loadAnim();
 	}
 	public void setHit() { crateHit = true; }
 	public void setHitX(float x) { crateHitX = x;}
 	public boolean isHit() { return crateHit;}
 	public float getHitX() { return crateHitX;}
 	
-	
+    public void reset()
+    {
+    	currCrate = 0;
+    	crateHit=false;
+    }
 	public void update(float elapsed, Player player, TileMap tmap)
 	{
 
@@ -71,9 +77,10 @@ public class Crate extends Sprite
       	crateSpawnPositions.add(p);
     }
     
-    public void reset()
+    private void loadAnim()
     {
-    	currCrate = 0;
-    	crateHit=false;
+        crateAnim = new Animation();
+        crateAnim.addFrame(gct.loadImage("assets/maps/crate.png"), 60);
+        setAnimation(crateAnim);
     }
 }

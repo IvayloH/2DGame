@@ -8,14 +8,16 @@ public class GrappleHook extends Sprite
 	Game gct;
 	boolean grappleHookRetracting = false;
 	float HOOKLIMIT;
+	Animation grapple;
 	
-	public GrappleHook(Animation anim, float limit, Game gct)
+	public GrappleHook( float hookLimit, Game gct)
 	{
-		super(anim);
-		HOOKLIMIT = limit;
+		super();
+		HOOKLIMIT = hookLimit;
 		this.gct = gct;
+		loadAnim();
 	}
-	public void update(Player player, Crate crate)
+	public void update(long elapsed, Player player, Crate crate)
 	{
 		checkForCollision(player);
     	if((this.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
@@ -44,6 +46,7 @@ public class GrappleHook extends Sprite
 				grappleHookRetracting=false;
 			}
 		}
+		update(elapsed);
 	}
 	
 	  /**
@@ -87,6 +90,29 @@ public class GrappleHook extends Sprite
         	g.setStroke(new BasicStroke(0));
   	      }
   	}
+  	public void shoot(Player player, float mouseX, float mouseY)
+  	{
+  		if(!this.isVisible() && !player.isCrouching())
+		{
+			Velocity v;
+			if(player.isLookingRight())
+			{
+				this.setX(player.getX()+player.getWidth());
+				this.setY(player.getY()+20);
+			}
+			else
+			{
+				this.setX(player.getX());
+				this.setY(player.getY()+20);
+			}
+			v = new Velocity(0.5f, this.getX()+gct.getXOffset(), this.getY()+gct.getYOffset(), mouseX+10, mouseY+10);
+			this.setVelocityX((float)v.getdx());
+			this.setVelocityY((float)v.getdy());
+			this.setRotation(v.getAngle());
+			this.show();
+		}
+  	}
+  	
   	/**
   	 * Check for collision against the tile maps on the Left and Right side of the grappleHook.
   	 */
@@ -100,5 +126,11 @@ public class GrappleHook extends Sprite
     	}
     	else if(gct.checkLeftSideForCollision(this))
     			retractGrappleHook(player);
+  	}
+  	private void loadAnim()
+  	{
+        grapple = new Animation();
+        grapple.addFrame(gct.loadImage("assets/images/Projectiles/GrappleHook.png"), 60);
+        setAnimation(grapple);
   	}
 }

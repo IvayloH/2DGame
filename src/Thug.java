@@ -9,21 +9,23 @@ public class Thug extends Sprite
 	boolean killed = true;
 	Game gct;
     float gravity = 0.01f;
-	Sprite enemyProjectile;
+	Sprite projectile;
 	Animation animLeft;
 	Animation animRight;
 	Animation shootLeft;
 	Animation shootRight;
 	
-	public Thug(Animation animLeft, Animation animRight, Animation shootLeft, Animation shootRight, Sprite enemyProjectile, Game gct)
+	public Thug(Sprite enemyProjectile, Game gct)
 	{
-		super(animLeft);
-		this.animLeft = animLeft;
-		this.animRight = animRight;
+		super();
 		this.gct = gct;
-		this.shootLeft = shootLeft;
-		this.shootRight = shootRight;
-		this.enemyProjectile = enemyProjectile;
+		this.projectile = enemyProjectile;
+		loadAnims();
+	}
+	public void reset()
+	{
+		currThug = 0;
+		killed=true;
 	}
 	public void drawThugAtNextPosition(Player player, Graphics2D g)
 	{
@@ -51,9 +53,9 @@ public class Thug extends Sprite
 		}
 		else
 		{
-			if(player.getX()>this.getX() && !enemyProjectile.isVisible())
+			if(player.getX()>this.getX() && !projectile.isVisible())
 				this.setAnimation(animRight);
-			else if(player.getX()<this.getX() && !enemyProjectile.isVisible())
+			else if(player.getX()<this.getX() && !projectile.isVisible())
 				this.setAnimation(animLeft);
 			this.setVelocityY(.0f);
 			gct.recoverSpriteStuckInBottomTile(this);
@@ -89,35 +91,48 @@ public class Thug extends Sprite
 	{
 		if(!player.isGameOver())//stop shooting after game is over
 		{
-	    	if(!enemyProjectile.isVisible() || enemyProjectile.getX()+gct.getWidth()<this.getX() || enemyProjectile.getX()-gct.getWidth()>this.getX())
+	    	if(!projectile.isVisible() || projectile.getX()+gct.getWidth()<this.getX() || projectile.getX()-gct.getWidth()>this.getX())
 	    	{
-	    		enemyProjectile.setScale(0.8f);
+	    		projectile.setScale(0.8f);
 				Velocity v;
 				if(player.getX()>this.getX())
 				{
 					this.setAnimation(shootRight);
-					enemyProjectile.setX(this.getX()+this.getWidth());
-					enemyProjectile.setY(this.getY()+15);
-					v = new Velocity(0.7f,enemyProjectile.getX()+gct.getXOffset(),enemyProjectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()+50,this.getY()+26+gct.getYOffset());
-					enemyProjectile.setRotation(180);
+					projectile.setX(this.getX()+this.getWidth());
+					projectile.setY(this.getY()+15);
+					v = new Velocity(0.7f,projectile.getX()+gct.getXOffset(),projectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()+50,this.getY()+26+gct.getYOffset());
+					projectile.setRotation(180);
 				}
 				else
 				{
 					this.setAnimation(shootLeft);
-					enemyProjectile.setX(this.getX());
-					enemyProjectile.setY(this.getY()+15);
-					v = new Velocity(0.7f,enemyProjectile.getX()+gct.getXOffset(),enemyProjectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()-50,this.getY()+26+gct.getYOffset());
-					enemyProjectile.setRotation(0);
+					projectile.setX(this.getX());
+					projectile.setY(this.getY()+15);
+					v = new Velocity(0.7f,projectile.getX()+gct.getXOffset(),projectile.getY()+gct.getYOffset(),this.getX()+gct.getXOffset()-50,this.getY()+26+gct.getYOffset());
+					projectile.setRotation(0);
 				}
-	
-				enemyProjectile.setVelocityX((float)v.getdx());
-				enemyProjectile.show();
+				projectile.setVelocityY(.0f);
+				projectile.setVelocityX((float)v.getdx());
+				projectile.show();
 	    	}
 		}
 	}
-	public void reset()
+	
+	private void loadAnims()
 	{
-		currThug = 0;
-		killed=true;
+        animLeft = new Animation();
+        animLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);
+        
+        //set starting animation
+        setAnimation(animLeft);
+        
+        animRight = new Animation();
+        animRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sr.gif"), 60);
+
+        shootRight = new Animation();
+        shootRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_right.gif"), 60);
+
+        shootLeft = new Animation();
+        shootLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_left.gif"), 60);
 	}
 }

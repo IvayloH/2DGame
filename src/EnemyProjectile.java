@@ -5,10 +5,12 @@ import game2D.*;
 public class EnemyProjectile extends Sprite
 {
 	Game gct;
-	public EnemyProjectile(Animation anim, Game gct) 
+	Animation projectile;
+	public EnemyProjectile(Game gct) 
 	{
-		super(anim);
+		super();
 		this.gct = gct;
+		loadAnim();
 	}
 	public void handleTileMapCollision()
 	{
@@ -24,5 +26,11 @@ public class EnemyProjectile extends Sprite
 	{
 		setOffsets(gct.getXOffset(),gct.getYOffset());
 		drawTransformed(g);
+	}
+	private void loadAnim()
+	{
+        projectile = new Animation();
+        projectile.addFrame(gct.loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
+        setAnimation(projectile);
 	}
 }

@@ -34,44 +34,24 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     
     // Game state flags
     private boolean cursorChanged = false;
-
+    private boolean bossFight = false;
+    
     //Pressed Key flags
     private boolean leftKey = false;
     private boolean rightKey = false;
     private boolean jumpKey = false;
     private boolean crouchKey = false;
     private boolean helpKey = false;
-    private boolean nextLevel = false; //TODO implement a next level method
+    private boolean nextLevel = false;
     
     // Game resources
-    private Animation standingFacingLeft = null;
-    private Animation standingFacingRight = null;
-    private Animation movement_Right = null;
-    private Animation movement_Left = null;
-    private Animation jump_Right = null;
-    private Animation jump_Left = null;
-    private Animation crateAnim = null;
-    private Animation grapple = null;
-    private Animation grappleHookGun_Right = null;
-    private Animation grappleHookGun_Left = null;
-    private Animation thugLeftAnim = null;
-    private Animation thugRightAnim = null;
-    private Animation thugFireLeftAnim = null;
-    private Animation thugFireRightAnim = null;
-    private Animation thugProjectileAnim = null;
-    private Animation batarangAnim = null;
-    private Animation transparent = null;
-    private Animation crouch = null;
-    private Animation crouch_move_left=null;
-    private Animation crouch_move_right=null;
-    
-    
     private Player player = null;
     private GrappleHook grappleHook = null;
-    private Crate crate = null;
+    private Crate crates = null;
+    private Thug thugs = null;
     private Batarang batarang = null;
-    private  Thug thug_one = null;
     private EnemyProjectile enemyProjectile = null;
+    private Boss boss = null;
     
     private Image bgImage = null;
     
@@ -103,9 +83,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         addMouseListener(this);
         addMouseWheelListener(this);
         addMouseMotionListener(this);
-        
-        setUpThugSpawnPositionsLevelOne();
-        setUpCrateSpawnPositionsLevelOne();
+
         initialiseGame(); 		
         System.out.println(tmap);
     }
@@ -118,6 +96,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void initialiseGame()
     {	
         player.show();
+        setUpLevel();
     }
 
     /**
@@ -129,15 +108,21 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         setOffsetsAndDrawSprites(g);
         player.drawHUD(g);
         grappleHook.drawGrappleHook(player, g);
-        crate.drawCrate(player, g);
-        thug_one.drawThugAtNextPosition(player, g);
+        crates.drawCrate(player, g);
+        thugs.drawThugAtNextPosition(player, g);
         batarang.draw(g);
         enemyProjectile.draw(g);
         
-        if(helpKey)
+        if(helpKey && !bossFight)
         	drawHELP(g);
-        else
+        else if(!bossFight)
         	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
+     
+        if(player.getX()+screenWidth/2+screenWidth/3>tmap.getPixelWidth() || bossFight)
+        {
+        	boss.draw(g);
+        	bossFight=true;
+        }
         if(player.isGameOver())
         {
         	g.setColor(Color.red);
@@ -147,7 +132,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
         }
     }
-
+    
     /**
      * Update any sprites and check for collisions
      * 
@@ -155,10 +140,20 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */    
     public void update(long elapsed)
     {
-    	if(thug_one.isVisible())
+    	if(bossFight)
     	{
-    		thug_one.update(elapsed, player);
-    		thug_one.update(elapsed);
+    		boss.update(elapsed, player);
+    		//if(boss.isDead())
+    			//loadNextLevel();
+    	}
+    		
+    	if(nextLevel)
+    		loadNextLevel();
+    	
+    	if(thugs.isVisible())
+    	{
+    		thugs.update(elapsed, player);
+    		thugs.update(elapsed);
     	}
     	
     	if(enemyProjectile.isVisible())
@@ -170,28 +165,18 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	
     	if(batarang.isVisible())
-    	{
-    		batarang.update(thug_one, player);
-    		batarang.update(elapsed);
-    	}
-    	
-    	if(crate.isHit())
-    		crate.update(elapsed, player, tmap);
+    		batarang.update(elapsed, thugs, player, crates, boss);
+
+    	if(crates.isHit())
+    		crates.update(elapsed, player, tmap);
 
     	if (grappleHook.isVisible())
-    	{
-    		grappleHook.update(player, crate);
-    		grappleHook.update(elapsed);
-    	}
-    	
+    		grappleHook.update(elapsed, player, crates);
+
        	for (Sprite s: clouds)
        		s.update(elapsed);
        	
        	player.update(elapsed, grappleHook.isVisible(),jumpStartPos,tmap);
-        if(!player.isGameOver())
-        	player.update(elapsed);
-        else
-        	player.hide();
     }
 
     /*
@@ -243,26 +228,39 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
 		return Player.EPlayerState.STANDING;
     }
+	private void setUpLevel()
+	{
+		setUpThugSpawnPositionsLevelOne();
+        setUpCrateSpawnPositionsLevelOne();
+        boss.setSpawn(1945f, 50f);
+	}
     private void setUpCrateSpawnPositionsLevelOne()
     {
-    	crate.addCrateSpawnPoint(704.f, 160.f);
-    	crate.addCrateSpawnPoint(1408.f, 160.f);
+    	crates.addCrateSpawnPoint(704.f, 160.f);
+    	crates.addCrateSpawnPoint(1408.f, 160.f);
     }
     private void setUpThugSpawnPositionsLevelOne()
     {
-    	thug_one.addThugSpawnPoint(450.f,50.f);
-    	thug_one.addThugSpawnPoint(894.f, 50.f);
-    	thug_one.addThugSpawnPoint(1440.f, 50.f);
+    	thugs.addThugSpawnPoint(450.f, 136.f);
+    	thugs.addThugSpawnPoint(894.f, 136.f);
+    	thugs.addThugSpawnPoint(1440.f, 136.f);
     }
+
     private void restartGame()
     {
-    	thug_one.reset();
-    	crate.reset();
+    	thugs.reset();
+    	crates.reset();
     	player.reset();
     	tmap.loadMap("assets/maps/", "level1.txt");
     	enemyProjectile.hide();
+    	bossFight = false;
+    	boss.reset();
     }
-    
+    private void loadNextLevel()
+    {
+    	nextLevel = false;
+    	tmap.loadMap("assets/maps", "level2.txt");
+    }
     
     /*
      *         KEY EVENTS
@@ -299,11 +297,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		else
     			helpKey=false;
     	}
+    	
     	//if player is already in a jump motion and do nothing
-		if(!player.getState().equals(Player.EPlayerState.JUMP_RIGHT) 
-				&& !player.getState().equals(Player.EPlayerState.JUMP_LEFT) 
-				&& !player.getState().equals(Player.EPlayerState.JUMP))
-			
+		if(!player.isJumping())
 				player.setState(getPlayerStateBasedOnKeysPressed());
     }
 	public void keyReleased(KeyEvent e) 
@@ -382,47 +378,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	{
 		if(player.getCurrentGadget().equals("Grapple Hook"))
 		{
-			if(!grappleHook.isVisible() && !player.getState().equals(Player.EPlayerState.CROUCH))
-			{
-				Velocity v;
-				if(player.isLookingRight())
-				{
-					grappleHook.setX(player.getX()+player.getWidth());
-					grappleHook.setY(player.getY()+20);
-				}
-				else
-				{
-					grappleHook.setX(player.getX());
-					grappleHook.setY(player.getY()+20);
-				}
-				v = new Velocity(0.5f, grappleHook.getX()+xOffset, grappleHook.getY()+yOffset, e.getX()+10, e.getY()+10);
-				grappleHook.setVelocityX((float)v.getdx());
-				grappleHook.setVelocityY((float)v.getdy());
-				grappleHook.setRotation(v.getAngle());
-				grappleHook.show();
-			}
+			grappleHook.shoot(player, e.getX(), e.getY());
 		}
 		
 		if(player.getCurrentGadget().equals("Batarang"))
 		{
-			if(!batarang.isVisible())
-			{
-				Velocity v;
-				if(player.isLookingRight())
-				{
-					batarang.setX(player.getX()+player.getWidth());
-					batarang.setY(player.getY()+26);
-				}
-				else
-				{
-					batarang.setX(player.getX());
-					batarang.setY(player.getY()+26);	
-				}
-				v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset,e.getX()+10,e.getY()+10);
-				batarang.setVelocityX((float)v.getdx());
-				batarang.setVelocityY((float)v.getdy());
-				batarang.show();
-			}
+			batarang.Throw(player, e.getX(), e.getY());
 		}
 	}
 	public void mouseClicked(MouseEvent arg0) {}
@@ -532,84 +493,24 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	private void loadAnimations()
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
-
         bgImage = loadImage("assets/images/city.png");
-        
-        standingFacingRight = new Animation();
-        standingFacingRight.addFrame(loadImage("assets/images/BatmanStates/BatmanFacingRight.gif"),60);
-        
-        standingFacingLeft = new Animation();
-        standingFacingLeft.addFrame(loadImage("assets/images/BatmanStates/BatmanFacingLeft.gif"), 60);
-        
-        movement_Right= new Animation();
-        movement_Right.addFrame(loadImage("assets/images/BatmanStates/BatmanMoveRight.gif"), 60);
-        
-        movement_Left = new Animation();
-        movement_Left.addFrame(loadImage("assets/images/BatmanStates/BatmanMoveLeft.gif"),60);
-        
-        jump_Right = new Animation();
-        jump_Right.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpRight.png"),60);
-        
-        jump_Left = new Animation();
-        jump_Left.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpLeft.png"),60);
-        
-        crateAnim = new Animation();
-        crateAnim.addFrame(loadImage("assets/maps/crate.png"), 60);
-        
-        grapple = new Animation();
-        grapple.addFrame(loadImage("assets/images/Projectiles/GrappleHook.png"), 60);
-        
-        grappleHookGun_Right = new Animation();
-        grappleHookGun_Right.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunRight.gif"), 60);
-        
-        grappleHookGun_Left = new Animation();
-        grappleHookGun_Left.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
-        
-        batarangAnim = new Animation();
-        batarangAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
-        
-        transparent = new Animation();
-        transparent.addFrame(loadImage("assets/images/BatmanStates/transparent.png"), 60);
-        
-        crouch = new Animation();
-        crouch.addFrame(loadImage("assets/images/testCube.png"), 60);
-        
-        crouch_move_right = new Animation();
-        crouch_move_right.addFrame(loadImage("assets/images/testCube.png"), 60);
-        
-        crouch_move_left = new Animation();
-        crouch_move_left.addFrame(loadImage("assets/images/testCube.png"), 60);
-        
-        thugLeftAnim = new Animation();
-        thugLeftAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);
-        
-        thugRightAnim = new Animation();
-        thugRightAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_sr.gif"), 60);
-        
-        thugProjectileAnim = new Animation();
-        thugProjectileAnim.addFrame(loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
-        
-        thugFireRightAnim = new Animation();
-        thugFireRightAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_fire_right.gif"), 60);
-
-        thugFireLeftAnim = new Animation();
-        thugFireLeftAnim.addFrame(loadImage("assets/images/Enemies/Thug/thug_fire_left.gif"), 60);
 	}
 	private void loadSprites()
 	{
-	  	player = new Player(standingFacingRight, 6,75.f,50.f, this);
-        player.loadAdditionalAnimations(standingFacingLeft, movement_Left, movement_Right, jump_Left, jump_Right, 
-        					 crouch_move_right, crouch, crouch_move_right, grappleHookGun_Left, grappleHookGun_Right, transparent);
-       
-        grappleHook = new GrappleHook(grapple,150,this);
+	  	player = new Player(6,75.f,50.f, this);
+
+        grappleHook = new GrappleHook(150,this);
         grappleHook.hide();
         
-        crate = new Crate(crateAnim,this);
-        batarang = new Batarang(batarangAnim,this);
+        crates = new Crate(this);
         
-        enemyProjectile = new EnemyProjectile(thugProjectileAnim, this);
+        batarang = new Batarang(this);
         
-        thug_one = new Thug(thugLeftAnim, thugRightAnim, thugFireLeftAnim, thugFireRightAnim, enemyProjectile, this);
+        enemyProjectile = new EnemyProjectile(this);
+        
+        thugs = new Thug(enemyProjectile, this);
+        
+        boss = new Boss(enemyProjectile, this);
         
         Animation ca = new Animation();
         ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
@@ -628,9 +529,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void setOffsetsAndDrawSprites(Graphics2D g)
     {
         g.drawImage(bgImage,0,0,null);
-
-        player.setOffsets(xOffset, yOffset);
-        player.draw(g);
         
         for (Sprite s: clouds)
         {
@@ -665,6 +563,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	yOffset=maxOffsetY;
         else if(yOffset<minOffsetY)
         	yOffset=minOffsetY;
+        
+        if(bossFight)
+        {
+        	xOffset=minOffsetX;
+        	yOffset = minOffsetY;
+        }
     }
     public int getXOffset(){return xOffset;}
     public int getYOffset() {return yOffset;}
