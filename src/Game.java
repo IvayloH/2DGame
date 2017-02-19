@@ -28,6 +28,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	// Useful game constants
 	static final int screenWidth = 512;   //512
 	static final int screenHeight = 384;  //384
+	final char[] tileMapChars = {'b','w','r','c','n','v'};
 
     private float jumpStartPos = .0f;  // keep track of jump start
     private int xOffset, yOffset; // made global as they are needed in the mouse press events
@@ -116,9 +117,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         if(helpKey && !bossFight)
         	drawHELP(g);
         else if(!bossFight)
+        {
+        	g.setColor(Color.green);
         	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
-     
-        if(player.getX()+screenWidth/2+screenWidth/3>tmap.getPixelWidth() || bossFight)
+        }
+        if(player.getX()+screenWidth/2+screenWidth/4>tmap.getPixelWidth() || bossFight)
         {
         	boss.draw(g);
         	bossFight=true;
@@ -143,18 +146,15 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(bossFight)
     	{
     		boss.update(elapsed, player);
-    		//if(boss.isDead())
-    			//loadNextLevel();
+    		if(boss.isDead())
+    			loadNextLevel();
     	}
     		
     	if(nextLevel)
     		loadNextLevel();
     	
     	if(thugs.isVisible())
-    	{
     		thugs.update(elapsed, player);
-    		thugs.update(elapsed);
-    	}
     	
     	if(enemyProjectile.isVisible())
     	{
@@ -206,6 +206,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if(crouchKey)
     	{
+    		if(!player.isCrouching())
+    			player.shiftY(30);
     		if(rightKey) 
     			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
     		else if(leftKey) 
@@ -259,6 +261,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void loadNextLevel()
     {
     	nextLevel = false;
+    	player.reset();
     	tmap.loadMap("assets/maps", "level2.txt");
     }
     
@@ -272,18 +275,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
 
-    	if( key == KeyEvent.VK_RIGHT) 
+    	if( key == KeyEvent.VK_D) 
 	    	rightKey = true;
     	
-    	if(key == KeyEvent.VK_LEFT) 
+    	if(key == KeyEvent.VK_A) 
     		leftKey=true;
     	
-    	if (key == KeyEvent.VK_UP && !jumpKey)
+    	if (key == KeyEvent.VK_W && !jumpKey)
     		jumpKey = true;
     	
-    	if(key==KeyEvent.VK_DOWN)
+    	if(key==KeyEvent.VK_S)
+    	{
 	    	crouchKey = true;
-
+    	}
     	if(key==KeyEvent.VK_R)
     	{
     		if(player.isGameOver())
@@ -312,13 +316,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				stop(); 
 				break;
 			}
-			case KeyEvent.VK_UP:
+			case KeyEvent.VK_W:
 			{
 				jumpKey = false;
 				break;
 			}
 			
-			case KeyEvent.VK_RIGHT:
+			case KeyEvent.VK_D:
 			{
 				if(!crouchKey)
 					player.setState(Player.EPlayerState.STANDING);
@@ -328,7 +332,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				break;
 			}
 			
-			case KeyEvent.VK_LEFT:
+			case KeyEvent.VK_A:
 			{
 				if(!crouchKey)
 					player.setState(Player.EPlayerState.STANDING);
@@ -339,12 +343,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				break;
 			}
 			
-			case KeyEvent.VK_DOWN:
+			case KeyEvent.VK_S:
 			{
 				if(!checkTopSideForCollision(player))
 				{
 					player.setState(Player.EPlayerState.STANDING);
-					player.shiftY(-32);
+					player.shiftY(-player.getHeight());
 					crouchKey = false;
 				}
 				break;
@@ -417,8 +421,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
 	public void recoverSpriteStuckInBottomTile(Sprite s) 
 	{
-		if(tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-1)/tmap.getTileHeight())!='.')
-			s.setY(s.getY()-1);
+		char temp = tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-1)/tmap.getTileHeight());
+		for(char c : tileMapChars)
+			if(c==temp)
+				s.setY(s.getY()-1);
 	}
     /**
      * Push Sprite LEFT by one pixel if sprite is stuck in a tile below it.
@@ -426,8 +432,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
 	public void recoverSpriteStuckInRightTile(Sprite s) 
 	{
-		if(tmap.getTileChar(((int)s.getX()+s.getWidth()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
-			s.setX(s.getX()-1);
+		char temp = tmap.getTileChar(((int)s.getX()+s.getWidth()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight());
+		for(char c : tileMapChars)
+			if(c==temp)
+				s.setX(s.getX()-1);
 	}
     /**
      * Push Sprite RIGHT by one pixel if sprite is stuck in a tile below it.
@@ -435,8 +443,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
 	public void recoverSpriteStuckInLeftTile(Sprite s) 
 	{
-		if(tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight())!='.')
-			s.setX(s.getX()+1);
+		char temp = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight());
+		for(char c : tileMapChars)
+			if(c==temp)
+				s.setX(s.getX()+1);
 	}
 	public boolean checkTopSideForCollision(Sprite s) 
 	{
@@ -444,10 +454,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
 			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
-			if(tileCharTop=='b' || tileCharTop == 'w' || tileCharTop == 'r' || tileCharTop == 'c')
-				hit =true;
+			for(char c : tileMapChars)
+				if(c==tileCharTop)
+					hit =true;
 		}
-
 		return hit;
 	}
 	public boolean checkLeftSideForCollision(Sprite s) 
@@ -456,10 +466,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		for(int i=1; i<s.getHeight()-3; i++)
 		{
 			char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
-			if(tileCharLeft=='b' || tileCharLeft == 'w' || tileCharLeft == 'r' || tileCharLeft == 'c')
-				hit =true;
+			for(char c : tileMapChars)
+				if(c==tileCharLeft)
+					hit =true;
 		}
-
 		return hit;
 	}
 	public boolean checkRightSideForCollision(Sprite s) 
@@ -468,8 +478,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		for(int i=1; i<s.getHeight()-3; i++)
 		{
 			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
-			if(tileCharRight=='b' || tileCharRight == 'w' || tileCharRight == 'r' || tileCharRight == 'c')
-				hit =true;
+			for(char c : tileMapChars)
+				if(c==tileCharRight)
+					hit =true;
 		}
 		return hit;
 	}
@@ -479,8 +490,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
 			char tileCharBottom = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight())/tmap.getTileHeight());
-			if(tileCharBottom=='b' || tileCharBottom == 'w' || tileCharBottom == 'r' || tileCharBottom == 'c')
-				hit =true;
+			for(char c : tileMapChars)
+				if(c==tileCharBottom)
+					hit = true;
 		}
 		return hit;
 	}
@@ -540,8 +552,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     }
 	private void drawHELP(Graphics2D g)
     {
+		g.setColor(Color.green);
     	g.drawString("Controls: Action   -  Key", screenWidth-250, 50);
-    	g.drawString("Move - Arrows", screenWidth-198, 65);
+    	g.drawString("Move - W/A/S/D", screenWidth-198, 65);
     	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
     	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
     }

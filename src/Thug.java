@@ -9,17 +9,17 @@ public class Thug extends Sprite
 	boolean killed = true;
 	Game gct;
     float gravity = 0.01f;
-	Sprite projectile;
+	EnemyProjectile projectile;
 	Animation animLeft;
 	Animation animRight;
 	Animation shootLeft;
 	Animation shootRight;
 	
-	public Thug(Sprite enemyProjectile, Game gct)
+	public Thug(EnemyProjectile projectile ,Game gct)
 	{
 		super();
 		this.gct = gct;
-		this.projectile = enemyProjectile;
+		this.projectile = projectile;
 		loadAnims();
 	}
 	public void reset()
@@ -44,7 +44,7 @@ public class Thug extends Sprite
 		    }
 		}
 	}
-	public void update(float elapsed, Player player)
+	public void update(long elapsed, Player player)
 	{
 		if(!gct.checkBottomSideForCollision(this))
 		{
@@ -69,6 +69,7 @@ public class Thug extends Sprite
     			this.kill();
     		}
 		}
+		this.update(elapsed);
 	}
 	public void addThugSpawnPoint(float x, float y)
 	{

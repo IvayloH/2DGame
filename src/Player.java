@@ -14,7 +14,8 @@ public class Player extends Sprite
 	private Animation jumpLeft;
 	private Animation grappleHookLeft;
 	private Animation grappleHookRight;
-	private Animation transparent;
+	private Animation transparent64;
+	private Animation transparent32;
     
 	private boolean lookingRight = true;
 	private boolean invincible = false;
@@ -97,7 +98,10 @@ public class Player extends Sprite
     		}
     		else
     		{
-    			this.setAnimation(transparent);
+    			if(isCrouching())
+    				setAnimation(transparent32);
+    			else
+    				setAnimation(transparent64);
     			flashy=true;
     		}
     		if(invincibleTime>2000f)
@@ -176,12 +180,16 @@ public class Player extends Sprite
     			this.setVelocityX(-RUNSPEED);
     	}
     	
-    	if(collisionBELOW && !playerState.equals(EPlayerState.JUMP) && !playerState.equals(EPlayerState.JUMP_LEFT)&& !playerState.equals(EPlayerState.JUMP_RIGHT))
+    	if(collisionBELOW && !isJumping())
     		this.setVelocityY(.0f);
-    	else if(!isJumping()) 
+    	else if(!isJumping())
     	{
     		this.setVelocityY(.05f);
     		this.setVelocityY(this.getVelocityY()+(gravity*elapsed)); // gravity adjustment
+    		if(!isCrouching())
+    		{
+    			playerState = EPlayerState.FALLING;
+    		}
     	}
     	if(!invincible)
     		setAnimation(getAppropriateAnimation(isGrappleHookVisible));
@@ -422,9 +430,12 @@ public class Player extends Sprite
         grappleHookLeft = new Animation();
         grappleHookLeft.addFrame(gct.loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
         
-        transparent = new Animation();
-        transparent.addFrame(gct.loadImage("assets/images/BatmanStates/transparent.png"), 60);
+        transparent64 = new Animation();
+        transparent64.addFrame(gct.loadImage("assets/images/BatmanStates/transparent64.png"), 60);
 	    
+        transparent32 = new Animation();
+        transparent32.addFrame(gct.loadImage("assets/images/BatmanStates/transparent32.png"), 60);
+        
         crouch = new Animation();
         crouch.addFrame(gct.loadImage("assets/images/testCube.png"), 60);
 

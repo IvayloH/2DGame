@@ -77,7 +77,7 @@ public class Boss extends Sprite
 				else if(player.getX()<this.getX() && !projectile.isVisible())
 					this.setAnimation(standLeft);
 				gct.recoverSpriteStuckInBottomTile(this);
-				if(Math.random()>0.3)
+				if(Math.random()>0.8)
 					if(player.getX()+gct.getWidth()>this.getX() || this.getX()<player.getX()-gct.getWidth()) // check to see if player is close or not
 	    				if(player.getY()+player.getHeight()-20>this.getY() || player.getY()-player.getHeight()+20>this.getY()) //player is near the same height
 	    					shoot(player);
