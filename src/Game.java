@@ -56,6 +56,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Sound levelMusic;
 	private Sound jump = null;
 	
+	private LevelOne lvlOne;
     private Image bgImage = null;
     
     private ArrayList<Sprite> clouds = new ArrayList<Sprite>();
@@ -86,7 +87,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         addMouseListener(this);
         addMouseWheelListener(this);
         addMouseMotionListener(this);
-
+        
+        lvlOne = new LevelOne(player, crates,thugs,boss);
+        
+        
         initialiseGame(); 		
         System.out.println(tmap);
     }
@@ -98,9 +102,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-        player.show();
-        setUpLevel();
-
+    	lvlOne.setUpLevel();
     }
 
     /**
@@ -137,6 +139,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	g.drawString("       or", screenWidth/2, screenHeight/2+30);
         	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
         }
+        drawRain(g);
     }
     
     /**
@@ -233,33 +236,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
 		return Player.EPlayerState.STANDING;
     }
-	private void setUpLevel()
-	{
-		setUpThugSpawnPositionsLevelOne();
-        setUpCrateSpawnPositionsLevelOne();
-        boss.setSpawn(1945f, 50f);
-	}
-    private void setUpCrateSpawnPositionsLevelOne()
-    {
-    	crates.addCrateSpawnPoint(704.f, 160.f);
-    	crates.addCrateSpawnPoint(1408.f, 160.f);
-    }
-    private void setUpThugSpawnPositionsLevelOne()
-    {
-    	thugs.addThugSpawnPoint(450.f, 136.f);
-    	thugs.addThugSpawnPoint(894.f, 136.f);
-    	thugs.addThugSpawnPoint(1440.f, 136.f);
-    }
 
     private void restartGame()
     {
-    	thugs.reset();
-    	crates.reset();
-    	player.reset();
+    	lvlOne.restartLevel(); // start from level one
+    	
     	tmap.loadMap("assets/maps/", "level1.txt");
     	enemyProjectile.hide();
     	bossFight = false;
-    	boss.reset();
     }
     private void loadNextLevel()
     {
@@ -567,6 +551,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
     	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
     }
+	private void drawRain(Graphics2D g)
+	{
+        //draw rain
+        for(int i=0; i<120; i++)
+        {
+        	g.setColor(Color.blue);
+        	int xRange = (screenWidth-5)+1;
+        	int yRange = (screenHeight-5)+1;
+        	int x = (int)(Math.random()*xRange)+5;
+        	int y = (int)(Math.random()*yRange)+5;
+        	g.drawLine(x, y, x, y+3);
+        }
+	}
 	private void calculateOffsets()
     {
     	xOffset = screenWidth/2-(int)player.getX();

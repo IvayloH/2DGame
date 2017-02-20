@@ -305,7 +305,7 @@ public class Player extends Sprite
 	 */
 	public void drawHUD(Graphics2D g)
 	{
-        this.setOffsets(gct.getXOffset(), gct.getYOffset());
+        setOffsets(gct.getXOffset(), gct.getYOffset());
         this.draw(g);
         		
     	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
