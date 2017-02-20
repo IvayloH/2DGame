@@ -53,7 +53,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Batarang batarang = null;
     private EnemyProjectile enemyProjectile = null;
     private Boss boss = null;
-    
+    private Sound levelMusic;
+	private Sound jump = null;
+	
     private Image bgImage = null;
     
     private ArrayList<Sprite> clouds = new ArrayList<Sprite>();
@@ -78,7 +80,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void init()
     {         
-        loadAnimations();
+        loadAssets();
         loadSprites();
         
         addMouseListener(this);
@@ -98,6 +100,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {	
         player.show();
         setUpLevel();
+
     }
 
     /**
@@ -282,7 +285,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		leftKey=true;
     	
     	if (key == KeyEvent.VK_W && !jumpKey)
+    	{
     		jumpKey = true;
+    		jump = new Sound("assets/sounds/grunt_jump.wav");
+    		jump.start();
+    	}
     	
     	if(key==KeyEvent.VK_S)
     	{
@@ -502,10 +509,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	/*
 	 *     LOAD MAP,IMAGES,ANIMATIONS,DRAW,OFFSETS
 	 */
-	private void loadAnimations()
+	private void loadAssets()
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
         bgImage = loadImage("assets/images/city.png");
+        levelMusic = new Sound("assets/sounds/level.wav");
+        levelMusic.start();
 	}
 	private void loadSprites()
 	{

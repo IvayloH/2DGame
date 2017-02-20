@@ -14,13 +14,14 @@ public class Thug extends Sprite
 	Animation animRight;
 	Animation shootLeft;
 	Animation shootRight;
+	Sound shooting = null;
 	
 	public Thug(EnemyProjectile projectile ,Game gct)
 	{
 		super();
 		this.gct = gct;
 		this.projectile = projectile;
-		loadAnims();
+		loadAssets();
 	}
 	public void reset()
 	{
@@ -59,11 +60,11 @@ public class Thug extends Sprite
 				this.setAnimation(animLeft);
 			this.setVelocityY(.0f);
 			gct.recoverSpriteStuckInBottomTile(this);
-    		if(Math.random()>0.3)
+    		if(Math.random()>0.6)
     			if(player.getX()+gct.getWidth()/2>this.getX() || this.getX()<player.getX()-gct.getWidth()/2) // check to see if player is close or not
     				if(player.getY()+player.getHeight()-20>this.getY() || player.getY()-player.getHeight()+20>this.getY()) //player is near the same height
     						Shoot(player);
-    		
+
     		if(player.getX()>this.getX()+gct.getWidth()/2)
     		{
     			this.kill();
@@ -114,12 +115,16 @@ public class Thug extends Sprite
 				}
 				projectile.setVelocityY(.0f);
 				projectile.setVelocityX((float)v.getdx());
+				
+		        shooting = new Sound("assets/sounds/shoot.wav");
+				shooting.start();
+				
 				projectile.show();
 	    	}
 		}
 	}
 	
-	private void loadAnims()
+	private void loadAssets()
 	{
         animLeft = new Animation();
         animLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);

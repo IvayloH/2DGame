@@ -6,6 +6,7 @@ public class Batarang extends Sprite
 {
 	Game gct;
 	Animation batarangAnim;
+	Sound throwing;
 	public Batarang(Game gct)
 	{
 		super();
@@ -57,6 +58,8 @@ public class Batarang extends Sprite
 			v = new Velocity(.5f,this.getX()+gct.getXOffset(),this.getY()+gct.getYOffset(), mouseX+10, mouseY+10);
 			this.setVelocityX((float)v.getdx());
 			this.setVelocityY((float)v.getdy());
+			throwing = new Sound("assets/sounds/grunt_throw.wav");
+			throwing.start();
 			this.show();
 		}
 	}

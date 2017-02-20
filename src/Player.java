@@ -16,7 +16,9 @@ public class Player extends Sprite
 	private Animation grappleHookRight;
 	private Animation transparent64;
 	private Animation transparent32;
-    
+	
+	private Sound damaged = null;
+	
 	private boolean lookingRight = true;
 	private boolean invincible = false;
 	private boolean flashy = false;
@@ -66,7 +68,7 @@ public class Player extends Sprite
 		setX(startingX);
 		setY(startingY);
 		this.gct = gct;
-		loadAnims();
+		loadAssets();
 	}
 	
 	public boolean isLookingRight() { return lookingRight; }
@@ -251,6 +253,8 @@ public class Player extends Sprite
 	 */
 	public void takeDamage(float elapsed)
 	{
+		damaged = new Sound("assets/sounds/grunt_damaged.wav");
+		damaged.start();
     	lifeBars--;
     	invincible=true;
     	if(lifeBars<1)
@@ -402,7 +406,7 @@ public class Player extends Sprite
 				||playerState.equals(EPlayerState.CROUCH_MOVE_LEFT));
 	}
 	
-	private void loadAnims()
+	private void loadAssets()
 	{
 		standingRight = new Animation();
     	standingRight.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanFacingRight.gif"), 60);

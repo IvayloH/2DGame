@@ -76,6 +76,7 @@ public class GrappleHook extends Sprite
             this.setOffsets(gct.getXOffset(),gct.getYOffset());
         	g.setColor(Color.black);
         	g.setStroke(new BasicStroke(3));
+        	//TODO adjust the line so it follows the hook properly when rotated
         	if(player.isLookingRight())
         		g.drawLine(	(int)player.getX()+(int)player.getWidth()+gct.getXOffset(),
         					(int)player.getY()+26+gct.getYOffset(),

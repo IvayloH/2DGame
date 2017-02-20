@@ -16,6 +16,7 @@ public class Boss extends Sprite
 	private Animation shootLeft;
 	private Animation shootRight;
 	private EnemyProjectile projectile;
+	Sound shooting;
 	
 	public Boss(EnemyProjectile p, Game gct)
 	{
@@ -136,6 +137,10 @@ public class Boss extends Sprite
 				projectile.setVelocityX((float)v.getdx());
 				projectile.setVelocityY((float)v.getdy());
 				projectile.setRotation(v.getAngle());
+				
+		        shooting = new Sound("assets/sounds/shoot.wav");
+		        shooting.start();
+		        
 				projectile.show();
 	    	}
 		}
