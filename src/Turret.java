@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import game2D.*;
 public class Turret extends Sprite
 {
-	ArrayList<Position<Float,Float>> turretSpawnPositions = new ArrayList<Position<Float,Float>>();
+	ArrayList<Pair<Float,Float>> turretSpawnPositions = new ArrayList<Pair<Float,Float>>();
 	Game gct;
 	Animation turretLeft;
 	Animation turretRight;
@@ -36,7 +36,7 @@ public class Turret extends Sprite
 	
 	public void addTurretSpawnPosition(float x, float y)
 	{
-		Position<Float,Float> turretPos = new Position<Float,Float>(x,y);
+		Pair<Float,Float> turretPos = new Pair<Float,Float>(x,y);
 		turretSpawnPositions.add(turretPos);
 	}
 }

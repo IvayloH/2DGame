@@ -1,16 +1,11 @@
-import java.awt.Graphics2D;
-import java.util.ArrayList;
-
 import game2D.*;
 
 public class Crate extends Sprite
 {
-	Game gct;
-	ArrayList<Position<Float,Float>> crateSpawnPositions = new ArrayList<Position<Float,Float>>();
-	int currCrate=0;
-	boolean crateHit = false;
-	float crateHitX;
-	Animation crateAnim;
+	private Game gct;
+	private boolean crateHit = false;
+	private float crateHitX;
+	private Animation crateAnim;
 	
 	public Crate(Game gct)
 	{
@@ -25,7 +20,6 @@ public class Crate extends Sprite
 	
     public void reset()
     {
-    	currCrate = 0;
     	crateHit=false;
     }
 	public void update(float elapsed, Player player, TileMap tmap)
@@ -44,39 +38,10 @@ public class Crate extends Sprite
 	    		crateHit=false;
 	    		tmap.setTileChar('c', ((int)this.getX()+5)/tmap.getTileWidth(), ((int)this.getY()+5)/tmap.getTileHeight());
 	    		this.hide();
-	    		currCrate++;
-	    		this.setRotation(0);
 	    	}
         }
 	}
-	/**
-	 * Draws the crate at the designated spawn location when the player gets close enough.
-	 */
-	public void drawCrate(Player player, Graphics2D g)
-	{
-        this.drawTransformed(g);
-        this.setOffsets(gct.getXOffset(), gct.getYOffset());
-        //setup next spawn position
-        if(currCrate<crateSpawnPositions.size() && !crateHit)
-        {
-	        Position<Float, Float> p = crateSpawnPositions.get(currCrate);
-	        if(player.getX()+gct.getWidth()>p.getX())
-	        {
-	        	this.setX(p.getX());
-	            this.setY(p.getY());	            
-	            this.show();
-	        }
-        }
-	}
-  	/**
-  	 * Create and add all the (x,y) locations to spawn a crate there
-       */
-    public void addCrateSpawnPoint(float x, float y)
-    {
-      	Position<Float,Float> p = new Position<Float,Float>(x,y);
-      	crateSpawnPositions.add(p);
-    }
-    
+
     private void loadAnim()
     {
         crateAnim = new Animation();

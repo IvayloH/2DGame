@@ -20,12 +20,21 @@ public class Batarang extends Sprite
 		drawTransformed(g);
 	}
 	
-	public void update(long elapsed, Thug enemy, Sprite player, Crate crate, Boss boss)
+	public void update(long elapsed, Player player, Boss boss, Level lvl)
 	{
-		if(gct.boundingBoxCollision(this,enemy))
-			enemy.kill();
-		if(gct.boundingBoxCollision(this,crate))
-			this.hide();
+		for(int i=0; i<lvl.getThugSpawnPositions().size(); i++)
+		{
+			Thug t = lvl.getThugSpawnPositions().get(i).getFirst();
+			if(gct.boundingBoxCollision(this,t))
+				t.kill();
+		}
+		for(int i=0; i<lvl.getCrateSpawnPositions().size(); i++)
+		{
+			Crate c = lvl.getCrateSpawnPositions().get(i).getFirst();
+			if(gct.boundingBoxCollision(this,c))
+				this.hide();
+		}
+		
 		if(gct.boundingBoxCollision(this,boss))
 		{
 			boss.takeDamage();
@@ -37,9 +46,13 @@ public class Batarang extends Sprite
 		}
 		if(this.getX()>player.getX()+gct.getWidth() || this.getX()<player.getX()-gct.getWidth())
 			this.hide();
-		update(elapsed);
+		if(!player.isGameOver())
+			update(elapsed);
 	}
-	
+	public void checkForSpriteCollisions()
+	{
+		
+	}
 	public void Throw(Player player, float mouseX, float mouseY)
 	{
 		if(!this.isVisible() && !player.isCrouching())
@@ -67,7 +80,7 @@ public class Batarang extends Sprite
 	private void loadAnim()
 	{
         batarangAnim = new Animation();
-        batarangAnim.addFrame(gct.loadImage("assets/images/Projectiles/thugProjectile.png"), 60);
+        batarangAnim.addFrame(gct.loadImage("assets/images/BatmanGadgets/batarang.gif"), 60);
         setAnimation(batarangAnim);
 	}
 }

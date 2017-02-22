@@ -5,7 +5,8 @@ public class Player extends Sprite
 {
 	private Animation standingLeft;
 	private Animation standingRight;
-	private Animation crouch;
+	private Animation crouch_Right;
+	private Animation crouch_Left;
 	private Animation crouchMoveLeft;
 	private Animation crouchMoveRight;
 	private Animation runRight;
@@ -211,7 +212,7 @@ public class Player extends Sprite
         {
         	if(this.equals(this)) 
         	{
-        		this.takeDamage(elapsed);
+        		this.takeDamage();
         		this.setState(Player.EPlayerState.DEAD);
         	}
         	else
@@ -251,14 +252,17 @@ public class Player extends Sprite
 	/**
 	 * Occurs when the player takes damage and reduces his health by 1.
 	 */
-	public void takeDamage(float elapsed)
+	public void takeDamage()
 	{
-		damaged = new Sound("assets/sounds/grunt_damaged.wav");
-		damaged.start();
     	lifeBars--;
     	invincible=true;
     	if(lifeBars<1)
     		playerState = EPlayerState.DEAD;
+    	else
+    	{
+    		damaged = new Sound("assets/sounds/grunt_damaged.wav");
+    		damaged.start();
+    	}
 	}
 	/**
 	 * Returns an animation depending on the State of the player.
@@ -268,7 +272,9 @@ public class Player extends Sprite
     	if(!isGrappleHookVisible)
     	{
     		if(playerState.equals(EPlayerState.CROUCH))
-    			return crouch;
+    		{
+    			return crouch_Right;
+    		}
     		if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
     			return crouchMoveLeft;
     		if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
@@ -306,7 +312,7 @@ public class Player extends Sprite
 	public void drawHUD(Graphics2D g)
 	{
         setOffsets(gct.getXOffset(), gct.getYOffset());
-        this.draw(g);
+        this.drawTransformed(g);
         		
     	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
         g.setColor(Color.red);
@@ -440,13 +446,16 @@ public class Player extends Sprite
         transparent32 = new Animation();
         transparent32.addFrame(gct.loadImage("assets/images/BatmanStates/transparent32.png"), 60);
         
-        crouch = new Animation();
-        crouch.addFrame(gct.loadImage("assets/images/testCube.png"), 60);
+        crouch_Right = new Animation();
+        crouch_Right.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_R.gif"), 60);
+        
+        crouch_Left = new Animation();
+        crouch_Left.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_L.gif"), 60);
 
         crouchMoveRight = new Animation();
-        crouchMoveRight.addFrame(gct.loadImage("assets/images/testCube.png"), 60);
+        crouchMoveRight.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_move_R.gif"), 60);
         
         crouchMoveLeft = new Animation();
-        crouchMoveLeft.addFrame(gct.loadImage("assets/images/testCube.png"), 60);
+        crouchMoveLeft.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_move_L.gif"), 60);
 	}
 }

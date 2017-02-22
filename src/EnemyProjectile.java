@@ -12,8 +12,9 @@ public class EnemyProjectile extends Sprite
 		this.gct = gct;
 		loadAnim();
 	}
-	public void handleTileMapCollision()
+	public void updateProjectile(long elapsed)
 	{
+		//handle TileMap collisions
 		if(this.isVisible())
         {
         	if(gct.checkLeftSideForCollision(this))
@@ -21,6 +22,7 @@ public class EnemyProjectile extends Sprite
         	if(gct.checkRightSideForCollision(this))
         		this.hide();
         }
+		this.update(elapsed);
 	}
 	public void draw(Graphics2D g)
 	{

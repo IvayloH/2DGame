@@ -1,47 +1,30 @@
+import java.util.ArrayList;
+import game2D.TileMap;
 
-public class LevelOne extends Game
-{
-	private static final long serialVersionUID = 1L;
-	
-	Player player;
-	Crate crates;
-	Thug thugs;
-	Boss boss;
-	
-	public LevelOne(Player player, Crate crates, Thug thugs, Boss boss)
+public class LevelOne extends Level
+{	
+	public LevelOne(Player player, Boss boss, TileMap tmap,Game gct)
 	{
+		crateSpawnPositions = new ArrayList<Pair<Crate,Pair<Float,Float>>>();
+		thugSpawnPositions = new ArrayList<Pair<Thug,Pair<Float,Float>>>();
 		this.player = player;
-		this.crates = crates;
-		this.thugs = thugs;
+		this.tmap = tmap;
 		this.boss = boss;
+		this.gct = gct;	
+		setUpLevel();
 	}
-	
+	private void setUpLevel()
+	{
+		player.show();
+		setUpThugs();
+		setUpCrates();
+        boss.setSpawn(1945f, 50f);
+	}
 	public void restartLevel()
 	{
-		thugs.reset();
-		crates.reset();
+		resetCurrentLevel();
 		boss.reset();
 		player.reset();
 		player.show();
 	}
-	
-	public void setUpLevel()
-	{
-		player.show();
-		setUpThugSpawnPositionsLevelOne();
-        setUpCrateSpawnPositionsLevelOne();
-        boss.setSpawn(1945f, 50f);
-	}
-    private void setUpCrateSpawnPositionsLevelOne()
-    {
-    	crates.addCrateSpawnPoint(704.f, 160.f);
-    	crates.addCrateSpawnPoint(1408.f, 160.f);
-    }
-    private void setUpThugSpawnPositionsLevelOne()
-    {
-    	thugs.addThugSpawnPoint(450.f, 100.f);
-    	thugs.addThugSpawnPoint(894.f, 100.f);
-    	thugs.addThugSpawnPoint(1440.f, 100.f);
-    }
-	
 }

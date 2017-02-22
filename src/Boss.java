@@ -18,12 +18,12 @@ public class Boss extends Sprite
 	private EnemyProjectile projectile;
 	Sound shooting;
 	
-	public Boss(EnemyProjectile p, Game gct)
+	public Boss(Game gct)
 	{
 		super();
 		this.gct = gct;
 		loadAnims();
-		projectile = p;
+		projectile = new EnemyProjectile(gct);
 		HP=maxHP;
 	}
 	public void setSpawn(float x, float y)
@@ -31,23 +31,8 @@ public class Boss extends Sprite
 		setX(x);
 		setY(y);
 	}
-	private void loadAnims() 
-	{
-        standLeft = new Animation();
-        standLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);
-        
-        //set starting animation
-        setAnimation(standLeft);
-        
-        standRight = new Animation();
-        standRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sr.gif"), 60);
-
-        shootRight = new Animation();
-        shootRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_right.gif"), 60);
-
-        shootLeft = new Animation();
-        shootLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_left.gif"), 60);
-	}
+	
+	public EnemyProjectile getProjectile() { return projectile; }
 
 	public void update(long elapsed, Player player)
 	{	
@@ -85,6 +70,8 @@ public class Boss extends Sprite
 			}
 		}
 		update(elapsed);
+		if(projectile.isVisible())
+			projectile.updateProjectile(elapsed);
 	}
 	
 	public void draw(Graphics2D g)
@@ -104,6 +91,8 @@ public class Boss extends Sprite
         	g.drawString("--", j, 72); //bottom line
         }
         g.drawLine(j, 36, j, 68); // side line
+        if(projectile.isVisible())
+        	projectile.draw(g);
 	}
 	
 	private void shoot(Player player)
@@ -158,5 +147,23 @@ public class Boss extends Sprite
 	public void reset()
 	{
 		HP = maxHP;
+	}
+	
+	private void loadAnims() 
+	{
+        standLeft = new Animation();
+        standLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);
+        
+        //set starting animation
+        setAnimation(standLeft);
+        
+        standRight = new Animation();
+        standRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sr.gif"), 60);
+
+        shootRight = new Animation();
+        shootRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_right.gif"), 60);
+
+        shootLeft = new Animation();
+        shootLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_left.gif"), 60);
 	}
 }

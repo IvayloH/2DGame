@@ -1,50 +1,33 @@
-import java.awt.Graphics2D;
-import java.util.ArrayList;
-
 import game2D.*;
 public class Thug extends Sprite
 {
-	ArrayList<Position<Float,Float>> thugSpawnPositions = new ArrayList<Position<Float,Float>>();
-	int currThug=0;
-	boolean killed = true;
-	Game gct;
-    float gravity = 0.01f;
-	EnemyProjectile projectile;
-	Animation animLeft;
-	Animation animRight;
-	Animation shootLeft;
-	Animation shootRight;
-	Sound shooting = null;
+	private boolean killed = false;
+	private Game gct;
+	private float gravity = 0.01f;
+	private EnemyProjectile projectile;
+	private Animation animLeft;
+	private Animation animRight;
+	private Animation shootLeft;
+	private Animation shootRight;
+	private Sound shooting = null;
 	
-	public Thug(EnemyProjectile projectile ,Game gct)
+	public Thug(Game gct)
 	{
 		super();
 		this.gct = gct;
-		this.projectile = projectile;
+		projectile = new EnemyProjectile(gct);
 		loadAssets();
+	}
+	public EnemyProjectile getProjectile() { return projectile; }
+	public boolean isKilled()
+	{
+		return killed;
 	}
 	public void reset()
 	{
-		currThug = 0;
-		killed=true;
+		killed=false;
 	}
-	public void drawThugAtNextPosition(Player player, Graphics2D g)
-	{
-        this.drawTransformed(g);
-        this.setOffsets(gct.getXOffset(), gct.getYOffset());
-
-		if(currThug<thugSpawnPositions.size() && killed)
-		{
-			Position<Float, Float> p = thugSpawnPositions.get(currThug);
-			if(player.getX()+gct.getWidth()>p.getX())
-		    {
-				this.setX(p.getX());
-				this.setY(p.getY());	            
-				this.show();
-				killed=false;
-		    }
-		}
-	}
+	
 	public void update(long elapsed, Player player)
 	{
 		if(!gct.checkBottomSideForCollision(this))
@@ -72,16 +55,10 @@ public class Thug extends Sprite
 		}
 		this.update(elapsed);
 	}
-	public void addThugSpawnPoint(float x, float y)
-	{
-		Position<Float,Float> p = new Position<Float,Float>(x,y);
-		thugSpawnPositions.add(p);
-	}
 	public void kill()
 	{
 		if(!killed)
 		{
-			currThug++;
 			killed = true;
 			this.hide();
 		}

@@ -5,10 +5,10 @@ import java.awt.Graphics2D;
 import game2D.*;
 public class GrappleHook extends Sprite
 {
-	Game gct;
-	boolean grappleHookRetracting = false;
-	float HOOKLIMIT;
-	Animation grapple;
+	private Game gct;
+	private boolean grappleHookRetracting = false;
+	private float HOOKLIMIT;
+	private Animation grapple;
 	
 	public GrappleHook( float hookLimit, Game gct)
 	{
@@ -17,24 +17,28 @@ public class GrappleHook extends Sprite
 		this.gct = gct;
 		loadAnim();
 	}
-	public void update(long elapsed, Player player, Crate crate)
+	public void update(long elapsed, Player player,  Level lvl)
 	{
+		for(int i=0; i<lvl.getCrateSpawnPositions().size(); i++)
+		{
+			Crate crate = lvl.getCrateSpawnPositions().get(i).getFirst();
+	    	if(gct.boundingBoxCollision(this, crate))
+	    	{
+	    		retractGrappleHook(player);
+	    		if(!gct.checkRightSideForCollision(crate))
+	    		{//if next to a tile, then crate already fallen
+	    			crate.setHit();
+	    			crate.setHitX(crate.getX());
+	    		}
+	    	}
+		}
+				
 		checkForCollision(player);
     	if((this.getX()>player.getX()+player.getWidth()+HOOKLIMIT)
 				|| (this.getX()<player.getX()-HOOKLIMIT)
 				|| (this.getY()>player.getY()+player.getHeight()/2+HOOKLIMIT)
 				|| (this.getY()<player.getY()-HOOKLIMIT))
 			retractGrappleHook(player);
-
-    	if(gct.boundingBoxCollision(this, crate))
-    	{
-    		retractGrappleHook(player);
-    		if(!gct.checkRightSideForCollision(crate))
-    		{//if next to a tile, then crate already fallen
-    			crate.setHit();
-    			crate.setHitX(crate.getX());
-    		}
-    	}
     	
 		if(grappleHookRetracting)
 		{
