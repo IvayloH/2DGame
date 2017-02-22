@@ -4,6 +4,8 @@ public class Thug extends Sprite
 	private boolean killed = false;
 	private Game gct;
 	private float gravity = 0.01f;
+	private final float PATROLSPEED = .04f;
+	private boolean walkingRight = false;
 	private EnemyProjectile projectile;
 	private Animation animLeft;
 	private Animation animRight;
@@ -19,14 +21,8 @@ public class Thug extends Sprite
 		loadAssets();
 	}
 	public EnemyProjectile getProjectile() { return projectile; }
-	public boolean isKilled()
-	{
-		return killed;
-	}
-	public void reset()
-	{
-		killed=false;
-	}
+	public boolean isKilled() { return killed; }
+	public void reset() { killed=false; }
 	
 	public void update(long elapsed, Player player)
 	{
@@ -44,23 +40,21 @@ public class Thug extends Sprite
 			this.setVelocityY(.0f);
 			gct.recoverSpriteStuckInBottomTile(this);
     		if(Math.random()>0.6)
-    			if(player.getX()+gct.getWidth()/2>this.getX() || this.getX()<player.getX()-gct.getWidth()/2) // check to see if player is close or not
-    				if(player.getY()+player.getHeight()-20>this.getY() || player.getY()-player.getHeight()+20>this.getY()) //player is near the same height
-    						Shoot(player);
-
-    		if(player.getX()>this.getX()+gct.getWidth()/2)
-    		{
-    			this.kill();
-    		}
+    			if(isPlayerClose(player))	
+    					Shoot(player);
 		}
+		patrol(player); // patrol the rooftops
 		this.update(elapsed);
 	}
+	/**
+	 * Sets the killed flag to true and hides the sprite.
+	 **/
 	public void kill()
 	{
 		if(!killed)
 		{
 			killed = true;
-			this.hide();
+			this.hide(); //TODO Replace with a new animation.
 		}
 	}
 	/**
@@ -100,7 +94,52 @@ public class Thug extends Sprite
 	    	}
 		}
 	}
+	private void patrol(Player player)
+	{
+		if(!isPlayerClose(player))
+		{
+			if(walkingRight)
+			{
+				if(gct.checkBottomSideForCollision(this) && !gct.checkRightSideForCollision(this))
+				{
+					this.setAnimation(animRight);
+					this.setVelocityX(PATROLSPEED);
+				}
+				else
+				{
+					this.setVelocityX(.0f);
+					walkingRight=false;
+				}
+			}
+			else
+			{
+				if(gct.checkBottomSideForCollision(this) && !gct.checkLeftSideForCollision(this))
+				{
+					this.setAnimation(animLeft);
+					this.setVelocityX(-PATROLSPEED);
+				}
+				else 
+				{
+					this.setVelocityX(.0f);
+					walkingRight=true;
+				}
+			}
+		}
+		else
+			this.setVelocityX(.0f);
+	}
 	
+	private boolean isPlayerClose(Player player)
+	{
+		return ((player.getX()+gct.getWidth()/2>this.getX() || this.getX()<player.getX()-gct.getWidth()/2)
+				&&(player.getY()+player.getHeight()+50>this.getY() || player.getY()-player.getHeight()+20>this.getY())); 
+		// check to see if player is close or not on the X axis
+		//then on the Y axis
+	}
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
 	private void loadAssets()
 	{
         animLeft = new Animation();

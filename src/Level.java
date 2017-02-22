@@ -14,12 +14,15 @@ public abstract class Level
 	protected Game gct;
 	protected EnemyProjectile projectile;
 	
-	public Level()
-	{
-		
-	}
 	public ArrayList<Pair<Crate,Pair<Float,Float>>> getCrateSpawnPositions() { return crateSpawnPositions; }
 	public ArrayList<Pair<Thug,Pair<Float,Float>>> getThugSpawnPositions() { return thugSpawnPositions; }
+	/**
+	 * Handles calling all other methods needed to set up the level. (empty)
+	 * */
+	void setUpLevel() { }
+	/**
+	 * Update the crates/boss/thugs and their projectiles if visible.
+	 * */
 	public void update(long elapsed)
 	{    
 		int i=0;
@@ -45,6 +48,9 @@ public abstract class Level
 		if(gct.boundingBoxCollision(boss.getProjectile(),player) && !player.isInvincible())
 			player.takeDamage();
 	}
+	/**
+	 * Draw each crate/thug by going through their ArrayLists accordingly.
+	 * */
 	public void draw(Graphics2D g)
 	{	//draw crates
 		for(int i=0; i<crateSpawnPositions.size(); i++)
@@ -83,9 +89,16 @@ public abstract class Level
 		for(i=0; i<crateSpawnPositions.size(); i++)
 		{
 			Crate c = crateSpawnPositions.get(i).getFirst();
-			c.reset();
+			Pair<Float,Float> location = crateSpawnPositions.get(i).getSecond();
+			resetCratesOnTileMap();
+			c.reset(location.getFirst(), location.getSecond());
 		}
 	}
+	/**
+	 * Scan through the tile map and replace every occurrence of 'a'
+	 * with an according tile char. Instantiate a new Thug and add it
+	 * along with the coordinates of the tile to the ArrayList.
+	 * */
     protected void setUpThugs()
     {
     	for(int y=0; y<tmap.getMapHeight(); y++)
@@ -106,6 +119,11 @@ public abstract class Level
     				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     			}
     }
+	/**
+	 * Scan through the tile map and replace every occurrence of 'c'
+	 * with an empty tile char. Instantiate a new Crate and add it
+	 * along with the coordinates of the tile to the ArrayList.
+	 * */
     protected void setUpCrates()
     {
     	for(int y=0; y<tmap.getMapHeight(); y++)
@@ -125,5 +143,17 @@ public abstract class Level
     	    		c.setY(pixelY);
     		      	tmap.setTileChar('.', x, y);
     			}
+    }
+	/**
+	 * Scan through the tile map and replace every occurrence of 'c'
+	 * with an according tile char. This will reset all of the crates
+	 * that have been hit and have been dropped down.
+	 * */
+    private void resetCratesOnTileMap()
+    {
+    	for(int y=0; y<tmap.getMapHeight(); y++)
+    		for(int x=0; x<tmap.getMapWidth(); x++)
+    			if(tmap.getTileChar(x, y)=='c') //find the tile with 'c' -> reset it
+    				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     }
 }

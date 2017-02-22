@@ -15,14 +15,14 @@ public class GrappleHook extends Sprite
 		super();
 		HOOKLIMIT = hookLimit;
 		this.gct = gct;
-		loadAnim();
+		loadAssets();
 	}
 	public void update(long elapsed, Player player,  Level lvl)
 	{
 		for(int i=0; i<lvl.getCrateSpawnPositions().size(); i++)
 		{
 			Crate crate = lvl.getCrateSpawnPositions().get(i).getFirst();
-	    	if(gct.boundingBoxCollision(this, crate))
+	    	if(gct.boundingBoxCollision(this, crate) && !grappleHookRetracting)
 	    	{
 	    		retractGrappleHook(player);
 	    		if(!gct.checkRightSideForCollision(crate))
@@ -52,7 +52,6 @@ public class GrappleHook extends Sprite
 		}
 		update(elapsed);
 	}
-	
 	  /**
      * Simulate the effect that the grapple hook retracts back into the grapple gun.
      */
@@ -132,7 +131,11 @@ public class GrappleHook extends Sprite
     	else if(gct.checkLeftSideForCollision(this))
     			retractGrappleHook(player);
   	}
-  	private void loadAnim()
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
+  	private void loadAssets()
   	{
         grapple = new Animation();
         grapple.addFrame(gct.loadImage("assets/images/Projectiles/GrappleHook.png"), 60);

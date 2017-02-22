@@ -11,20 +11,19 @@ public class Crate extends Sprite
 	{
 		super();
 		this.gct = gct;
-		loadAnim();
+		loadAssets();
 	}
 	public void setHit() { crateHit = true; }
 	public void setHitX(float x) { crateHitX = x;}
 	public boolean isHit() { return crateHit;}
 	public float getHitX() { return crateHitX;}
-	
-    public void reset()
-    {
-    	crateHit=false;
-    }
+	/**
+	 * Update the crate if it has been hit by the Grapple Hook.
+	 * Rotates and moves the crate until it is in the needed position.
+	 * Replaces the crate with a 'c' tile char in the tile map.
+	 */
 	public void update(float elapsed, Player player, TileMap tmap)
 	{
-
         if(crateHit)
         {
 			if(this.getRotation()>-90)
@@ -37,12 +36,22 @@ public class Crate extends Sprite
 	    	{
 	    		crateHit=false;
 	    		tmap.setTileChar('c', ((int)this.getX()+5)/tmap.getTileWidth(), ((int)this.getY()+5)/tmap.getTileHeight());
+	    		//adding 5 to both X and Y to make sure we're in the correct tile 
 	    		this.hide();
 	    	}
         }
 	}
-
-    private void loadAnim()
+	public void reset(float x, float y)
+	{
+		setX(x);
+		setY(y);
+		crateHit=false; 
+	}
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
+    private void loadAssets()
     {
         crateAnim = new Animation();
         crateAnim.addFrame(gct.loadImage("assets/maps/crate.png"), 60);

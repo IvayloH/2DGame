@@ -13,7 +13,7 @@ public class LevelOne extends Level
 		this.gct = gct;	
 		setUpLevel();
 	}
-	private void setUpLevel()
+	void setUpLevel()
 	{
 		player.show();
 		setUpThugs();

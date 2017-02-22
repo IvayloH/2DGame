@@ -49,9 +49,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Player player = null;
     private GrappleHook grappleHook = null;
     private Batarang batarang = null;
-    //private EnemyProjectile enemyProjectile = null;
     private Boss boss = null;
-    private Sound levelMusic;
+    //private Sound levelMusic;
 	private Sound jump = null;
 	
 	private LevelOne lvlOne;
@@ -193,27 +192,28 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if(crouchKey)
     	{
-    		if(!player.isCrouching())
-    			player.shiftY(30);
-    		if(rightKey) 
-    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
-    		else if(leftKey) 
-    			return Player.EPlayerState.CROUCH_MOVE_LEFT;
-    		else 
-    			return Player.EPlayerState.CROUCH;
+    		if(!player.isJumping())
+    		{
+	    		if(!player.isCrouching())
+	    			player.shiftY(30);
+	    		if(rightKey) 
+	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
+	    		else if(leftKey) 
+	    			return Player.EPlayerState.CROUCH_MOVE_LEFT;
+	    		else 
+	    			return Player.EPlayerState.CROUCH;
+    		}
     	}
     	
     	if(jumpKey && checkBottomSideForCollision(player))
     	{
-    		{
-    			jumpStartPos=player.getY();
-	    		if(rightKey)
-	    			return Player.EPlayerState.JUMP_RIGHT;
-	    		else if(leftKey)
-	    			return Player.EPlayerState.JUMP_LEFT;
-	    		else
-	    			return Player.EPlayerState.JUMP;
-    		}
+			jumpStartPos=player.getY();
+    		if(rightKey)
+    			return Player.EPlayerState.JUMP_RIGHT;
+    		else if(leftKey)
+    			return Player.EPlayerState.JUMP_LEFT;
+    		else
+    			return Player.EPlayerState.JUMP;
     	}
 		return Player.EPlayerState.STANDING;
     }
@@ -471,14 +471,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	
 	
 	/*
-	 *     LOAD MAP,IMAGES,ANIMATIONS,DRAW,OFFSETS
+	 *     LOAD RESOURCES AND OFFSETS
 	 */
 	private void loadAssets()
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
         bgImage = loadImage("assets/images/city.png");
-        levelMusic = new Sound("assets/sounds/level.wav");
-        levelMusic.start();
+        //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
+        //levelMusic.start();
 	}
 	private void loadSprites()
 	{
@@ -488,8 +488,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         grappleHook.hide();
         
         batarang = new Batarang(this);
-        
-        //enemyProjectile = new EnemyProjectile(this);
         
         boss = new Boss(this);
         
@@ -537,7 +535,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	int yRange = (screenHeight-5)+1;
         	int x = (int)(Math.random()*xRange)+5;
         	int y = (int)(Math.random()*yRange)+5;
-        	g.drawLine(x, y, x, y+3);
+        	g.drawLine(x, y, x-3, y+3);
         }
 	}
 	private void calculateOffsets()

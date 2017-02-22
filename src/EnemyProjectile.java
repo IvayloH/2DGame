@@ -4,13 +4,13 @@ import game2D.*;
 
 public class EnemyProjectile extends Sprite
 {
-	Game gct;
-	Animation projectile;
+	private Game gct;
+	private Animation projectile;
 	public EnemyProjectile(Game gct) 
 	{
 		super();
 		this.gct = gct;
-		loadAnim();
+		loadAssets();
 	}
 	public void updateProjectile(long elapsed)
 	{
@@ -29,7 +29,11 @@ public class EnemyProjectile extends Sprite
 		setOffsets(gct.getXOffset(),gct.getYOffset());
 		drawTransformed(g);
 	}
-	private void loadAnim()
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
+	private void loadAssets()
 	{
         projectile = new Animation();
         projectile.addFrame(gct.loadImage("assets/images/Projectiles/thugProjectile.png"), 60);

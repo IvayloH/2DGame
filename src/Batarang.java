@@ -4,22 +4,16 @@ import game2D.*;
 
 public class Batarang extends Sprite
 {
-	Game gct;
-	Animation batarangAnim;
-	Sound throwing;
+	private Game gct;
+	private Animation batarangAnim;
+	private Sound throwing;
+	
 	public Batarang(Game gct)
 	{
 		super();
 		this.gct = gct;
-		loadAnim();
+		loadAssets();
 	}
-	
-	public void draw(Graphics2D g)
-	{
-		setOffsets(gct.getXOffset(), gct.getYOffset());
-		drawTransformed(g);
-	}
-	
 	public void update(long elapsed, Player player, Boss boss, Level lvl)
 	{
 		for(int i=0; i<lvl.getThugSpawnPositions().size(); i++)
@@ -49,9 +43,10 @@ public class Batarang extends Sprite
 		if(!player.isGameOver())
 			update(elapsed);
 	}
-	public void checkForSpriteCollisions()
+	public void draw(Graphics2D g)
 	{
-		
+		setOffsets(gct.getXOffset(), gct.getYOffset());
+		drawTransformed(g);
 	}
 	public void Throw(Player player, float mouseX, float mouseY)
 	{
@@ -73,11 +68,15 @@ public class Batarang extends Sprite
 			this.setVelocityY((float)v.getdy());
 			throwing = new Sound("assets/sounds/grunt_throw.wav");
 			throwing.start();
+			this.setRotation(v.getAngle());
 			this.show();
 		}
 	}
-	
-	private void loadAnim()
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
+	private void loadAssets()
 	{
         batarangAnim = new Animation();
         batarangAnim.addFrame(gct.loadImage("assets/images/BatmanGadgets/batarang.gif"), 60);

@@ -22,7 +22,7 @@ public class Boss extends Sprite
 	{
 		super();
 		this.gct = gct;
-		loadAnims();
+		loadAssets();
 		projectile = new EnemyProjectile(gct);
 		HP=maxHP;
 	}
@@ -31,9 +31,14 @@ public class Boss extends Sprite
 		setX(x);
 		setY(y);
 	}
-	
+	public boolean isDead() { return dead; }
+	public void reset() { HP = maxHP; }
 	public EnemyProjectile getProjectile() { return projectile; }
-
+	public void takeDamage() { if(!invulnerable) HP--; }
+	/**
+	 * Updates the boss and the projectile if visible. 
+	 * Calls the shoot method in the end.
+	 */
 	public void update(long elapsed, Player player)
 	{	
 		if(HP<1)
@@ -73,7 +78,10 @@ public class Boss extends Sprite
 		if(projectile.isVisible())
 			projectile.updateProjectile(elapsed);
 	}
-	
+	/**
+	 * Handles setting offsets for the boss and drawing 
+	 * the boss HUD and projectile.
+	 */
 	public void draw(Graphics2D g)
 	{
 		setOffsets(gct.getXOffset(), gct.getYOffset());
@@ -94,7 +102,9 @@ public class Boss extends Sprite
         if(projectile.isVisible())
         	projectile.draw(g);
 	}
-	
+	/**
+	 * Handles the shooting animation and action.
+	 */
 	private void shoot(Player player)
 	{
 		if(!player.isGameOver())//stop shooting after game is over
@@ -134,22 +144,11 @@ public class Boss extends Sprite
 	    	}
 		}
 	}
-	
-	public void takeDamage()
-	{
-		if(!invulnerable) 
-			HP--;
-	}
-	public boolean isDead()
-	{
-		return dead;
-	}
-	public void reset()
-	{
-		HP = maxHP;
-	}
-	
-	private void loadAnims() 
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
+	private void loadAssets() 
 	{
         standLeft = new Animation();
         standLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);

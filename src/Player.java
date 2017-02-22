@@ -3,6 +3,7 @@ import java.awt.*;
 import game2D.*;
 public class Player extends Sprite
 {
+	//Animations
 	private Animation standingLeft;
 	private Animation standingRight;
 	private Animation crouch_Right;
@@ -17,9 +18,9 @@ public class Player extends Sprite
 	private Animation grappleHookRight;
 	private Animation transparent64;
 	private Animation transparent32;
-	
+	//Sounds
 	private Sound damaged = null;
-	
+	//Flags
 	private boolean lookingRight = true;
 	private boolean invincible = false;
 	private boolean flashy = false;
@@ -28,15 +29,15 @@ public class Player extends Sprite
 	private boolean collisionRIGHT = false;
 	private boolean collisionLEFT = false;
 	private boolean gameOver = false;
-	
+	//Gadgets
 	private final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
 	private String currentGadget = "Grapple Hook";
-
+	//useful variables
 	private float startingX, startingY;
 	private int lifeBars;
 	private int amountOfDamageBeforeDeath;
 	private final float RUNSPEED = .07f;
-	private final float JUMPHEIGHT = 48;  // ??? tile.height()/2 + tile.height()/4
+	private final float JUMPHEIGHT = 48;
 	private float invincibleTime = .0f;
 	private float gravity = 0.01f;
 
@@ -84,13 +85,17 @@ public class Player extends Sprite
 	 * Returns currently equipped gadget.
 	 * */
 	public String getCurrentGadget() { return currentGadget; }
-	
+	/**
+	 * Get results from the checks for collisions and other changes in player state.
+	 * Update player based on those results.
+	 * */
 	public void update(long elapsed, boolean isGrappleHookVisible, float jumpStartPoint, TileMap tmap)
 	{
 		collisionABOVE = gct.checkTopSideForCollision(this);
 		collisionBELOW = gct.checkBottomSideForCollision(this);
 		collisionRIGHT = gct.checkRightSideForCollision(this);
 		collisionLEFT = gct.checkLeftSideForCollision(this);
+		
 		if(invincible)
     	{
     		invincibleTime+=elapsed;
@@ -202,53 +207,9 @@ public class Player extends Sprite
         else
         	hide();
         
-    	handleTileMapCollisions(elapsed,tmap);
+    	handleTileMapCollisions(tmap);
 
 	}
-    private void handleTileMapCollisions(float elapsed, TileMap tmap)
-    {
-    	//Check if sprite has fallen off screen
-        if (this.getY() + this.getHeight() > tmap.getPixelHeight())
-        {
-        	if(this.equals(this)) 
-        	{
-        		this.takeDamage();
-        		this.setState(Player.EPlayerState.DEAD);
-        	}
-        	else
-        		this.hide();
-        }
-        
-    	//Check Tile underneath the sprite for collision
-        collisionBELOW = gct.checkBottomSideForCollision(this);
-    	if(collisionBELOW)
-    		gct.recoverSpriteStuckInBottomTile(this);
-        
-        //Check Tile to the RIGHT of the sprite for collision
-        if(this.getState().equals(Player.EPlayerState.RUN_RIGHT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_RIGHT))
-        	collisionRIGHT = gct.checkRightSideForCollision(this);
-
-        
-        //Check Tile to the LEFT of the sprite for collision
-        if(this.getState().equals(Player.EPlayerState.RUN_LEFT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_LEFT))
-        	collisionLEFT = gct.checkLeftSideForCollision(this);
-
-        
-        //Check Tile ABOVE the sprite for collision
-        if(isJumping())
-        {
-        	collisionABOVE = gct.checkTopSideForCollision(this);
-        	collisionRIGHT = gct.checkRightSideForCollision(this);
-        	collisionLEFT = gct.checkLeftSideForCollision(this);
-        }       
-        
-        if(this.getState().equals(Player.EPlayerState.FALLING))
-        {
-        	collisionRIGHT = gct.checkRightSideForCollision(this);
-        	collisionLEFT = gct.checkLeftSideForCollision(this);
-        }
-    }
-    
 	/**
 	 * Occurs when the player takes damage and reduces his health by 1.
 	 */
@@ -273,7 +234,9 @@ public class Player extends Sprite
     	{
     		if(playerState.equals(EPlayerState.CROUCH))
     		{
-    			return crouch_Right;
+    			if(lookingRight)
+    				return crouch_Right;
+    			return crouch_Left;
     		}
     		if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
     			return crouchMoveLeft;
@@ -314,7 +277,12 @@ public class Player extends Sprite
         setOffsets(gct.getXOffset(), gct.getYOffset());
         this.drawTransformed(g);
         		
-    	String msg = String.format("Equipped Gadget: %s", currentGadget); // TODO WILL BE REPLACED WITH AN IMAGE
+    	String msg = "Equipped Gadget: "; 
+    	if(currentGadget.equals("Batarang"))
+    		g.drawImage(gct.loadImage("assets/images/BatmanGadgets/batarang.png"), 125, 75, null);
+    	else if(currentGadget.equals("Grapple Hok"))
+    		g.drawImage(gct.loadImage("assets/images/BatmanGadgets/grappleHookGun.png"), 125, 75, null);
+    	
         g.setColor(Color.red);
         g.drawString(msg, 20, 90);
         
@@ -365,6 +333,9 @@ public class Player extends Sprite
 				currentGadget = gadgets[count];
 		}
 	}
+	/**
+	 * Sets the animation for the player based on the location of the mouse on the screen.
+	 * */
 	public void updateDirectionBasedOnMouseLocation(int mouseX, boolean isGrappleHookVisible)
 	{
 		if(mouseX<this.getX()+gct.getXOffset())
@@ -390,6 +361,9 @@ public class Player extends Sprite
 			}
 		}
 	}
+	/**
+	 * Reset Player position, health and game state.
+	 * */
 	public void reset()
 	{
 		lifeBars = amountOfDamageBeforeDeath;
@@ -397,21 +371,73 @@ public class Player extends Sprite
 		this.setX(startingX);
 		this.setY(startingY);
 		this.show();
-		gameOver=false;
+		gameOver=false; //TODO move gameOver state out of player and into level or game
 	}
+	/**
+	 * Returns true if player is in any of the jumping states.
+	 * */
 	public boolean isJumping()
 	{
 		return (playerState.equals(EPlayerState.JUMP) 
 				|| playerState.equals(EPlayerState.JUMP_RIGHT) 
 				|| playerState.equals(EPlayerState.JUMP_LEFT));
 	}
+	/**
+	 * Returns true if player is in any of the crouching states.
+	 * */
 	public boolean isCrouching()
 	{
 		return (playerState.equals(EPlayerState.CROUCH) 
 				|| playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT) 
 				||playerState.equals(EPlayerState.CROUCH_MOVE_LEFT));
 	}
-	
+	/**
+	 *  Check for tile map collisions using the collision methods from the Game Class.
+	 *  Store the results in the collision flags.
+	 *  Or make appropriate changes to the player state.
+	 * */
+	private void handleTileMapCollisions(TileMap tmap)
+    {
+    	//Check if sprite has fallen off screen
+        if (this.getY() + this.getHeight() > tmap.getPixelHeight())
+        {
+        	this.takeDamage();
+        	this.setState(Player.EPlayerState.DEAD);
+        }
+        
+    	//Check Tile underneath the sprite for collision
+        collisionBELOW = gct.checkBottomSideForCollision(this);
+    	if(collisionBELOW)
+    		gct.recoverSpriteStuckInBottomTile(this);
+        
+        //Check Tile to the RIGHT of the sprite for collision
+        if(this.getState().equals(Player.EPlayerState.RUN_RIGHT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_RIGHT))
+        	collisionRIGHT = gct.checkRightSideForCollision(this);
+
+        
+        //Check Tile to the LEFT of the sprite for collision
+        if(this.getState().equals(Player.EPlayerState.RUN_LEFT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_LEFT))
+        	collisionLEFT = gct.checkLeftSideForCollision(this);
+
+        
+        //Check Tile ABOVE the sprite for collision
+        if(isJumping())
+        {
+        	collisionABOVE = gct.checkTopSideForCollision(this);
+        	collisionRIGHT = gct.checkRightSideForCollision(this);
+        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        }       
+        
+        if(this.getState().equals(Player.EPlayerState.FALLING))
+        {
+        	collisionRIGHT = gct.checkRightSideForCollision(this);
+        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        }
+    }
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
 	private void loadAssets()
 	{
 		standingRight = new Animation();

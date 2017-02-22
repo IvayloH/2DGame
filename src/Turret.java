@@ -1,23 +1,18 @@
 import java.awt.Graphics2D;
-import java.util.ArrayList;
 import game2D.*;
 public class Turret extends Sprite
 {
-	ArrayList<Pair<Float,Float>> turretSpawnPositions = new ArrayList<Pair<Float,Float>>();
-	Game gct;
-	Animation turretLeft;
-	Animation turretRight;
-	Animation turretFireLeft;
-	Animation turretFireRight;
+	private Game gct;
+	private Animation turretLeft;
+	private Animation turretRight;
+	private Animation turretFireLeft;
+	private Animation turretFireRight;
 	
-	public Turret(Animation turretLeft, Animation turretRight, Animation turretFireLeft, Animation turretFireRight, Game gct)
+	public Turret(Game gct)
 	{
-		super(turretLeft);
-		this.turretLeft = turretLeft;
-		this.turretRight = turretRight;
-		this.turretFireLeft = turretFireLeft;
-		this.turretFireRight = turretFireRight;
+		super();
 		this.gct = gct;
+		loadAssets();
 	}
 	
 	public void draw(Graphics2D g)
@@ -33,10 +28,23 @@ public class Turret extends Sprite
 			setVelocityY(.0f);
 		}
 	}
-	
-	public void addTurretSpawnPosition(float x, float y)
+	/**
+	 * Load the necessary assets for the sprite to work.
+	 * Also sets default animation.
+	 * */
+	private void loadAssets()
 	{
-		Pair<Float,Float> turretPos = new Pair<Float,Float>(x,y);
-		turretSpawnPositions.add(turretPos);
+		 turretLeft = new Animation();
+	     turretLeft.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_idle_l.gif"), 60);
+	     setAnimation(turretLeft);
+	     
+	     turretRight = new Animation();
+	     turretRight.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_idle_r.gif"), 	60);
+	     
+	     turretFireLeft = new Animation();
+	     turretFireLeft.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_sh_l.gif"), 60);
+	     
+	     turretFireRight = new Animation();
+	     turretFireRight.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_sh_r.gif"), 60);
 	}
 }
