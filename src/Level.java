@@ -14,12 +14,24 @@ public abstract class Level
 	protected Game gct;
 	protected EnemyProjectile projectile;
 	
+	public Level(Player player, Boss boss, TileMap tmap,Game gct)
+	{
+		crateSpawnPositions = new ArrayList<Pair<Crate,Pair<Float,Float>>>();
+		thugSpawnPositions = new ArrayList<Pair<Thug,Pair<Float,Float>>>();
+		this.player = player;
+		this.tmap = tmap;
+		this.boss = boss;
+		this.gct = gct;	
+	}
+	
 	public ArrayList<Pair<Crate,Pair<Float,Float>>> getCrateSpawnPositions() { return crateSpawnPositions; }
 	public ArrayList<Pair<Thug,Pair<Float,Float>>> getThugSpawnPositions() { return thugSpawnPositions; }
+	
 	/**
 	 * Handles calling all other methods needed to set up the level. (empty)
 	 * */
 	void setUpLevel() { }
+	
 	/**
 	 * Update the crates/boss/thugs and their projectiles if visible.
 	 * */
@@ -35,7 +47,7 @@ public abstract class Level
 		{
 			Thug th = thugSpawnPositions.get(i).getFirst();
 			if(th.isVisible())
-				th.update(elapsed, player);
+				th.update(elapsed, player, tmap);
 			if(th.getProjectile().isVisible())
 	    	{
 	    		if(gct.boundingBoxCollision(th.getProjectile(),player) && !player.isInvincible())
@@ -78,13 +90,14 @@ public abstract class Level
 	/**
 	 * Reset the Crate and Thug Lists by calling their reset methods.
 	 * */
-	public void resetCurrentLevel()
+	protected void resetCurrentLevel()
 	{
 		int i=0;
 		for(i=0; i<thugSpawnPositions.size(); i++)
 		{
 			Thug th = thugSpawnPositions.get(i).getFirst();
-			th.reset();
+			Pair<Float,Float> location = thugSpawnPositions.get(i).getSecond();
+			th.reset(location.getFirst(), location.getSecond());
 		}
 		for(i=0; i<crateSpawnPositions.size(); i++)
 		{
@@ -121,7 +134,7 @@ public abstract class Level
     }
 	/**
 	 * Scan through the tile map and replace every occurrence of 'c'
-	 * with an empty tile char. Instantiate a new Crate and add it
+	 * with an according tile char. Instantiate a new Crate and add it
 	 * along with the coordinates of the tile to the ArrayList.
 	 * */
     protected void setUpCrates()
@@ -141,7 +154,8 @@ public abstract class Level
     		      	//set x,y for the crate
     	    		c.setX(pixelX);
     	    		c.setY(pixelY);
-    		      	tmap.setTileChar('.', x, y);
+    	    		//set tile according to the one above it
+    		      	tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     			}
     }
 	/**

@@ -7,6 +7,8 @@ public class Turret extends Sprite
 	private Animation turretRight;
 	private Animation turretFireLeft;
 	private Animation turretFireRight;
+	private EnemyProjectile projectile;
+	private boolean killed = false;
 	
 	public Turret(Game gct)
 	{
@@ -14,6 +16,11 @@ public class Turret extends Sprite
 		this.gct = gct;
 		loadAssets();
 	}
+	
+	public EnemyProjectile getProjectile() { return projectile; }
+	public boolean isKilled() { return killed; }
+	public void kill() { killed = true; }
+	public void reset() { killed = false; }
 	
 	public void draw(Graphics2D g)
 	{

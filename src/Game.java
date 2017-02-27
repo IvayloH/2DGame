@@ -110,9 +110,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         if(!player.isGameOver())
         {
 	        grappleHook.drawGrappleHook(player, g);
-	        lvlOne.draw	(g);
 	        batarang.draw(g);
         }
+        lvlOne.draw	(g);
         
         if(helpKey && !bossFight)
         	drawHELP(g);
@@ -194,8 +194,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(!player.isJumping())
     		{
-	    		if(!player.isCrouching())
-	    			player.shiftY(30);
+	    		//if(!player.isCrouching())
+	    			//player.shiftY(30);
 	    		if(rightKey) 
 	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
 	    		else if(leftKey) 
@@ -236,7 +236,16 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void keyPressed(KeyEvent e) 
     { 
     	int key = e.getKeyCode();
-    	
+    	if(key==KeyEvent.VK_1)
+    	{
+    		tmap.loadMap("assets/maps", "level1.txt");
+    		lvlOne = new LevelOne(player, boss, tmap, this);
+    	}
+    	if(key==KeyEvent.VK_2)
+    	{
+    		tmap.loadMap("assets/maps", "level2.txt");
+    		lvlOne = new LevelOne(player, boss, tmap, this);
+    	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
 

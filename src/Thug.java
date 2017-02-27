@@ -22,10 +22,13 @@ public class Thug extends Sprite
 	}
 	public EnemyProjectile getProjectile() { return projectile; }
 	public boolean isKilled() { return killed; }
-	public void reset() { killed=false; }
 	
-	public void update(long elapsed, Player player)
+	
+	public void update(long elapsed, Player player, TileMap tmap)
 	{
+		if (this.getY() + this.getHeight() > tmap.getPixelHeight())
+			this.kill();
+		
 		if(!gct.checkBottomSideForCollision(this))
 		{
 			this.setVelocityY(.5f);
@@ -41,10 +44,21 @@ public class Thug extends Sprite
 			gct.recoverSpriteStuckInBottomTile(this);
     		if(Math.random()>0.6)
     			if(isPlayerClose(player))	
-    					Shoot(player);
+    					shootHorizontal(player);
 		}
-		patrol(player); // patrol the rooftops
 		this.update(elapsed);
+		//if(gct.checkBottomSideForCollision(this))
+			patrol(player, tmap); // patrol the rooftops
+	}
+	/**
+	 * Reset the position to the thug's original position
+	 * and set the killed flag to false.
+	 **/
+	public void reset(float x, float y) 
+	{
+		setX(x);
+		setY(y);
+		killed=false; 
 	}
 	/**
 	 * Sets the killed flag to true and hides the sprite.
@@ -60,7 +74,7 @@ public class Thug extends Sprite
 	/**
 	 * Handles the shooting animation and action.
 	 */
-	private void Shoot(Player player)
+	private void shootHorizontal(Player player)
 	{
 		if(!player.isGameOver())//stop shooting after game is over
 		{
@@ -94,41 +108,53 @@ public class Thug extends Sprite
 	    	}
 		}
 	}
-	private void patrol(Player player)
+	private void patrol(Player player, TileMap tmap)//FIXME
 	{
 		if(!isPlayerClose(player))
 		{
 			if(walkingRight)
 			{
-				if(gct.checkBottomSideForCollision(this) && !gct.checkRightSideForCollision(this))
-				{
-					this.setAnimation(animRight);
-					this.setVelocityX(PATROLSPEED);
-				}
-				else
+				if(!modifiedThugCheckBottomSideForCollision(tmap) || gct.checkRightSideForCollision(this))
 				{
 					this.setVelocityX(.0f);
 					walkingRight=false;
 				}
+				else
+				{
+					this.setAnimation(animRight);
+					this.setVelocityX(PATROLSPEED);
+				}
 			}
 			else
 			{
-				if(gct.checkBottomSideForCollision(this) && !gct.checkLeftSideForCollision(this))
+				if(!modifiedThugCheckBottomSideForCollision(tmap) || gct.checkLeftSideForCollision(this))
+				{	
+					this.setVelocityX(.0f);
+					walkingRight=true;
+				}
+				else
 				{
 					this.setAnimation(animLeft);
 					this.setVelocityX(-PATROLSPEED);
-				}
-				else 
-				{
-					this.setVelocityX(.0f);
-					walkingRight=true;
 				}
 			}
 		}
 		else
 			this.setVelocityX(.0f);
 	}
-	
+	private boolean modifiedThugCheckBottomSideForCollision(TileMap tmap)
+	{
+		boolean hit = false;
+		char tileCharBottom;
+		
+		if(walkingRight)
+			tileCharBottom = tmap.getTileChar(((int)this.getX()+this.getWidth()+this.getWidth()/2)/tmap.getTileWidth(), (int)(this.getY()+this.getHeight())/tmap.getTileHeight());
+		else
+			tileCharBottom = tmap.getTileChar(((int)this.getX()-this.getWidth()/2)/tmap.getTileWidth(), (int)(this.getY()+this.getHeight())/tmap.getTileHeight());
+		if(tileCharBottom == 'r')
+			hit = true;
+		return hit;
+	}
 	private boolean isPlayerClose(Player player)
 	{
 		return ((player.getX()+gct.getWidth()/2>this.getX() || this.getX()<player.getX()-gct.getWidth()/2)

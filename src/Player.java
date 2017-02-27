@@ -194,10 +194,8 @@ public class Player extends Sprite
     	{
     		this.setVelocityY(.05f);
     		this.setVelocityY(this.getVelocityY()+(gravity*elapsed)); // gravity adjustment
-    		if(!isCrouching())
-    		{
-    			playerState = EPlayerState.FALLING;
-    		}
+    		//if(!isCrouching())
+    			//playerState = EPlayerState.FALLING;
     	}
     	if(!invincible)
     		setAnimation(getAppropriateAnimation(isGrappleHookVisible));
