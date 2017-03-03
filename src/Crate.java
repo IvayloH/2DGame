@@ -1,16 +1,14 @@
 import game2D.*;
 
-public class Crate extends Sprite
+public class Crate extends SpriteExtension
 {
-	private Game gct;
 	private boolean crateHit = false;
 	private float crateHitX;
-	private Animation crateAnim;
 	
-	public Crate(Game gct)
+	public Crate(String tag)
 	{
 		super();
-		this.gct = gct;
+		this.tag = tag;
 		loadAssets();
 	}
 	public void setHit() { crateHit = true; }
@@ -24,13 +22,14 @@ public class Crate extends Sprite
 	 */
 	public void update(float elapsed, Player player, TileMap tmap)
 	{
+		collider = new Collision(tmap);
         if(crateHit)
         {
 			if(this.getRotation()>-90)
 				this.setRotation(this.getRotation()-2.0);
 	    	if(this.getX()>getHitX()-32)
 	    		this.setX(this.getX()-2);
-	    	else if(!gct.checkBottomSideForCollision(this))
+	    	else if(!collider.checkBottomSideForCollision(this))
 	    		this.setY(this.getY()+2);
 	    	else
 	    	{
@@ -47,14 +46,4 @@ public class Crate extends Sprite
 		setY(y);
 		crateHit=false; 
 	}
-	/**
-	 * Load the necessary assets for the sprite to work.
-	 * Also sets default animation.
-	 * */
-    private void loadAssets()
-    {
-        crateAnim = new Animation();
-        crateAnim.addFrame(gct.loadImage("assets/maps/crate.png"), 60);
-        setAnimation(crateAnim);
-    }
 }

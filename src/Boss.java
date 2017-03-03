@@ -1,29 +1,18 @@
-import java.awt.Color;
-import java.awt.Graphics2D;
-
 import game2D.*;
-public class Boss extends Sprite
+public class Boss extends SpriteExtension
 {
-	Game gct;
-	private float gravity = 0.01f;
 	private int HP;
 	private int maxHP=10;
 	private boolean invulnerable = false;
 	private long invulnerableTime = 0;
 	private boolean dead = false;
-	private Animation standLeft;
-	private Animation standRight;
-	private Animation shootLeft;
-	private Animation shootRight;
-	private EnemyProjectile projectile;
-	Sound shooting;
-	
-	public Boss(Game gct)
+
+	public Boss(String tag)
 	{
 		super();
-		this.gct = gct;
+		this.tag = tag;
 		loadAssets();
-		projectile = new EnemyProjectile(gct);
+		projectile = new SpriteExtension("projectile");
 		HP=maxHP;
 	}
 	public void setSpawn(float x, float y)
@@ -32,104 +21,56 @@ public class Boss extends Sprite
 		setY(y);
 	}
 	public boolean isDead() { return dead; }
+	public int getCurrentHP() { return HP; }
+	public int getMaxHP() { return maxHP; }
 	public void reset() { HP = maxHP; }
-	public EnemyProjectile getProjectile() { return projectile; }
-	public void takeDamage() { if(!invulnerable) HP--; }
+	public SpriteExtension getProjectile() { return projectile; }
+	public void kill() { dead=true; }
+	public void lookLeft() { setAnimation(standLeft); }
+	public void lookRight() { setAnimation(standRight); }
+	public boolean isInvulnerable() { return invulnerable; }
+	public long getInvulnerableTimer() { return invulnerableTime; }
+	public void setInvulnerable(boolean state) { invulnerable = state;}
+	public void setInvulnerableTimer(long time) { invulnerableTime = time; }
 	/**
-	 * Updates the boss and the projectile if visible. 
-	 * Calls the shoot method in the end.
+	 * Decrease boss HP and make invulnerable.
 	 */
-	public void update(long elapsed, Player player)
-	{	
-		if(HP<1)
-		{
-			hide();
-			dead=true;
-		}
-		else
-		{
-			if(!gct.checkBottomSideForCollision(this))
-			{
-				this.setVelocityY(.5f);
-				this.setVelocityY(this.getVelocityY()+(gravity*elapsed)); // gravity adjustment
-			}
-			else
-			{
-				if(invulnerable)
-				{
-					if(invulnerableTime>1000)
-						invulnerable = false;
-					else
-						invulnerableTime+=elapsed;
-				}
-				this.setVelocityY(.0f);
-				if(player.getX()>this.getX() && !projectile.isVisible())
-					this.setAnimation(standRight);
-				else if(player.getX()<this.getX() && !projectile.isVisible())
-					this.setAnimation(standLeft);
-				gct.recoverSpriteStuckInBottomTile(this);
-				if(Math.random()>0.8)
-					if(player.getX()+gct.getWidth()>this.getX() || this.getX()<player.getX()-gct.getWidth()) // check to see if player is close or not
-	    				if(player.getY()+player.getHeight()-20>this.getY() || player.getY()-player.getHeight()+20>this.getY()) //player is near the same height
-	    					shoot(player);
-			}
-		}
-		update(elapsed);
-		if(projectile.isVisible())
-			projectile.updateProjectile(elapsed);
-	}
-	/**
-	 * Handles setting offsets for the boss and drawing 
-	 * the boss HUD and projectile.
-	 */
-	public void draw(Graphics2D g)
+	public void takeDamage() 
 	{
-		setOffsets(gct.getXOffset(), gct.getYOffset());
-		drawTransformed(g);
-		show();
-        g.setColor(Color.green);
-        int i=0, j=gct.getWidth()-95;
-        for(; i<HP; i++,j+=8)
-        {
-        	g.fillRoundRect(j,40, 5, 25, 6, 6);
-        }
-        for(i=0, j=gct.getWidth()-95; i<maxHP; i++, j+=8)
-        {
-        	g.drawString("--", j, 40); //top line
-        	g.drawString("--", j, 72); //bottom line
-        }
-        g.drawLine(j, 36, j, 68); // side line
-        if(projectile.isVisible())
-        	projectile.draw(g);
+		if(!invulnerable) 
+		{ 
+			HP--;
+			invulnerable = true;
+		}
 	}
 	/**
 	 * Handles the shooting animation and action.
 	 */
-	private void shoot(Player player)
+	public void shoot(Player player)
 	{
 		if(!player.isGameOver())//stop shooting after game is over
 		{
-	    	if(!projectile.isVisible() || projectile.getX()+gct.getWidth()<this.getX() || projectile.getX()-gct.getWidth()>this.getX())
+	    	if(!projectile.isVisible() || projectile.getX()+screenWidth<this.getX() || projectile.getX()-screenWidth>this.getX())
 	    	{
 	    		projectile.setScale(0.8f);
 				Velocity v;
 				if(player.getX()>this.getX())
 				{
-					this.setAnimation(shootRight);
+					this.setAnimation(fireRight);
 					projectile.setX(this.getX()+this.getWidth());
 					projectile.setY(this.getY()+15);
 					//shoot directly at the player
-					v = new Velocity(0.7f, projectile.getX()+gct.getXOffset(),projectile.getY()+gct.getYOffset(),
-							player.getX()+player.getWidth()/2+gct.getXOffset(),player.getY()+player.getHeight()/2+gct.getYOffset());
+					v = new Velocity(0.7f, projectile.getX(),projectile.getY(),
+							player.getX()+player.getWidth()/2,player.getY()+player.getHeight()/2);
 					projectile.setRotation(180);
 				}
 				else
 				{
-					this.setAnimation(shootLeft);
+					this.setAnimation(fireLeft);
 					projectile.setX(this.getX());
 					projectile.setY(this.getY()+15);
-					v = new Velocity(0.7f, projectile.getX()+gct.getXOffset(),projectile.getY()+gct.getYOffset(),
-							player.getX()+player.getWidth()/2+gct.getXOffset(),player.getY()+player.getHeight()/2+gct.getYOffset());
+					v = new Velocity(0.7f, projectile.getX(),projectile.getY(),
+							player.getX()+player.getWidth()/2,player.getY()+player.getHeight()/2);
 					projectile.setRotation(0);
 				}
 	
@@ -137,32 +78,9 @@ public class Boss extends Sprite
 				projectile.setVelocityY((float)v.getdy());
 				projectile.setRotation(v.getAngle());
 				
-		        shooting = new Sound("assets/sounds/shoot.wav");
-		        shooting.start();
-		        
+		        playShootSound();
 				projectile.show();
 	    	}
 		}
-	}
-	/**
-	 * Load the necessary assets for the sprite to work.
-	 * Also sets default animation.
-	 * */
-	private void loadAssets() 
-	{
-        standLeft = new Animation();
-        standLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);
-        
-        //set starting animation
-        setAnimation(standLeft);
-        
-        standRight = new Animation();
-        standRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_sr.gif"), 60);
-
-        shootRight = new Animation();
-        shootRight.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_right.gif"), 60);
-
-        shootLeft = new Animation();
-        shootLeft.addFrame(gct.loadImage("assets/images/Enemies/Thug/thug_fire_left.gif"), 60);
 	}
 }

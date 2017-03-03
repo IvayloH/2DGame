@@ -1,21 +1,14 @@
-import java.awt.*;
-
 import game2D.*;
-public class Player extends Sprite
+
+public class Player extends SpriteExtension
 {
 	//Animations
-	private Animation standingLeft;
-	private Animation standingRight;
 	private Animation crouch_Right;
 	private Animation crouch_Left;
 	private Animation crouchMoveLeft;
 	private Animation crouchMoveRight;
-	private Animation runRight;
-	private Animation runLeft;
 	private Animation jumpRight;
 	private Animation jumpLeft;
-	private Animation grappleHookLeft;
-	private Animation grappleHookRight;
 	private Animation transparent64;
 	private Animation transparent32;
 	//Sounds
@@ -41,7 +34,6 @@ public class Player extends Sprite
 	private float invincibleTime = .0f;
 	private float gravity = 0.01f;
 
-	private Game gct;
 	
     public enum EPlayerState
     {
@@ -60,7 +52,7 @@ public class Player extends Sprite
     }
     EPlayerState playerState = EPlayerState.FALLING;
     
-	public Player(int maxHP, float startingX, float startingY, Game gct)
+	public Player(int maxHP, float startingX, float startingY, String tag)
 	{
 		super();
 		this.amountOfDamageBeforeDeath = maxHP;
@@ -69,8 +61,9 @@ public class Player extends Sprite
 		this.startingY = startingY;
 		setX(startingX);
 		setY(startingY);
-		this.gct = gct;
+		this.tag = tag;
 		loadAssets();
+		loadAdditionalAssets();
 	}
 	
 	public boolean isLookingRight() { return lookingRight; }
@@ -79,6 +72,7 @@ public class Player extends Sprite
 	public EPlayerState getState() { return playerState; }
 	public boolean isInvincible() { return invincible; }
 	public int getLifeBars() { return lifeBars; }
+	public int getMaxHP() { return amountOfDamageBeforeDeath; }
 	public void setMaxHealth(int amountOfDamageBeforeDeath) { this.amountOfDamageBeforeDeath = amountOfDamageBeforeDeath; }
 	public boolean isGameOver() { return gameOver; }
 	/**
@@ -91,10 +85,11 @@ public class Player extends Sprite
 	 * */
 	public void update(long elapsed, boolean isGrappleHookVisible, float jumpStartPoint, TileMap tmap)
 	{
-		collisionABOVE = gct.checkTopSideForCollision(this);
-		collisionBELOW = gct.checkBottomSideForCollision(this);
-		collisionRIGHT = gct.checkRightSideForCollision(this);
-		collisionLEFT = gct.checkLeftSideForCollision(this);
+		collider = new Collision(tmap);
+		collisionABOVE = collider.checkTopSideForCollision(this);
+		collisionBELOW = collider.checkBottomSideForCollision(this);
+		collisionRIGHT = collider.checkRightSideForCollision(this);
+		collisionLEFT = collider.checkLeftSideForCollision(this);
 		
 		if(invincible)
     	{
@@ -171,7 +166,7 @@ public class Player extends Sprite
     		if(collisionRIGHT) 
     		{
     			this.setVelocityX(.0f);
-    			gct.recoverSpriteStuckInRightTile(this);
+    			collider.recoverSpriteStuckInRightTile(this);
     		}
     		else
     			this.setVelocityX(RUNSPEED);
@@ -182,7 +177,7 @@ public class Player extends Sprite
     		if(collisionLEFT)
     		{
     			this.setVelocityX(.0f);
-    			gct.recoverSpriteStuckInLeftTile(this);
+    			collider.recoverSpriteStuckInLeftTile(this);
     		}
     		else
     			this.setVelocityX(-RUNSPEED);
@@ -194,8 +189,6 @@ public class Player extends Sprite
     	{
     		this.setVelocityY(.05f);
     		this.setVelocityY(this.getVelocityY()+(gravity*elapsed)); // gravity adjustment
-    		//if(!isCrouching())
-    			//playerState = EPlayerState.FALLING;
     	}
     	if(!invincible)
     		setAnimation(getAppropriateAnimation(isGrappleHookVisible));
@@ -241,9 +234,9 @@ public class Player extends Sprite
     		if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
     			return crouchMoveRight;
 	    	if(playerState.equals(EPlayerState.RUN_RIGHT))
-	    		return runRight;
+	    		return moveRight;
 	    	if(playerState.equals(EPlayerState.RUN_LEFT))
-	    		return runLeft;
+	    		return moveLeft;
 	    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
 	    		return jumpRight;
 	    	if(playerState.equals(EPlayerState.JUMP_LEFT))
@@ -254,50 +247,20 @@ public class Player extends Sprite
 	    		else 
 	    			return jumpLeft;
 			if(lookingRight)
-				return standingRight;
+				return standRight;
 			else 
-				return standingLeft;
+				return standLeft;
     	}
     	else
     	{
 	    	if(lookingRight)
-	    		return grappleHookRight;
+	    		return fireRight;
 			else 
-				return grappleHookLeft;
+				return fireLeft;
 
     	}
 	}
-	/**
-	 * Draws the HUD for the player's Life Bars/Gadgets
-	 */
-	public void drawHUD(Graphics2D g)
-	{
-        setOffsets(gct.getXOffset(), gct.getYOffset());
-        this.drawTransformed(g);
-        		
-    	String msg = "Equipped Gadget: "; 
-    	if(currentGadget.equals("Batarang"))
-    		g.drawImage(gct.loadImage("assets/images/BatmanGadgets/batarang.png"), 125, 75, null);
-    	else if(currentGadget.equals("Grapple Hok"))
-    		g.drawImage(gct.loadImage("assets/images/BatmanGadgets/grappleHookGun.png"), 125, 75, null);
-    	
-        g.setColor(Color.red);
-        g.drawString(msg, 20, 90);
-        
-        //Life Bars
-        g.setColor(Color.black);
-        int i=0, j=20;
-        for(; i<getLifeBars(); i++,j+=8)
-        {
-        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
-        }
-        for(i=0, j=20; i<amountOfDamageBeforeDeath; i++, j+=8)
-        {
-        	g.drawString("--", j, 40); //top line
-        	g.drawString("--", j, 72); //bottom line
-        }
-        g.drawLine(j, 36, j, 68); // side line
-	}
+
 	/**
 	 * Switches to the next or previous gadget depending on the number of mouse wheel scrolls.
 	 */
@@ -336,7 +299,7 @@ public class Player extends Sprite
 	 * */
 	public void updateDirectionBasedOnMouseLocation(int mouseX, boolean isGrappleHookVisible)
 	{
-		if(mouseX<this.getX()+gct.getXOffset())
+		if(mouseX<this.getX())
 		{
 			if(this.getState().equals(Player.EPlayerState.STANDING))
 			{
@@ -404,82 +367,62 @@ public class Player extends Sprite
         }
         
     	//Check Tile underneath the sprite for collision
-        collisionBELOW = gct.checkBottomSideForCollision(this);
+        collisionBELOW = collider.checkBottomSideForCollision(this);
     	if(collisionBELOW)
-    		gct.recoverSpriteStuckInBottomTile(this);
+    		collider.recoverSpriteStuckInBottomTile(this);
         
         //Check Tile to the RIGHT of the sprite for collision
         if(this.getState().equals(Player.EPlayerState.RUN_RIGHT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_RIGHT))
-        	collisionRIGHT = gct.checkRightSideForCollision(this);
+        	collisionRIGHT = collider.checkRightSideForCollision(this);
 
         
         //Check Tile to the LEFT of the sprite for collision
         if(this.getState().equals(Player.EPlayerState.RUN_LEFT) || this.getState().equals(Player.EPlayerState.CROUCH_MOVE_LEFT))
-        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        	collisionLEFT = collider.checkLeftSideForCollision(this);
 
         
         //Check Tile ABOVE the sprite for collision
         if(isJumping())
         {
-        	collisionABOVE = gct.checkTopSideForCollision(this);
-        	collisionRIGHT = gct.checkRightSideForCollision(this);
-        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        	collisionABOVE = collider.checkTopSideForCollision(this);
+        	collisionRIGHT = collider.checkRightSideForCollision(this);
+        	collisionLEFT = collider.checkLeftSideForCollision(this);
         }       
         
         if(this.getState().equals(Player.EPlayerState.FALLING))
         {
-        	collisionRIGHT = gct.checkRightSideForCollision(this);
-        	collisionLEFT = gct.checkLeftSideForCollision(this);
+        	collisionRIGHT = collider.checkRightSideForCollision(this);
+        	collisionLEFT = collider.checkLeftSideForCollision(this);
         }
     }
 	/**
 	 * Load the necessary assets for the sprite to work.
 	 * Also sets default animation.
 	 * */
-	private void loadAssets()
+	private void loadAdditionalAssets()
 	{
-		standingRight = new Animation();
-    	standingRight.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanFacingRight.gif"), 60);
-        
-    	setAnimation(standingRight);
-    	
-    	standingLeft = new Animation();
-    	standingLeft.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanFacingLeft.gif"), 60);
-	        
-	    runRight= new Animation();
-	    runRight.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanMoveRight.gif"), 60);
-	        
-        runLeft = new Animation();
-        runLeft.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanMoveLeft.gif"),60);
-        
         jumpRight = new Animation();
-        jumpRight.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanJumpRight.png"),60);
+        jumpRight.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpRight.png"),60);
         
         jumpLeft = new Animation();
-        jumpLeft.addFrame(gct.loadImage("assets/images/BatmanStates/BatmanJumpLeft.png"),60);
-        
-        grappleHookRight = new Animation();
-        grappleHookRight.addFrame(gct.loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunRight.gif"), 60);
-        
-        grappleHookLeft = new Animation();
-        grappleHookLeft.addFrame(gct.loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
-        
+        jumpLeft.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpLeft.png"),60);
+
         transparent64 = new Animation();
-        transparent64.addFrame(gct.loadImage("assets/images/BatmanStates/transparent64.png"), 60);
+        transparent64.addFrame(loadImage("assets/images/BatmanStates/transparent64.png"), 60);
 	    
         transparent32 = new Animation();
-        transparent32.addFrame(gct.loadImage("assets/images/BatmanStates/transparent32.png"), 60);
+        transparent32.addFrame(loadImage("assets/images/BatmanStates/transparent32.png"), 60);
         
         crouch_Right = new Animation();
-        crouch_Right.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_R.gif"), 60);
+        crouch_Right.addFrame(loadImage("assets/images/BatmanStates/crouch_R.gif"), 60);
         
         crouch_Left = new Animation();
-        crouch_Left.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_L.gif"), 60);
+        crouch_Left.addFrame(loadImage("assets/images/BatmanStates/crouch_L.gif"), 60);
 
         crouchMoveRight = new Animation();
-        crouchMoveRight.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_move_R.gif"), 60);
+        crouchMoveRight.addFrame(loadImage("assets/images/BatmanStates/crouch_move_R.gif"), 60);
         
         crouchMoveLeft = new Animation();
-        crouchMoveLeft.addFrame(gct.loadImage("assets/images/BatmanStates/crouch_move_L.gif"), 60);
+        crouchMoveLeft.addFrame(loadImage("assets/images/BatmanStates/crouch_move_L.gif"), 60);
 	}
 }

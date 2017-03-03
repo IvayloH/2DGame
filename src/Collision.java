@@ -23,6 +23,19 @@ public class Collision
     	min = (s1.getRadius()+s2.getRadius());
     	return ((dx*dx)+(dy*dy))<(min*min);
     }
+    
+    
+    /**
+     * Push Sprite UP by one pixel if sprite is stuck in a tile below it.
+     * @param s Sprite to check and unstuck.
+     * */
+	public void recoverSpriteStuckInBottomTile(Sprite s) 
+	{
+		char temp = tmap.getTileChar(((int)s.getX()+s.getWidth()/2)/tmap.getTileWidth(), (int)(s.getY()+s.getHeight()-1)/tmap.getTileHeight());
+		for(char c : tileMapChars)
+			if(c==temp)
+				s.setY(s.getY()-1);
+	}
     /**
      * Push Sprite LEFT by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.

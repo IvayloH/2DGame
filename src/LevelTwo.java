@@ -1,11 +1,8 @@
-import java.util.ArrayList;
-
 import game2D.TileMap;
 
 public class LevelTwo extends Level
 {
-	protected ArrayList<Pair<Turret,Pair<Float,Float>>> turretSpawnPositions;
-	
+
 	public LevelTwo(Player player, Boss boss, TileMap tmap,Game gct)
 	{
 		super(player, boss, tmap, gct);
@@ -34,7 +31,7 @@ public class LevelTwo extends Level
     			{
     				float pixelX = x*tmap.getTileWidth();
     				float pixelY = y*tmap.getTileHeight();
-    				Turret turret = new Turret(gct);
+    				Turret turret = new Turret("turret");
     				//add thug to array list
     				Pair<Float, Float> location = new Pair<Float,Float>(pixelX,pixelY);
     				Pair<Turret,Pair<Float,Float>> p = new Pair<Turret ,Pair<Float,Float>>(turret,location);

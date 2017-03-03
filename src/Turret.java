@@ -1,57 +1,27 @@
-import java.awt.Graphics2D;
 import game2D.*;
-public class Turret extends Sprite
+
+public class Turret extends SpriteExtension
 {
-	private Game gct;
-	private Animation turretLeft;
-	private Animation turretRight;
-	private Animation turretFireLeft;
-	private Animation turretFireRight;
-	private EnemyProjectile projectile;
 	private boolean killed = false;
 	
-	public Turret(Game gct)
+	public Turret(String tag)
 	{
 		super();
-		this.gct = gct;
+		this.tag = tag;
 		loadAssets();
 	}
 	
-	public EnemyProjectile getProjectile() { return projectile; }
+	public SpriteExtension getProjectile() { return projectile; }
 	public boolean isKilled() { return killed; }
 	public void kill() { killed = true; }
 	public void reset() { killed = false; }
 	
-	public void draw(Graphics2D g)
+	public void update(float elapsed, TileMap tmap)
 	{
-		setOffsets(gct.getXOffset(), gct.getYOffset());
-		drawTransformed(g);
-	}
-	
-	public void update(float elapsed)
-	{
-		if(gct.checkBottomSideForCollision(this))
+		collider = new Collision(tmap);
+		if(collider.checkBottomSideForCollision(this))
 		{
 			setVelocityY(.0f);
 		}
-	}
-	/**
-	 * Load the necessary assets for the sprite to work.
-	 * Also sets default animation.
-	 * */
-	private void loadAssets()
-	{
-		 turretLeft = new Animation();
-	     turretLeft.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_idle_l.gif"), 60);
-	     setAnimation(turretLeft);
-	     
-	     turretRight = new Animation();
-	     turretRight.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_idle_r.gif"), 	60);
-	     
-	     turretFireLeft = new Animation();
-	     turretFireLeft.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_sh_l.gif"), 60);
-	     
-	     turretFireRight = new Animation();
-	     turretFireRight.addFrame(gct.loadImage("assets/images/Enemies/Turret/turret_sh_r.gif"), 60);
 	}
 }
