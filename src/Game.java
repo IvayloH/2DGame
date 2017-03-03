@@ -31,7 +31,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	final char[] tileMapChars = {'b','w','r','c','n','v','z'};
 
     private float jumpStartPos = .0f;  // keep track of jump start
-    private int xOffset, yOffset; // made global as they are needed in the mouse press events
+
     
     // Game state flags
     private boolean cursorChanged = false;
@@ -50,16 +50,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private GrappleHook grappleHook = null;
     private SpriteExtension batarang = null;
     private Boss boss = null;
-    //private Sound levelMusic;
-	private Sound jump = null;
+	
     private Image bgImage = null;
     
 	private Level currLevel;
     private Collision collider;
 	
-    private ArrayList<Sprite> clouds = new ArrayList<Sprite>();
+    private ArrayList<Sprite> bats = new ArrayList<Sprite>();
     private TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
-
+    
+    private int xOffset, yOffset;
+    
     /**
 	 * The obligatory main method that creates
      * an instance of our class and starts it running
@@ -98,7 +99,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-        currLevel = new Level(player, boss, tmap, this);
+        currLevel = new Level(player, boss, tmap);
     }
 
     /**
@@ -107,7 +108,15 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void draw(Graphics2D g)
     {
     	calculateOffsets();
-        setOffsetsAndDrawSprites(g);
+        g.drawImage(bgImage,xOffset,yOffset,null);
+        tmap.draw(g,xOffset,yOffset);
+       
+        for (Sprite s: bats)
+        {
+        	s.setOffsets(xOffset,yOffset); //FIXME spawn offscreen 
+        	s.draw(g);
+        }
+    	
         drawPlayerAndHUD(g);
         if(!player.isGameOver())
         {
@@ -130,13 +139,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
         if(player.isGameOver())
         {
-        	g.setColor(Color.red);
-        	g.drawString("GAME OVER", screenWidth/2, screenHeight/2);
-        	g.drawString("Press Esc to Quit", screenWidth/2-15, screenHeight/2+15);
-        	g.drawString("       or", screenWidth/2, screenHeight/2+30);
-        	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
+        	drawGameOverState(g);
         }
         drawRain(g);
+
     }
     
     /**
@@ -163,150 +169,373 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		updateGrappleHook(elapsed);
 	
     	updateLevel(elapsed);
+    	
+        for (Sprite s: bats)
+        	s.update(elapsed);
 
        	player.update(elapsed, grappleHook.isVisible(),jumpStartPos,tmap);
     }
-
-
+  
     /*
-     * 			DRAW METHODS
+     *         KEY EVENTS
      */
-	/**
-	 * Handles setting offsets for the boss and drawing 
-	 * the boss HUD and projectile.
+    public void keyPressed(KeyEvent e) 
+    { 
+    	int key = e.getKeyCode();
+    	if(key==KeyEvent.VK_1)
+    	{
+    		tmap.loadMap("assets/maps", "level1.txt");
+    		currLevel = new Level(player, boss, tmap);
+    	}
+    	if(key==KeyEvent.VK_2)
+    	{
+    		tmap.loadMap("assets/maps", "level2.txt");
+    		currLevel = new Level(player, boss, tmap);
+    	}
+    	if (key == KeyEvent.VK_ESCAPE)
+    		stop();
+
+    	if( key == KeyEvent.VK_D) 
+	    	rightKey = true;
+    	
+    	if(key == KeyEvent.VK_A) 
+    		leftKey=true;
+    	
+    	if (key == KeyEvent.VK_W && !jumpKey)
+    	{
+    		jumpKey = true;
+    		player.playJumpSound();
+    	}
+    	
+    	if(key==KeyEvent.VK_S)
+    	{
+	    	crouchKey = true;
+    	}
+    	if(key==KeyEvent.VK_R)
+    	{
+    		if(player.isGameOver())
+    			restartGame();
+    	}
+    	
+    	if(key==KeyEvent.VK_H)
+    	{
+    		if(!helpKey)
+    			helpKey=true;
+    		else
+    			helpKey=false;
+    	}
+    	
+    	//if player is already in a jump motion and do nothing
+		if(!player.isJumping())
+				player.setState(getPlayerStateBasedOnKeysPressed());
+    }
+	public void keyReleased(KeyEvent e) 
+	{
+		int key = e.getKeyCode();
+		switch (key)
+		{
+			case KeyEvent.VK_ESCAPE:
+			{
+				stop(); 
+				break;
+			}
+			case KeyEvent.VK_W:
+			{
+				jumpKey = false;
+				break;
+			}
+			
+			case KeyEvent.VK_D:
+			{
+				if(!crouchKey)
+					player.setState(Player.EPlayerState.STANDING);
+				else
+					player.setState(Player.EPlayerState.CROUCH);
+				rightKey = false;
+				break;
+			}
+			
+			case KeyEvent.VK_A:
+			{
+				if(!crouchKey)
+					player.setState(Player.EPlayerState.STANDING);
+				else
+					player.setState(Player.EPlayerState.CROUCH);
+			
+				leftKey = false;
+				break;
+			}
+			
+			case KeyEvent.VK_S:
+			{
+				if(!collider.checkTopSideForCollision(player))
+				{
+					player.setState(Player.EPlayerState.STANDING);
+					player.shiftY(-player.getHeight());
+					crouchKey = false;
+				}
+				break;
+			}
+			default:
+				break;
+		}
+	}
+	
+	/*
+	 * 			MOUSE EVENTS 
 	 */
-    private void drawBoss(Graphics2D g)
+	public void mouseDragged(MouseEvent e) {}
+	public void mouseMoved(MouseEvent e) 
+	{
+		if(e.getX()<player.getX()+xOffset)
+		{
+			if(player.getState().equals(Player.EPlayerState.STANDING))
+			{
+				if(player.isLookingRight())
+				{
+					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
+					player.setLookingRight(false);
+				}
+			}
+		}
+		else
+		{
+			if(player.getState().equals(Player.EPlayerState.STANDING))
+			{
+				if(!player.isLookingRight())
+				{
+					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
+					player.setLookingRight(true);
+				}
+			}
+		}
+		//player.updateDirectionBasedOnMouseLocation(e.getX(), grappleHook.isVisible());
+		if(!cursorChanged)
+		{
+			Toolkit tk = Toolkit.getDefaultToolkit();
+			Cursor c = tk.createCustomCursor(loadImage("assets/images/CrossHair/crosshair.png"), new Point(0,0), "custom cursor");
+			setCursor(c);
+			cursorChanged=true;
+		}
+	}
+	public void mouseWheelMoved(MouseWheelEvent e) 
+	{
+		player.switchGadget(e.getWheelRotation());
+	}
+	public void mousePressed(MouseEvent e) 
+	{
+		if(player.getCurrentGadget().equals("Grapple Hook"))
+		{
+			if(!player.isGameOver())
+		  		if(!grappleHook.isVisible() && !player.isCrouching())
+				{
+					Velocity v;
+					if(player.isLookingRight())
+					{
+						grappleHook.setX(player.getX()+player.getWidth());
+						grappleHook.setY(player.getY()+20);
+					}
+					else
+					{
+						grappleHook.setX(player.getX());
+						grappleHook.setY(player.getY()+20);
+					}
+					v = new Velocity(0.5f, grappleHook.getX()+xOffset, grappleHook.getY()+yOffset, e.getX()+10, e.getY()+10);
+					grappleHook.setVelocityX((float)v.getdx());
+					grappleHook.setVelocityY((float)v.getdy());
+					grappleHook.setRotation(v.getAngle());
+					grappleHook.show();
+				}
+		}
+		
+		if(player.getCurrentGadget().equals("Batarang"))
+		{
+			if(!player.isGameOver())
+			{
+				//batarang.Throw(player, e.getX(), e.getY());
+				if(!batarang.isVisible() && !player.isCrouching())
+				{
+					Velocity v;
+					if(player.isLookingRight())
+					{
+						batarang.setX(player.getX()+player.getWidth());
+						batarang.setY(player.getY()+26);
+					}
+					else
+					{
+						batarang.setX(player.getX());
+						batarang.setY(player.getY()+26);	
+					}
+					v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset, e.getX()+10, e.getY()+10);
+					batarang.setVelocityX((float)v.getdx());
+					batarang.setVelocityY((float)v.getdy());
+					batarang.playShootSound();
+					batarang.setRotation(v.getAngle());
+					batarang.show();
+				}
+			}
+		}
+	}
+	public void mouseClicked(MouseEvent arg0) {}
+	public void mouseEntered(MouseEvent arg0) {}
+	public void mouseExited(MouseEvent arg0) {}
+	public void mouseReleased(MouseEvent arg0) {}
+
+    /**
+     *         PRIVATE METHODS
+     */
+	
+	private void calculateOffsets()
     {
-    	boss.setOffsets(xOffset, yOffset);
-    	boss.drawTransformed(g);
-    	boss.show();
-        g.setColor(Color.green);
-        int i=0, j=getWidth()-95;
-        for(; i<boss.getCurrentHP(); i++,j+=8)
+    	xOffset = screenWidth/2-(int)player.getX();
+    	yOffset = screenHeight/2-(int)player.getY();
+        int minOffsetX= screenWidth-tmap.getPixelWidth();
+        int maxOffsetX = 0;
+        int minOffsetY = screenHeight-tmap.getPixelHeight();
+        int maxOffsetY = 0;
+        
+        if(xOffset>maxOffsetX)
+        	xOffset = maxOffsetX;
+        else if(xOffset<minOffsetX)
+        	xOffset=minOffsetX;
+        
+        if(yOffset>maxOffsetY)
+        	yOffset=maxOffsetY;
+        else if(yOffset<minOffsetY)
+        	yOffset=minOffsetY;
+        
+        if(bossFight)
         {
-        	g.fillRoundRect(j,40, 5, 25, 6, 6);
+        	xOffset = minOffsetX;
+        	yOffset = minOffsetY;
         }
-        for(i=0, j=getWidth()-95; i<boss.getMaxHP(); i++, j+=8)
-        {
-        	g.drawString("--", j, 40); //top line
-        	g.drawString("--", j, 72); //bottom line
-        }
-        g.drawLine(j, 36, j, 68); // side line
-        if(boss.getProjectile().isVisible())
-        	drawProjectile(g, boss.getProjectile());
     }
   	/**
-  	 * Draws the Grapple Hook and a line behind.
-  	 */
-    private void drawGrappleHook(Graphics2D g)
+  	 * Return appropriate player state depending on the keys that have been pressed
+     */
+    private Player.EPlayerState getPlayerStateBasedOnKeysPressed()
     {
-    	 if(grappleHook.isVisible())
-         {
-    		 grappleHook.setRotation(grappleHook.getRotation());
-    		 grappleHook.drawTransformed(g);
-    		 grappleHook.setOffsets(xOffset, yOffset);
-         	g.setColor(Color.black);
-         	g.setStroke(new BasicStroke(3));
-         	//TODO adjust the line so it follows the hook properly when rotated
-         	if(player.isLookingRight())
-         		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
-         					(int)player.getY()+26+yOffset,
-         					(int)grappleHook.getX()+xOffset,
-         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-         	else
-             	g.drawLine(	(int)player.getX()+xOffset,
-         					(int)player.getY()+26+yOffset,
-         					(int)grappleHook.getX()+xOffset,
-         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-         	//reset stroke
-         	g.setStroke(new BasicStroke(0));
-   	      }
-    }
-	/**
-	 * Draw each crate/thug by going through their ArrayLists accordingly.
-	 * */
-    private void drawLevel(Graphics2D g)
-    {
-    	//draw crates
-		for(int i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
-        {
-        	Crate c =  currLevel.getCrateSpawnPositions().get(i).getFirst();
-    		c.drawTransformed(g);
-    	    c.setOffsets(xOffset, yOffset);
-        	Pair<Float,Float> crateLocation = currLevel.getCrateSpawnPositions().get(i).getSecond();
-        	if(player.getX()+getWidth()>crateLocation.getFirst() && !c.isHit())
-        		c.show();
-        }
-		//draw thugs
-		for(int i=0; i<currLevel.getThugSpawnPositions().size(); i++)
-		{
-			Thug th = currLevel.getThugSpawnPositions().get(i).getFirst();
-			th.drawTransformed(g);
-			th.setOffsets(xOffset, yOffset);
-			Pair<Float,Float> thugLocation = currLevel.getThugSpawnPositions().get(i).getSecond();
-			if(player.getX()+getWidth()>thugLocation.getFirst() && !th.isKilled())
-				th.show();
-			if(th.getProjectile().isVisible())
-				drawProjectile(g, th.getProjectile());
-		}
-		//draw turrets TODO finish this
-		/*for(int i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
-		{
-			Turret turret = currLevel.getTurretSpawnPositions().get(i).getFirst();
-			turret.setOffsets(xOffset, yOffset);
-			turret.drawTransformed(g);
-		*/
-    }
-	/**
-	 * Draws the HUD for the player's Life Bars/Gadgets
-	 */
-    private void drawPlayerAndHUD(Graphics2D g)
-    {
-        player.setOffsets(xOffset, yOffset);
-        player.drawTransformed(g);
-        		
-    	String msg = "Equipped Gadget: "; 
-    	if(player.getCurrentGadget().equals("Batarang"))
-    		g.drawImage(loadImage("assets/images/BatmanGadgets/batarang.png"), 125, 75, null);
-    	else if(player.getCurrentGadget().equals("Grapple Hok"))
-    		g.drawImage(loadImage("assets/images/BatmanGadgets/grappleHookGun.png"), 125, 75, null);
+    	if((rightKey || leftKey) && !crouchKey && !jumpKey)
+    	{
+      		if(!player.getState().equals(Player.EPlayerState.JUMP_RIGHT) && !player.getState().equals(Player.EPlayerState.JUMP_LEFT))
+      		{
+      			if(rightKey)
+      			{
+      				player.setLookingRight(true);
+      				return Player.EPlayerState.RUN_RIGHT;
+      			}
+      			if(leftKey)
+      			{
+      				player.setLookingRight(false);
+      				return Player.EPlayerState.RUN_LEFT;
+      			}
+      		}
+    	}
     	
-        g.setColor(Color.red);
-        g.drawString(msg, 20, 90);
-        
-        //Life Bars
-        g.setColor(Color.black);
-        int i=0, j=20;
-        for(; i<player.getLifeBars(); i++,j+=8)
-        {
-        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
-        }
-        for(i=0, j=20; i<player.getMaxHP(); i++, j+=8)
-        {
-        	g.drawString("--", j, 40); //top line
-        	g.drawString("--", j, 72); //bottom line
-        }
-        g.drawLine(j, 36, j, 68); // side line
-	
+    	if(crouchKey)
+    	{
+    		if(!player.isJumping())
+    		{
+	    		//if(!player.isCrouching())
+	    			//player.shiftY(30);
+	    		if(rightKey) 
+	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
+	    		else if(leftKey) 
+	    			return Player.EPlayerState.CROUCH_MOVE_LEFT;
+	    		else 
+	    			return Player.EPlayerState.CROUCH;
+    		}
+    	}
+    	
+    	if(jumpKey && collider.checkBottomSideForCollision(player))
+    	{
+			jumpStartPos=player.getY();
+    		if(rightKey)
+    			return Player.EPlayerState.JUMP_RIGHT;
+    		else if(leftKey)
+    			return Player.EPlayerState.JUMP_LEFT;
+    		else
+    			return Player.EPlayerState.JUMP;
+    	}
+		return Player.EPlayerState.STANDING;
     }
-    private void drawProjectile(Graphics2D g, Sprite proj)
+    private void restartGame()
     {
-		proj.setOffsets(xOffset, yOffset);
-		proj.drawTransformed(g);
+    	currLevel.restartLevel(); // start from level one
+    	bossFight = false;
     }
-   
+    private void loadNextLevel()
+    {
+    	nextLevel = false;
+    	player.reset();
+    	tmap.loadMap("assets/maps", "level2.txt");
+    }
+    private void spawnBats()
+    {
+    	Sprite s;
+    	//hasnt been set up yet
+    	if(bats.size()==0)
+    	{
+	    	Animation ca = new Animation();
+	    	ca.addFrame(loadImage("assets/maps/bat.gif"), 1000);
+	        for (int b=0; b<6; b++)
+	        {
+	        	s = new Sprite(ca);
+	        	s.setX(screenWidth + (int)(Math.random()*200.0f));
+	        	s.setY(30 + (int)(Math.random()*150.0f));
+	        	s.setVelocityX(-0.6f);
+	        	s.show();
+	        	bats.add(s);
+	        }
+    	}
+    	else
+    	{
+    		for (int b=0; b<6; b++)
+    		{
+    			s = bats.get(b);
+    			s.setX(screenWidth + (int)(Math.random()*200.0f));
+	        	s.setY(30 + (int)(Math.random()*150.0f));
+    		}
+    	}
+    }
+
+	/*
+	 *    		 LOAD RESOURCES
+	 */
+	private void loadAssets()
+	{
+		tmap.loadMap("assets/maps", "level1.txt");
+        bgImage = loadImage("assets/images/city.png");
+        //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
+        //levelMusic.start();
+	}
+	private void loadSprites()
+	{
+	  	player = new Player(6,75.f,50.f, "player");
+        grappleHook = new GrappleHook(150,"grappleHook");
+        batarang = new SpriteExtension("batarang");
+        boss = new Boss("boss");
+        
+        spawnBats();
+	}
+	
+	
     /*
      *       UPDATE METHODS
      */
     private void updateBatarang(long elapsed)
     {
-    	for(int i=0; i<currLevel.getThugSpawnPositions().size(); i++)
+    	int i=0;
+    	for(i=0; i<currLevel.getThugSpawnPositions().size(); i++)
 		{
 			Thug t = currLevel.getThugSpawnPositions().get(i).getFirst();
 			if(collider.boundingBoxCollision(batarang,t))
+			{
 				t.kill();
+				spawnBats();
+			}
 		}
-		for(int i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
+		for(i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
 		{
 			Crate c = currLevel.getCrateSpawnPositions().get(i).getFirst();
 			if(collider.boundingBoxCollision(batarang,c))
@@ -445,7 +674,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(collider.boundingBoxCollision(boss.getProjectile(),player) && !player.isInvincible())
 			player.takeDamage();
     }
-    
     private void updateProjectile(long elapsed, SpriteExtension s)
     {
 		collider = new Collision(tmap);
@@ -459,325 +687,133 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
 		s.update(elapsed);
     }
-    
-    /*
-     *         PRIVATE METHODS
-     */
-  	/**
-  	 * Return appropriate player state depending on the keys that have been pressed
-     */
-    private Player.EPlayerState getPlayerStateBasedOnKeysPressed()
-    {
-    	if((rightKey || leftKey) && !crouchKey && !jumpKey)
-    	{
-      		if(!player.getState().equals(Player.EPlayerState.JUMP_RIGHT) && !player.getState().equals(Player.EPlayerState.JUMP_LEFT))
-      		{
-      			if(rightKey)
-      			{
-      				player.setLookingRight(true);
-      				return Player.EPlayerState.RUN_RIGHT;
-      			}
-      			if(leftKey)
-      			{
-      				player.setLookingRight(false);
-      				return Player.EPlayerState.RUN_LEFT;
-      			}
-      		}
-    	}
-    	
-    	if(crouchKey)
-    	{
-    		if(!player.isJumping())
-    		{
-	    		//if(!player.isCrouching())
-	    			//player.shiftY(30);
-	    		if(rightKey) 
-	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
-	    		else if(leftKey) 
-	    			return Player.EPlayerState.CROUCH_MOVE_LEFT;
-	    		else 
-	    			return Player.EPlayerState.CROUCH;
-    		}
-    	}
-    	
-    	if(jumpKey && collider.checkBottomSideForCollision(player))
-    	{
-			jumpStartPos=player.getY();
-    		if(rightKey)
-    			return Player.EPlayerState.JUMP_RIGHT;
-    		else if(leftKey)
-    			return Player.EPlayerState.JUMP_LEFT;
-    		else
-    			return Player.EPlayerState.JUMP;
-    	}
-		return Player.EPlayerState.STANDING;
-    }
-    
-    private void restartGame()
-    {
-    	currLevel.restartLevel(); // start from level one
-    	bossFight = false;
-    }
-    private void loadNextLevel()
-    {
-    	nextLevel = false;
-    	player.reset();
-    	tmap.loadMap("assets/maps", "level2.txt");
-    }
-    
-    /*
-     *         KEY EVENTS
-     */
-    public void keyPressed(KeyEvent e) 
-    { 
-    	int key = e.getKeyCode();
-    	if(key==KeyEvent.VK_1)
-    	{
-    		tmap.loadMap("assets/maps", "level1.txt");
-    		currLevel = new Level(player, boss, tmap, this);
-    	}
-    	if(key==KeyEvent.VK_2)
-    	{
-    		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new Level(player, boss, tmap, this);
-    	}
-    	if (key == KeyEvent.VK_ESCAPE)
-    		stop();
-
-    	if( key == KeyEvent.VK_D) 
-	    	rightKey = true;
-    	
-    	if(key == KeyEvent.VK_A) 
-    		leftKey=true;
-    	
-    	if (key == KeyEvent.VK_W && !jumpKey)
-    	{
-    		jumpKey = true;
-    		jump = new Sound("assets/sounds/grunt_jump.wav");
-    		jump.start();
-    	}
-    	
-    	if(key==KeyEvent.VK_S)
-    	{
-	    	crouchKey = true;
-    	}
-    	if(key==KeyEvent.VK_R)
-    	{
-    		if(player.isGameOver())
-    			restartGame();
-    	}
-    	
-    	if(key==KeyEvent.VK_H)
-    	{
-    		if(!helpKey)
-    			helpKey=true;
-    		else
-    			helpKey=false;
-    	}
-    	
-    	//if player is already in a jump motion and do nothing
-		if(!player.isJumping())
-				player.setState(getPlayerStateBasedOnKeysPressed());
-    }
-	public void keyReleased(KeyEvent e) 
-	{
-		int key = e.getKeyCode();
-		switch (key)
-		{
-			case KeyEvent.VK_ESCAPE:
-			{
-				stop(); 
-				break;
-			}
-			case KeyEvent.VK_W:
-			{
-				jumpKey = false;
-				break;
-			}
-			
-			case KeyEvent.VK_D:
-			{
-				if(!crouchKey)
-					player.setState(Player.EPlayerState.STANDING);
-				else
-					player.setState(Player.EPlayerState.CROUCH);
-				rightKey = false;
-				break;
-			}
-			
-			case KeyEvent.VK_A:
-			{
-				if(!crouchKey)
-					player.setState(Player.EPlayerState.STANDING);
-				else
-					player.setState(Player.EPlayerState.CROUCH);
-			
-				leftKey = false;
-				break;
-			}
-			
-			case KeyEvent.VK_S:
-			{
-				if(!collider.checkTopSideForCollision(player))
-				{
-					player.setState(Player.EPlayerState.STANDING);
-					player.shiftY(-player.getHeight());
-					crouchKey = false;
-				}
-				break;
-			}
-			default:
-				break;
-		}
-	}
-    
 	
-	/*
-	 * 			MOUSE EVENTS 
+	
+    /*
+     * 			DRAW METHODS
+     */
+	/**
+	 * Handles setting offsets for the boss and drawing 
+	 * the boss HUD and projectile.
 	 */
-	public void mouseDragged(MouseEvent e) {}
-	public void mouseMoved(MouseEvent e) 
-	{
-		if(e.getX()<player.getX()+xOffset)
-		{
-			if(player.getState().equals(Player.EPlayerState.STANDING))
-			{
-				if(player.isLookingRight())
-				{
-					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
-					player.setLookingRight(false);
-				}
-			}
-		}
-		else
-		{
-			if(player.getState().equals(Player.EPlayerState.STANDING))
-			{
-				if(!player.isLookingRight())
-				{
-					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
-					player.setLookingRight(true);
-				}
-			}
-		}
-		//player.updateDirectionBasedOnMouseLocation(e.getX(), grappleHook.isVisible());
-		if(!cursorChanged)
-		{
-			Toolkit tk = Toolkit.getDefaultToolkit();
-			Cursor c = tk.createCustomCursor(loadImage("assets/images/CrossHair/crosshair.png"), new Point(0,0), "custom cursor");
-			setCursor(c);
-			cursorChanged=true;
-		}
-	}
-	public void mouseWheelMoved(MouseWheelEvent e) 
-	{
-		player.switchGadget(e.getWheelRotation());
-	}
-	public void mousePressed(MouseEvent e) 
-	{
-		if(player.getCurrentGadget().equals("Grapple Hook"))
-		{
-			if(!player.isGameOver())
-		  		if(!grappleHook.isVisible() && !player.isCrouching())
-				{
-					Velocity v;
-					if(player.isLookingRight())
-					{
-						grappleHook.setX(player.getX()+player.getWidth());
-						grappleHook.setY(player.getY()+20);
-					}
-					else
-					{
-						grappleHook.setX(player.getX());
-						grappleHook.setY(player.getY()+20);
-					}
-					v = new Velocity(0.5f, grappleHook.getX()+xOffset, grappleHook.getY()+yOffset, e.getX()+10, e.getY()+10);
-					grappleHook.setVelocityX((float)v.getdx());
-					grappleHook.setVelocityY((float)v.getdy());
-					grappleHook.setRotation(v.getAngle());
-					grappleHook.show();
-				}
-		}
-		
-		if(player.getCurrentGadget().equals("Batarang"))
-		{
-			if(!player.isGameOver())
-			{
-				//batarang.Throw(player, e.getX(), e.getY());
-				if(!batarang.isVisible() && !player.isCrouching())
-				{
-					Velocity v;
-					if(player.isLookingRight())
-					{
-						batarang.setX(player.getX()+player.getWidth());
-						batarang.setY(player.getY()+26);
-					}
-					else
-					{
-						batarang.setX(player.getX());
-						batarang.setY(player.getY()+26);	
-					}
-					v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset, e.getX()+10, e.getY()+10);
-					batarang.setVelocityX((float)v.getdx());
-					batarang.setVelocityY((float)v.getdy());
-					batarang.playShootSound();
-					batarang.setRotation(v.getAngle());
-					batarang.show();
-				}
-			}
-		}
-	}
-	public void mouseClicked(MouseEvent arg0) {}
-	public void mouseEntered(MouseEvent arg0) {}
-	public void mouseExited(MouseEvent arg0) {}
-	public void mouseReleased(MouseEvent arg0) {}
-
-
-	/*
-	 *     LOAD RESOURCES AND OFFSETS
-	 */
-	private void loadAssets()
-	{
-		tmap.loadMap("assets/maps", "level1.txt");
-        bgImage = loadImage("assets/images/city.png");
-        //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
-        //levelMusic.start();
-	}
-	private void loadSprites()
-	{
-	  	player = new Player(6,75.f,50.f, "player");
-        grappleHook = new GrappleHook(150,"grappleHook");
-        grappleHook.hide();
-        
-        batarang = new SpriteExtension("batarang");
-        
-        boss = new Boss("boss");
-        
-        Animation ca = new Animation();
-        ca.addFrame(loadImage("images/cloud.png"), 1000); //TODO REPLACE IMAGE WITH BATS
-        
-        Sprite s;
-        for (int c=0; c<3; c++)
-        {
-        	s = new Sprite(ca);
-        	s.setX(screenWidth + (int)(Math.random()*200.0f));
-        	s.setY(30 + (int)(Math.random()*150.0f));
-        	s.setVelocityX(-0.02f);
-        	s.show();
-        	clouds.add(s);
-        }
-	}
-    private void setOffsetsAndDrawSprites(Graphics2D g)
+    private void drawBoss(Graphics2D g)
     {
-        g.drawImage(bgImage,0,0,null);
-        
-        for (Sprite s: clouds)
+    	boss.setOffsets(xOffset, yOffset);
+    	boss.drawTransformed(g);
+    	boss.show();
+        g.setColor(Color.green);
+        int i=0, j=getWidth()-95;
+        for(; i<boss.getCurrentHP(); i++,j+=8)
         {
-        	s.setOffsets(xOffset,yOffset);
-        	s.draw(g);
+        	g.fillRoundRect(j,40, 5, 25, 6, 6);
         }
-
-        tmap.draw(g,xOffset,yOffset);
+        for(i=0, j=getWidth()-95; i<boss.getMaxHP(); i++, j+=8)
+        {
+        	g.drawString("--", j, 40); //top line
+        	g.drawString("--", j, 72); //bottom line
+        }
+        g.drawLine(j, 36, j, 68); // side line
+        if(boss.getProjectile().isVisible())
+        	drawProjectile(g, boss.getProjectile());
+    }
+  	/**
+  	 * Draws the Grapple Hook and a line behind.
+  	 */
+    private void drawGrappleHook(Graphics2D g)
+    {
+    	 if(grappleHook.isVisible())
+         {
+    		 grappleHook.setRotation(grappleHook.getRotation());
+    		 grappleHook.drawTransformed(g);
+    		 grappleHook.setOffsets(xOffset, yOffset);
+         	g.setColor(Color.black);
+         	g.setStroke(new BasicStroke(3));
+         	//TODO adjust the line so it follows the hook properly when rotated
+         	if(player.isLookingRight())
+         		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
+         					(int)player.getY()+26+yOffset,
+         					(int)grappleHook.getX()+xOffset,
+         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+         	else
+             	g.drawLine(	(int)player.getX()+xOffset,
+         					(int)player.getY()+26+yOffset,
+         					(int)grappleHook.getX()+xOffset,
+         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+         	//reset stroke
+         	g.setStroke(new BasicStroke(0));
+   	      }
+    }
+	/**
+	 * Draw each crate/thug by going through their ArrayLists accordingly.
+	 * */
+    private void drawLevel(Graphics2D g)
+    {
+    	//draw crates
+		for(int i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
+        {
+        	Crate c =  currLevel.getCrateSpawnPositions().get(i).getFirst();
+    		c.drawTransformed(g);
+    	    c.setOffsets(xOffset, yOffset);
+        	Pair<Float,Float> crateLocation = currLevel.getCrateSpawnPositions().get(i).getSecond();
+        	if(player.getX()+getWidth()>crateLocation.getFirst() && !c.isHit())
+        		c.show();
+        }
+		//draw thugs
+		for(int i=0; i<currLevel.getThugSpawnPositions().size(); i++)
+		{
+			Thug th = currLevel.getThugSpawnPositions().get(i).getFirst();
+			th.drawTransformed(g);
+			th.setOffsets(xOffset, yOffset);
+			Pair<Float,Float> thugLocation = currLevel.getThugSpawnPositions().get(i).getSecond();
+			if(player.getX()+getWidth()>thugLocation.getFirst() && !th.isKilled())
+				th.show();
+			if(th.getProjectile().isVisible())
+				drawProjectile(g, th.getProjectile());
+		}
+		//draw turrets TODO finish this
+		/*for(int i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
+		{
+			Turret turret = currLevel.getTurretSpawnPositions().get(i).getFirst();
+			turret.setOffsets(xOffset, yOffset);
+			turret.drawTransformed(g);
+		*/
+    }
+	/**
+	 * Draws the HUD for the player's Life Bars/Gadgets
+	 */
+    private void drawPlayerAndHUD(Graphics2D g)
+    {
+        player.setOffsets(xOffset, yOffset);
+        player.drawTransformed(g);
+        		
+    	String msg = "Equipped Gadget: "; 
+    	if(player.getCurrentGadget().equals("Batarang"))
+    		g.drawImage(loadImage("assets/images/BatmanGadgets/batarang.png"), 125, 75, null);
+    	else if(player.getCurrentGadget().equals("Grapple Hok"))
+    		g.drawImage(loadImage("assets/images/BatmanGadgets/grappleHookGun.png"), 125, 75, null);
+    	
+        g.setColor(Color.red);
+        g.drawString(msg, 20, 90);
+        
+        //Life Bars
+        g.setColor(Color.black);
+        int i=0, j=20;
+        for(; i<player.getLifeBars(); i++,j+=8)
+        {
+        	g.fillRoundRect(j, 40, 5, 25, 6, 6);
+        }
+        for(i=0, j=20; i<player.getMaxHP(); i++, j+=8)
+        {
+        	g.drawString("--", j, 40); //top line
+        	g.drawString("--", j, 72); //bottom line
+        }
+        g.drawLine(j, 36, j, 68); // side line
+	
+    }
+    private void drawProjectile(Graphics2D g, Sprite proj)
+    {
+		proj.setOffsets(xOffset, yOffset);
+		proj.drawTransformed(g);
     }
 	private void drawHELP(Graphics2D g)
     {
@@ -787,6 +823,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
     	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
     }
+	private void drawGameOverState(Graphics2D g)
+	{
+    	g.setColor(Color.red);
+    	g.drawString("GAME OVER", screenWidth/2, screenHeight/2);
+    	g.drawString("Press Esc to Quit", screenWidth/2-15, screenHeight/2+15);
+    	g.drawString("       or", screenWidth/2, screenHeight/2+30);
+    	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
+	}
 	private void drawRain(Graphics2D g)
 	{
         //draw rain
@@ -800,31 +844,4 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	g.drawLine(x, y, x-3, y+3);
         }
 	}
-	private void calculateOffsets()
-    {
-    	xOffset = screenWidth/2-(int)player.getX();
-    	yOffset = screenHeight/2-(int)player.getY();
-        int minOffsetX= screenWidth-tmap.getPixelWidth();
-        int maxOffsetX = 0;
-        int minOffsetY = screenHeight-tmap.getPixelHeight();
-        int maxOffsetY = 0;
-        
-        if(xOffset>maxOffsetX)
-        	xOffset = maxOffsetX;
-        else if(xOffset<minOffsetX)
-        	xOffset=minOffsetX;
-        
-        if(yOffset>maxOffsetY)
-        	yOffset=maxOffsetY;
-        else if(yOffset<minOffsetY)
-        	yOffset=minOffsetY;
-        
-        if(bossFight)
-        {
-        	xOffset = minOffsetX;
-        	yOffset = minOffsetY;
-        }
-    }
-    public int getXOffset(){return xOffset;}
-    public int getYOffset() {return yOffset;}
 }

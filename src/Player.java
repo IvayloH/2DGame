@@ -13,6 +13,7 @@ public class Player extends SpriteExtension
 	private Animation transparent32;
 	//Sounds
 	private Sound damaged = null;
+	private Sound jump = null;
 	//Flags
 	private boolean lookingRight = true;
 	private boolean invincible = false;
@@ -32,7 +33,6 @@ public class Player extends SpriteExtension
 	private final float RUNSPEED = .07f;
 	private final float JUMPHEIGHT = 48;
 	private float invincibleTime = .0f;
-	private float gravity = 0.01f;
 
 	
     public enum EPlayerState
@@ -79,6 +79,14 @@ public class Player extends SpriteExtension
 	 * Returns currently equipped gadget.
 	 * */
 	public String getCurrentGadget() { return currentGadget; }
+	/**
+	 * Loads the sound file and calls the start() method.
+	 * */
+	public void playJumpSound() 
+	{
+		jump = new Sound("assets/sounds/grunt_jump.wav");
+		jump.start();
+	}
 	/**
 	 * Get results from the checks for collisions and other changes in player state.
 	 * Update player based on those results.
@@ -260,7 +268,6 @@ public class Player extends SpriteExtension
 
     	}
 	}
-
 	/**
 	 * Switches to the next or previous gadget depending on the number of mouse wheel scrolls.
 	 */

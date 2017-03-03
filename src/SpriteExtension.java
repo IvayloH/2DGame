@@ -32,7 +32,10 @@ public class SpriteExtension extends Sprite
 		this.tag = tag;
 		loadAssets();
 	}
-	public SpriteExtension(){}
+	/**
+	 * If using this constructor, set tag manually before use!!
+	 * */
+	public SpriteExtension() { }
 	
 	public void setTag(String tag){ this.tag = tag; }
 	public String getTag() { return tag; }

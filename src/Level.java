@@ -3,17 +3,16 @@ import game2D.TileMap;
 
 public class Level
 {
-	protected ArrayList<Pair<Crate,Pair<Float,Float>>> crateSpawnPositions;
-	protected ArrayList<Pair<Thug,Pair<Float,Float>>> thugSpawnPositions;
-	protected ArrayList<Pair<Turret,Pair<Float,Float>>> turretSpawnPositions;
+	private ArrayList<Pair<Crate,Pair<Float,Float>>> crateSpawnPositions;
+	private ArrayList<Pair<Thug,Pair<Float,Float>>> thugSpawnPositions;
+	private ArrayList<Pair<Turret,Pair<Float,Float>>> turretSpawnPositions;
 	
-	protected Player player;
-	protected Boss boss;
-	protected TileMap tmap = null;
-	protected SpriteExtension projectile;
+	private Player player;
+	private Boss boss;
+	private TileMap tmap = null;
 	private String levelName="";
 	
-	public Level(Player player, Boss boss, TileMap tmap,Game gct)
+	public Level(Player player, Boss boss, TileMap tmap)
 	{
 		crateSpawnPositions = new ArrayList<Pair<Crate,Pair<Float,Float>>>();
 		thugSpawnPositions = new ArrayList<Pair<Thug,Pair<Float,Float>>>();
@@ -68,6 +67,10 @@ public class Level
 			Pair<Float,Float> location = crateSpawnPositions.get(i).getSecond();
 			resetCratesOnTileMap();
 			c.reset(location.getFirst(), location.getSecond());
+		}
+		for(i=0; i<turretSpawnPositions.size(); i++)
+		{
+			turretSpawnPositions.get(i).getFirst().reset();
 		}
 	}
 	/**

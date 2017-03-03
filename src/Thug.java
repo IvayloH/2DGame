@@ -3,7 +3,6 @@ import game2D.*;
 public class Thug extends SpriteExtension
 {
 	private boolean killed = false;
-	private float gravity = 0.01f;
 	private final float PATROLSPEED = .04f;
 	private boolean walkingRight = false;
 
@@ -42,7 +41,7 @@ public class Thug extends SpriteExtension
     					shootHorizontal(player);
 		}
 		this.update(elapsed);
-		//if(gct.checkBottomSideForCollision(this))
+		if(collider.checkBottomSideForCollision(this))
 			patrol(player, tmap); // patrol the rooftops
 	}
 	/**
