@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import game2D.TileMap;
 
-public abstract class Level
+public class Level
 {
 	protected ArrayList<Pair<Crate,Pair<Float,Float>>> crateSpawnPositions;
 	protected ArrayList<Pair<Thug,Pair<Float,Float>>> thugSpawnPositions;
@@ -11,6 +11,7 @@ public abstract class Level
 	protected Boss boss;
 	protected TileMap tmap = null;
 	protected SpriteExtension projectile;
+	private String levelName="";
 	
 	public Level(Player player, Boss boss, TileMap tmap,Game gct)
 	{
@@ -20,21 +21,39 @@ public abstract class Level
 		this.player = player;
 		this.tmap = tmap;
 		this.boss = boss;
+		setUpLevel();
 	}
 	
 	public ArrayList<Pair<Crate,Pair<Float,Float>>> getCrateSpawnPositions() { return crateSpawnPositions; }
 	public ArrayList<Pair<Thug,Pair<Float,Float>>> getThugSpawnPositions() { return thugSpawnPositions; }
 	
 	/**
-	 * Handles calling all other methods needed to set up the level. (empty)
+	 * Handles calling all other methods needed to set up the level.
 	 * */
-	void setUpLevel() { }
-	
+	private void setUpLevel() 
+	{ 
+		player.show();
+		setUpThugs();
+		setUpCrates();
+		setUpTurrets();
+        if(levelName.equals("Level One"))
+        	boss.setSpawn(1945f, 50f);
+	}
+	/**
+	 * Restart the level.
+	 * */
+	public void restartLevel()
+	{
+		resetCurrentLevel();
+		boss.reset();
+		player.reset();
+		player.show();
+	}
 
 	/**
 	 * Reset the Crate and Thug Lists by calling their reset methods.
 	 * */
-	protected void resetCurrentLevel()
+	private void resetCurrentLevel()
 	{
 		int i=0;
 		for(i=0; i<thugSpawnPositions.size(); i++)
@@ -56,7 +75,7 @@ public abstract class Level
 	 * with an according tile char. Instantiate a new Thug and add it
 	 * along with the coordinates of the tile to the ArrayList.
 	 * */
-    protected void setUpThugs()
+	private void setUpThugs()
     {
     	for(int y=0; y<tmap.getMapHeight(); y++)
     		for(int x=0; x<tmap.getMapWidth(); x++)
@@ -81,7 +100,7 @@ public abstract class Level
 	 * with an according tile char. Instantiate a new Crate and add it
 	 * along with the coordinates of the tile to the ArrayList.
 	 * */
-    protected void setUpCrates()
+	private void setUpCrates()
     {
     	for(int y=0; y<tmap.getMapHeight(); y++)
     		for(int x=0; x<tmap.getMapWidth(); x++)
@@ -103,11 +122,36 @@ public abstract class Level
     			}
     }
 	/**
+	 * Scan through the tile map and replace every occurrence of 'o'
+	 * with an according tile char. Instantiate a new Turret and add it
+	 * along with the coordinates of the tile to the ArrayList.
+	 * */
+	private void setUpTurrets()
+    {
+    	for(int y=0; y<tmap.getMapHeight(); y++)
+    		for(int x=0; x<tmap.getMapWidth(); x++)
+    			if(tmap.getTileChar(x, y)=='o')
+    			{
+    				float pixelX = x*tmap.getTileWidth();
+    				float pixelY = y*tmap.getTileHeight();
+    				Turret turret = new Turret("turret");
+    				//add thug to array list
+    				Pair<Float, Float> location = new Pair<Float,Float>(pixelX,pixelY);
+    				Pair<Turret,Pair<Float,Float>> p = new Pair<Turret ,Pair<Float,Float>>(turret,location);
+    				turretSpawnPositions.add(p);
+    				//set the x,y for each thug
+    				turret.setX(pixelX);
+    				turret.setY(pixelY);
+    				//set tile according to the one above it
+    				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
+    			}
+    }
+	/**
 	 * Scan through the tile map and replace every occurrence of 'c'
 	 * with an according tile char. This will reset all of the crates
 	 * that have been hit and have been dropped down.
 	 * */
-    private void resetCratesOnTileMap()
+	private void resetCratesOnTileMap()
     {
     	for(int y=0; y<tmap.getMapHeight(); y++)
     		for(int x=0; x<tmap.getMapWidth(); x++)

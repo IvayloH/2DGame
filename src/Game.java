@@ -54,7 +54,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	private Sound jump = null;
     private Image bgImage = null;
     
-	private LevelOne currLevel;
+	private Level currLevel;
     private Collision collider;
 	
     private ArrayList<Sprite> clouds = new ArrayList<Sprite>();
@@ -98,7 +98,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-        currLevel = new LevelOne(player, boss, tmap, this);
+        currLevel = new Level(player, boss, tmap, this);
     }
 
     /**
@@ -534,12 +534,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_1)
     	{
     		tmap.loadMap("assets/maps", "level1.txt");
-    		currLevel = new LevelOne(player, boss, tmap, this);
+    		currLevel = new Level(player, boss, tmap, this);
     	}
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new LevelOne(player, boss, tmap, this);
+    		currLevel = new Level(player, boss, tmap, this);
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();

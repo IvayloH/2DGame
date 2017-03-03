@@ -19,7 +19,7 @@ public class SpriteExtension extends Sprite
 	
 	protected SpriteExtension projectile;
 	
-	protected String tag;
+	protected String tag = "";
 	protected float gravity = 0.01f;
 	protected boolean walkingRight = false;
 	protected Collision collider;
@@ -74,7 +74,7 @@ public class SpriteExtension extends Sprite
 	 * */
 	protected void loadAssets()
 	{
-		if(tag.equals(null) || tag.equals(""))
+		if(tag.equals(""))
 			System.out.println("Animation for " + this.getClass().toString() + " failed to load or was not set.");
         mainAnimation = new Animation();
         switch(tag)
