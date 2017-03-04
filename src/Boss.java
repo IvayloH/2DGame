@@ -1,5 +1,4 @@
-import game2D.*;
-public class Boss extends SpriteExtension
+public class Boss extends Enemy
 {
 	private int HP;
 	private int maxHP=10;
@@ -9,8 +8,7 @@ public class Boss extends SpriteExtension
 
 	public Boss(String tag)
 	{
-		super();
-		this.tag = tag;
+		super(tag);
 		loadAssets();
 		projectile = new SpriteExtension("projectile");
 		HP=maxHP;
@@ -48,39 +46,7 @@ public class Boss extends SpriteExtension
 	 */
 	public void shoot(Player player)
 	{
-		if(!player.isGameOver())//stop shooting after game is over
-		{
-	    	if(!projectile.isVisible() || projectile.getX()+screenWidth<this.getX() || projectile.getX()-screenWidth>this.getX())
-	    	{
-	    		projectile.setScale(0.8f);
-				Velocity v;
-				if(player.getX()>this.getX())
-				{
-					this.setAnimation(fireRight);
-					projectile.setX(this.getX()+this.getWidth());
-					projectile.setY(this.getY()+15);
-					//shoot directly at the player
-					v = new Velocity(0.7f, projectile.getX(),projectile.getY(),
-							player.getX()+player.getWidth()/2,player.getY()+player.getHeight()/2);
-					projectile.setRotation(180);
-				}
-				else
-				{
-					this.setAnimation(fireLeft);
-					projectile.setX(this.getX());
-					projectile.setY(this.getY()+15);
-					v = new Velocity(0.7f, projectile.getX(),projectile.getY(),
-							player.getX()+player.getWidth()/2,player.getY()+player.getHeight()/2);
-					projectile.setRotation(0);
-				}
-	
-				projectile.setVelocityX((float)v.getdx());
-				projectile.setVelocityY((float)v.getdy());
-				projectile.setRotation(v.getAngle());
-				
-		        playShootSound();
-				projectile.show();
-	    	}
-		}
+		//call the shoot method from superclass
+		shoot(player, true);
 	}
 }

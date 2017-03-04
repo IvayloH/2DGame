@@ -1,23 +1,46 @@
 import game2D.*;
 
-public class Thug extends SpriteExtension
+public class Enemy extends SpriteExtension
 {
 	private boolean killed = false;
 	private final float PATROLSPEED = .04f;
 	private boolean walkingRight = false;
-
-	public Thug(String tag)
+	
+	public Enemy(String tag)
 	{
 		super();
 		this.tag = tag;
 		projectile = new SpriteExtension("projectile");
 		loadAssets();
 	}
+	
 	public SpriteExtension getProjectile() { return projectile; }
 	public boolean isKilled() { return killed; }
-	
-	
-	public void update(long elapsed, Player player, TileMap tmap)
+	public void kill() 
+	{ 
+		if(!killed)
+		{
+			killed = true; 
+			this.hide();
+		}
+	}
+	/**
+	 * Reset the position to the thug's original position
+	 * and set the killed flag to false.
+	 **/
+	public void reset(float x, float y) 
+	{
+		setX(x);
+		setY(y);
+		killed=false; 
+	}
+	/**
+	 * @param elapsed Time that has elapsed.
+	 * @param player The player sprite.
+	 * @param tmap   The current TileMap, for collision checks.
+	 * @param aimAtPlayer If true, thugs will aim at the player when shooting.
+	 */
+	public void update(long elapsed, Player player, TileMap tmap, boolean aimAtPlayer)
 	{
 		collider = new Collision(tmap);
 		if (this.getY() + this.getHeight() > tmap.getPixelHeight())
@@ -38,68 +61,85 @@ public class Thug extends SpriteExtension
 			collider.recoverSpriteStuckInBottomTile(this);
     		if(Math.random()>0.6)
     			if(isPlayerClose(player))	
-    					shootHorizontal(player);
+    					shoot(player, aimAtPlayer);
 		}
 		this.update(elapsed);
-		if(collider.checkBottomSideForCollision(this))
-			patrol(player, tmap); // patrol the rooftops
-	}
-	/**
-	 * Reset the position to the thug's original position
-	 * and set the killed flag to false.
-	 **/
-	public void reset(float x, float y) 
-	{
-		setX(x);
-		setY(y);
-		killed=false; 
-	}
-	/**
-	 * Sets the killed flag to true and hides the sprite.
-	 **/
-	public void kill()
-	{
-		if(!killed)
-		{
-			killed = true;
-			this.hide(); //TODO Replace with a new animation.
-		}
+		if(tag.equals("thug"))
+			if(collider.checkBottomSideForCollision(this))
+				patrol(player, tmap); // patrol the rooftops
 	}
 	/**
 	 * Handles the shooting animation and action.
 	 */
-	private void shootHorizontal(Player player)
+	protected void shoot(Player player, boolean aimAtPlayer)
 	{
 		if(!player.isGameOver())//stop shooting after game is over
 		{
 	    	if(!projectile.isVisible() || projectile.getX()+screenWidth<this.getX() || projectile.getX()-screenWidth>this.getX())
 	    	{
-	    		projectile.setScale(0.8f);
 				Velocity v;
+				projectile.setVelocityY(.0f);
 				if(player.getX()>this.getX())
 				{
 					this.setAnimation(fireRight);
 					projectile.setX(this.getX()+this.getWidth());
 					projectile.setY(this.getY()+15);
-					v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()+50,this.getY()+26);
-					projectile.setRotation(180);
+					if(aimAtPlayer)
+					{
+						v = new Velocity(0.7f, projectile.getX(), projectile.getY(), 
+								player.getX()+player.getWidth()/2, player.getY()+player.getHeight()/2);
+						projectile.setRotation(v.getAngle());
+						projectile.setVelocityY((float)v.getdy());
+					}
+					else
+					{
+						v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()+this.getWidth()+5,this.getY()+26);
+						projectile.setRotation(180);
+					}
 				}
 				else
 				{
 					this.setAnimation(fireLeft);
 					projectile.setX(this.getX());
 					projectile.setY(this.getY()+15);
-					v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()-50,this.getY()+26);
-					projectile.setRotation(0);
+					if(aimAtPlayer)
+					{
+						v = new Velocity(0.7f, projectile.getX(),projectile.getY(),
+								player.getX()+player.getWidth()/2,player.getY()+player.getHeight()/2);
+						projectile.setRotation(v.getAngle());
+						projectile.setVelocityY((float)v.getdy());
+					}
+					else
+					{
+						v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()-50,this.getY()+26);
+						projectile.setRotation(0);
+					}
 				}
-				projectile.setVelocityY(.0f);
 				projectile.setVelocityX((float)v.getdx());
-				
+	    		switch(tag)
+	    		{
+	    		case "turret":
+	    		{
+	    			projectile.shiftY(5f);
+	    			projectile.setScale(1.0f);
+	    			if(projectile.getVelocityX()<0) projectile.setVelocityX(-2.0f);
+	    			else projectile.setVelocityX(2.0f);
+	    			break;
+	    		}
+	    		case "thug":
+	    		{
+	    			projectile.setScale(.5f);
+	    			break;
+	    		}
+	    		default:
+	    			break;
+	    		}
 				playShootSound();
 				projectile.show();
 	    	}
 		}
 	}
+	
 	private void patrol(Player player, TileMap tmap)//FIXME
 	{
 		if(!isPlayerClose(player))
@@ -147,11 +187,25 @@ public class Thug extends SpriteExtension
 			hit = true;
 		return hit;
 	}
+	
 	private boolean isPlayerClose(Player player)
 	{
-		return ((player.getX()+screenWidth>this.getX() || this.getX()<player.getX()-screenWidth)
-				&&(player.getY()+player.getHeight()+50>this.getY() || player.getY()-player.getHeight()+20>this.getY())); 
-		// check to see if player is close or not on the X axis
-		//then on the Y axis
+		boolean closeOnX = false;
+		boolean closeOnY = false;
+		if(player.getX()+screenWidth>this.getX())
+		{
+			if(this.getX()+screenWidth<player.getX())
+				closeOnX = false;
+			else
+				closeOnX = true;
+		}
+		if(player.getY()+player.getHeight()+50>this.getY() || player.getY()-player.getHeight()+20>this.getY())
+		{
+			closeOnY = true;
+		}
+		else
+			closeOnY = false;
+		return (closeOnX && closeOnY);
 	}
+	
 }

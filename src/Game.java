@@ -31,7 +31,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	final char[] tileMapChars = {'b','w','r','c','n','v','z'};
 
     private float jumpStartPos = .0f;  // keep track of jump start
-
     
     // Game state flags
     private boolean cursorChanged = false;
@@ -57,7 +56,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Collision collider;
 	
     private ArrayList<Sprite> bats = new ArrayList<Sprite>();
-    private TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()    
+    private TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()
     
     private int xOffset, yOffset;
     
@@ -99,7 +98,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-        currLevel = new Level(player, boss, tmap);
+        currLevel = new Level(player, boss, tmap, "Level One");
     }
 
     /**
@@ -136,6 +135,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         {
         	drawBoss(g);
         	bossFight=true;
+        	spawnBats();
         }
         if(player.isGameOver())
         {
@@ -185,12 +185,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_1)
     	{
     		tmap.loadMap("assets/maps", "level1.txt");
-    		currLevel = new Level(player, boss, tmap);
+    		currLevel = new Level(player, boss, tmap, "Level One");
     	}
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new Level(player, boss, tmap);
+    		currLevel = new Level(player, boss, tmap, "Level Two");
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
@@ -528,12 +528,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	int i=0;
     	for(i=0; i<currLevel.getThugSpawnPositions().size(); i++)
 		{
-			Thug t = currLevel.getThugSpawnPositions().get(i).getFirst();
+    		Enemy t = currLevel.getThugSpawnPositions().get(i).getFirst();
 			if(collider.boundingBoxCollision(batarang,t))
-			{
 				t.kill();
-				spawnBats();
-			}
 		}
 		for(i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
 		{
@@ -585,7 +582,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 					}
 					else
 					boss.setInvulnerableTimer(boss.getInvulnerableTimer()+elapsed);
-					System.out.println(boss.getInvulnerableTimer()+elapsed);
 				}
 				boss.setVelocityY(.0f);
 				if(player.getX()>boss.getX() && !boss.getProjectile().isVisible())
@@ -659,15 +655,40 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
 		for(i=0; i<currLevel.getThugSpawnPositions().size(); i++)
 		{
-			Thug th = currLevel.getThugSpawnPositions().get(i).getFirst();
+			Enemy th = currLevel.getThugSpawnPositions().get(i).getFirst();
 			if(th.isVisible())
-				th.update(elapsed, player, tmap);
+			{
+				//when its the first level, leave it easier
+				if(!currLevel.getLevelName().equals("Level One"))
+					th.update(elapsed, player, tmap, true);
+				else 
+					th.update(elapsed, player, tmap, false);
+			}
 			if(th.getProjectile().isVisible())
 	    	{
 	    		if(collider.boundingBoxCollision(th.getProjectile(),player) && !player.isInvincible())
 	    			player.takeDamage();
 	    		if(th.getProjectile().isVisible())
 	    			updateProjectile(elapsed, th.getProjectile());
+	    	}
+		}
+		for(i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
+		{
+			Enemy turr = currLevel.getTurretSpawnPositions().get(i).getFirst();
+			if(turr.isVisible())
+			{
+				//when its the first level, leave it easier
+				if(!currLevel.getLevelName().equals("Level One"))
+					turr.update(elapsed, player, tmap, true);
+				else 
+					turr.update(elapsed, player, tmap, false);
+			}
+			if(turr.getProjectile().isVisible())
+	    	{
+	    		if(collider.boundingBoxCollision(turr.getProjectile(),player) && !player.isInvincible())
+	    			player.takeDamage();
+	    		if(turr.getProjectile().isVisible())
+	    			updateProjectile(elapsed, turr.getProjectile());
 	    	}
 		}
 		//boss bullet collision
@@ -761,7 +782,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		//draw thugs
 		for(int i=0; i<currLevel.getThugSpawnPositions().size(); i++)
 		{
-			Thug th = currLevel.getThugSpawnPositions().get(i).getFirst();
+			Enemy th = currLevel.getThugSpawnPositions().get(i).getFirst();
 			th.drawTransformed(g);
 			th.setOffsets(xOffset, yOffset);
 			Pair<Float,Float> thugLocation = currLevel.getThugSpawnPositions().get(i).getSecond();
@@ -771,12 +792,18 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				drawProjectile(g, th.getProjectile());
 		}
 		//draw turrets TODO finish this
-		/*for(int i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
+		for(int i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
 		{
-			Turret turret = currLevel.getTurretSpawnPositions().get(i).getFirst();
+			Enemy turret = currLevel.getTurretSpawnPositions().get(i).getFirst();
 			turret.setOffsets(xOffset, yOffset);
 			turret.drawTransformed(g);
-		*/
+			
+			Pair<Float,Float> turretLocation = currLevel.getTurretSpawnPositions().get(i).getSecond();
+			if(player.getX()+getWidth()>turretLocation.getFirst() && !turret.isKilled())
+				turret.show();
+			if(turret.getProjectile().isVisible())
+				drawProjectile(g, turret.getProjectile());
+		}
     }
 	/**
 	 * Draws the HUD for the player's Life Bars/Gadgets

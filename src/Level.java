@@ -4,28 +4,30 @@ import game2D.TileMap;
 public class Level
 {
 	private ArrayList<Pair<Crate,Pair<Float,Float>>> crateSpawnPositions;
-	private ArrayList<Pair<Thug,Pair<Float,Float>>> thugSpawnPositions;
-	private ArrayList<Pair<Turret,Pair<Float,Float>>> turretSpawnPositions;
+	private ArrayList<Pair<Enemy,Pair<Float,Float>>> thugSpawnPositions;
+	private ArrayList<Pair<Enemy,Pair<Float,Float>>> turretSpawnPositions;
 	
 	private Player player;
 	private Boss boss;
 	private TileMap tmap = null;
 	private String levelName="";
 	
-	public Level(Player player, Boss boss, TileMap tmap)
+	public Level(Player player, Boss boss, TileMap tmap, String levelName)
 	{
 		crateSpawnPositions = new ArrayList<Pair<Crate,Pair<Float,Float>>>();
-		thugSpawnPositions = new ArrayList<Pair<Thug,Pair<Float,Float>>>();
-		turretSpawnPositions = new ArrayList<Pair<Turret,Pair<Float,Float>>>();
+		thugSpawnPositions = new ArrayList<Pair<Enemy,Pair<Float,Float>>>();
+		turretSpawnPositions = new ArrayList<Pair<Enemy,Pair<Float,Float>>>();
 		this.player = player;
 		this.tmap = tmap;
 		this.boss = boss;
+		this.levelName = levelName;
 		setUpLevel();
 	}
 	
 	public ArrayList<Pair<Crate,Pair<Float,Float>>> getCrateSpawnPositions() { return crateSpawnPositions; }
-	public ArrayList<Pair<Thug,Pair<Float,Float>>> getThugSpawnPositions() { return thugSpawnPositions; }
-	
+	public ArrayList<Pair<Enemy,Pair<Float,Float>>> getThugSpawnPositions() { return thugSpawnPositions; }
+	public ArrayList<Pair<Enemy,Pair<Float,Float>>> getTurretSpawnPositions() { return turretSpawnPositions; }
+	public String getLevelName() { return levelName; }
 	/**
 	 * Handles calling all other methods needed to set up the level.
 	 * */
@@ -57,7 +59,7 @@ public class Level
 		int i=0;
 		for(i=0; i<thugSpawnPositions.size(); i++)
 		{
-			Thug th = thugSpawnPositions.get(i).getFirst();
+			Enemy th = thugSpawnPositions.get(i).getFirst();
 			Pair<Float,Float> location = thugSpawnPositions.get(i).getSecond();
 			th.reset(location.getFirst(), location.getSecond());
 		}
@@ -70,7 +72,9 @@ public class Level
 		}
 		for(i=0; i<turretSpawnPositions.size(); i++)
 		{
-			turretSpawnPositions.get(i).getFirst().reset();
+			Enemy turr = turretSpawnPositions.get(i).getFirst();
+			Pair<Float,Float> location = turretSpawnPositions.get(i).getSecond();
+			turr.reset(location.getFirst(), location.getSecond());
 		}
 	}
 	/**
@@ -86,10 +90,10 @@ public class Level
     			{
     				float pixelX = x*tmap.getTileWidth();
     				float pixelY = y*tmap.getTileHeight();
-    				Thug th = new Thug("thug");
+    				Enemy th = new Enemy("thug");
     				//add thug to array list
     				Pair<Float, Float> location = new Pair<Float,Float>(pixelX,pixelY);
-    				Pair<Thug,Pair<Float,Float>> p = new Pair<Thug ,Pair<Float,Float>>(th,location);
+    				Pair<Enemy,Pair<Float,Float>> p = new Pair<Enemy ,Pair<Float,Float>>(th,location);
     				thugSpawnPositions.add(p);
     				//set the x,y for each thug
     				th.setX(pixelX);
@@ -137,10 +141,10 @@ public class Level
     			{
     				float pixelX = x*tmap.getTileWidth();
     				float pixelY = y*tmap.getTileHeight();
-    				Turret turret = new Turret("turret");
+    				Enemy turret = new Enemy("turret");
     				//add thug to array list
     				Pair<Float, Float> location = new Pair<Float,Float>(pixelX,pixelY);
-    				Pair<Turret,Pair<Float,Float>> p = new Pair<Turret ,Pair<Float,Float>>(turret,location);
+    				Pair<Enemy,Pair<Float,Float>> p = new Pair<Enemy ,Pair<Float,Float>>(turret,location);
     				turretSpawnPositions.add(p);
     				//set the x,y for each thug
     				turret.setX(pixelX);
