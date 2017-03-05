@@ -1,7 +1,8 @@
 public class Boss extends Enemy
 {
+	private int[] difficultyScale = {4,8,12};
 	private int HP;
-	private int maxHP=10;
+	private int maxHP=8; // default value
 	private boolean invulnerable = false;
 	private long invulnerableTime = 0;
 	private boolean dead = false;
@@ -11,6 +12,11 @@ public class Boss extends Enemy
 		super(tag);
 		loadAssets();
 		projectile = new SpriteExtension("projectile");
+		HP = maxHP;
+	}
+	public void setDifficulty(int difficulty)
+	{
+		maxHP = difficultyScale[difficulty];
 		HP=maxHP;
 	}
 	public void setSpawn(float x, float y)

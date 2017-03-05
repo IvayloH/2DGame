@@ -42,7 +42,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private boolean jumpKey = false;
     private boolean crouchKey = false;
     private boolean helpKey = false;
-    private boolean nextLevel = false;
+    
+    private boolean inMenu = true;
+    private boolean difficultySelection = false;
     
     // Game resources
     private Player player = null;
@@ -51,6 +53,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Boss boss = null;
 	
     private Image bgImage = null;
+    private Image menuBackground;
+    private Image menu;
+    private Image difficultyMenu;
     
 	private Level currLevel;
     private Collision collider;
@@ -106,6 +111,17 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void draw(Graphics2D g)
     {
+    	if(inMenu)
+    	{
+    		if(difficultySelection)
+    			g.drawImage(difficultyMenu, 0, 0, null);
+    		else
+    		{
+    			g.drawImage(menuBackground, 0, 0, null);
+            	g.drawImage(menu, 0, 0, null);
+    		}
+            return;
+    	}
     	calculateOffsets();
         g.drawImage(bgImage,xOffset,yOffset,null);
         tmap.draw(g,xOffset,yOffset);
@@ -142,7 +158,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	drawGameOverState(g);
         }
         drawRain(g);
-
     }
     
     /**
@@ -152,16 +167,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */    
     public void update(long elapsed)
     {
+    	if(inMenu) return;
     	if(bossFight)
     	{
     		updateBoss(elapsed);
     		if(boss.isDead())
     			loadNextLevel();
     	}
-    		
-    	if(nextLevel)
-    		loadNextLevel();
-
+    	
     	if(batarang.isVisible())
     		updateBatarang(elapsed);
     	
@@ -191,6 +204,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
     		currLevel = new Level(player, boss, tmap, "Level Two");
+    	}
+    	if(key==KeyEvent.VK_3)
+    	{
+    		player.reset();
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
@@ -375,6 +392,22 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				}
 			}
 		}
+		if(inMenu && !difficultySelection)
+		{
+			if((e.getX()>160 && e.getX()<380) && (e.getY()>80 && e.getY()<130))
+				difficultySelection = true;
+			else if((e.getX()>200 && e.getX()<300) && (e.getY()>160 && e.getY()<210))
+				System.exit(0);
+		}
+		if(difficultySelection)
+		{
+			if((e.getX()>210 && e.getX()<290) && (e.getY()>100 && e.getY()<140))
+				startGame(0);
+			else if((e.getX()>190 && e.getX()<325) && (e.getY()>166 && e.getY()<200))
+				startGame(1);
+			else if((e.getX()>215 && e.getX()<302) && (e.getY()>223 && e.getY()<265))
+				startGame(2);
+		}
 	}
 	public void mouseClicked(MouseEvent arg0) {}
 	public void mouseEntered(MouseEvent arg0) {}
@@ -466,9 +499,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     }
     private void loadNextLevel()
     {
-    	nextLevel = false;
     	player.reset();
+    	bossFight=false;
     	tmap.loadMap("assets/maps", "level2.txt");
+    	currLevel = new Level(player, boss, tmap, "Level Two");
     }
     private void spawnBats()
     {
@@ -498,7 +532,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		}
     	}
     }
-
+    private void startGame(int diff)
+    {
+    	inMenu=false;
+    	difficultySelection=false;
+    	boss.setDifficulty(diff);
+    }
 	/*
 	 *    		 LOAD RESOURCES
 	 */
@@ -506,6 +545,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
         bgImage = loadImage("assets/images/city.png");
+        menuBackground = loadImage("assets/images/Menus/menuBG.jpg");
+        menu = loadImage("assets/images/Menus/menu.png");
+        difficultyMenu = loadImage("assets/images/Menus/diffMenu.jpg");
         //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
         //levelMusic.start();
 	}

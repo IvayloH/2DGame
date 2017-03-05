@@ -7,6 +7,7 @@ public class Level
 	private ArrayList<Pair<Enemy,Pair<Float,Float>>> thugSpawnPositions;
 	private ArrayList<Pair<Enemy,Pair<Float,Float>>> turretSpawnPositions;
 	
+	
 	private Player player;
 	private Boss boss;
 	private TileMap tmap = null;
