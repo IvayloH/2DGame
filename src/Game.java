@@ -43,7 +43,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private boolean crouchKey = false;
     private boolean helpKey = false;
     
-    private boolean inMenu = true;
+    private boolean inMenu = false; // TODO set to true later
     private boolean difficultySelection = false;
     
     // Game resources
@@ -53,8 +53,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Boss boss = null;
 	
     private Image bgImage = null;
-    private Image menuBackground;
-    private Image menu;
+    private Image mainMenu;
     private Image difficultyMenu;
     
 	private Level currLevel;
@@ -117,8 +116,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			g.drawImage(difficultyMenu, 0, 0, null);
     		else
     		{
-    			g.drawImage(menuBackground, 0, 0, null);
-            	g.drawImage(menu, 0, 0, null);
+            	g.drawImage(mainMenu, 0, 0, null);
     		}
             return;
     	}
@@ -133,7 +131,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         }
     	
         drawPlayerAndHUD(g);
-        if(!player.isGameOver())
+        if(!player.isKilled())
         {
 	        drawGrappleHook(g);
 	        drawProjectile(g, batarang);
@@ -153,7 +151,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	bossFight=true;
         	spawnBats();
         }
-        if(player.isGameOver())
+        if(player.isKilled())
         {
         	drawGameOverState(g);
         }
@@ -171,14 +169,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(bossFight)
     	{
     		updateBoss(elapsed);
-    		if(boss.isDead())
+    		if(boss.isKilled())
     			loadNextLevel();
     	}
     	
     	if(batarang.isVisible())
     		updateBatarang(elapsed);
     	
-    	if (grappleHook.isVisible() && !player.isGameOver())
+    	if (grappleHook.isVisible() && !player.isKilled())
     		updateGrappleHook(elapsed);
 	
     	updateLevel(elapsed);
@@ -207,6 +205,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	if(key==KeyEvent.VK_3)
     	{
+    		tmap.loadMap("assets/maps", "level3.txt");
+    		currLevel = new Level(player, boss, tmap, "Level Two");
+    	}
+    	if(key==KeyEvent.VK_4)
+    	{
     		player.reset();
     	}
     	if (key == KeyEvent.VK_ESCAPE)
@@ -230,7 +233,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	if(key==KeyEvent.VK_R)
     	{
-    		if(player.isGameOver())
+    		if(player.isKilled())
     			restartGame();
     	}
     	
@@ -308,10 +311,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		{
 			if(player.getState().equals(Player.EPlayerState.STANDING))
 			{
-				if(player.isLookingRight())
+				if(player.isFacingRight())
 				{
 					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
-					player.setLookingRight(false);
+					player.setFacingRight(false);
 				}
 			}
 		}
@@ -319,10 +322,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		{
 			if(player.getState().equals(Player.EPlayerState.STANDING))
 			{
-				if(!player.isLookingRight())
+				if(!player.isFacingRight())
 				{
 					player.setAnimation(player.getAppropriateAnimation(grappleHook.isVisible()));
-					player.setLookingRight(true);
+					player.setFacingRight(true);
 				}
 			}
 		}
@@ -341,72 +344,75 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	}
 	public void mousePressed(MouseEvent e) 
 	{
-		if(player.getCurrentGadget().equals("Grapple Hook"))
-		{
-			if(!player.isGameOver())
-		  		if(!grappleHook.isVisible() && !player.isCrouching())
-				{
-					Velocity v;
-					if(player.isLookingRight())
-					{
-						grappleHook.setX(player.getX()+player.getWidth());
-						grappleHook.setY(player.getY()+20);
-					}
-					else
-					{
-						grappleHook.setX(player.getX());
-						grappleHook.setY(player.getY()+20);
-					}
-					v = new Velocity(0.5f, grappleHook.getX()+xOffset, grappleHook.getY()+yOffset, e.getX()+10, e.getY()+10);
-					grappleHook.setVelocityX((float)v.getdx());
-					grappleHook.setVelocityY((float)v.getdy());
-					grappleHook.setRotation(v.getAngle());
-					grappleHook.show();
-				}
-		}
-		
-		if(player.getCurrentGadget().equals("Batarang"))
-		{
-			if(!player.isGameOver())
-			{
-				//batarang.Throw(player, e.getX(), e.getY());
-				if(!batarang.isVisible() && !player.isCrouching())
-				{
-					Velocity v;
-					if(player.isLookingRight())
-					{
-						batarang.setX(player.getX()+player.getWidth());
-						batarang.setY(player.getY()+26);
-					}
-					else
-					{
-						batarang.setX(player.getX());
-						batarang.setY(player.getY()+26);	
-					}
-					v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset, e.getX()+10, e.getY()+10);
-					batarang.setVelocityX((float)v.getdx());
-					batarang.setVelocityY((float)v.getdy());
-					batarang.playShootSound();
-					batarang.setRotation(v.getAngle());
-					batarang.show();
-				}
-			}
-		}
 		if(inMenu && !difficultySelection)
 		{
-			if((e.getX()>160 && e.getX()<380) && (e.getY()>80 && e.getY()<130))
+			if((e.getX()>180 && e.getX()<350) && (e.getY()>160 && e.getY()<200))
 				difficultySelection = true;
-			else if((e.getX()>200 && e.getX()<300) && (e.getY()>160 && e.getY()<210))
+			else if((e.getX()>220 && e.getX()<290) && (e.getY()>225 && e.getY()<260))
 				System.exit(0);
 		}
-		if(difficultySelection)
+		else if(difficultySelection)
 		{
-			if((e.getX()>210 && e.getX()<290) && (e.getY()>100 && e.getY()<140))
+			if((e.getX()>220 && e.getX()<290) && (e.getY()>90 && e.getY()<130))
 				startGame(0);
-			else if((e.getX()>190 && e.getX()<325) && (e.getY()>166 && e.getY()<200))
+			else if((e.getX()>190 && e.getX()<320) && (e.getY()>160 && e.getY()<200))
 				startGame(1);
-			else if((e.getX()>215 && e.getX()<302) && (e.getY()>223 && e.getY()<265))
+			else if((e.getX()>220 && e.getX()<300) && (e.getY()>225 && e.getY()<265))
 				startGame(2);
+		}
+		else
+		{
+			if(player.getCurrentGadget().equals("Grapple Hook"))
+			{
+				if(!player.isKilled())
+			  		if(!grappleHook.isVisible() && !player.isCrouching())
+					{
+						Velocity v;
+						if(player.isFacingRight())
+						{
+							grappleHook.setX(player.getX()+player.getWidth());
+							grappleHook.setY(player.getY()+20);
+						}
+						else
+						{
+							grappleHook.setX(player.getX());
+							grappleHook.setY(player.getY()+20);
+						}
+						v = new Velocity(0.5f, grappleHook.getX()+xOffset, grappleHook.getY()+yOffset, e.getX()+10, e.getY()+10);
+						grappleHook.setVelocityX((float)v.getdx());
+						grappleHook.setVelocityY((float)v.getdy());
+						grappleHook.setRotation(v.getAngle());
+						grappleHook.show();
+					}
+			}
+			
+			if(player.getCurrentGadget().equals("Batarang"))
+			{
+				if(!player.isKilled())
+				{
+					//batarang.Throw(player, e.getX(), e.getY());
+					if(!batarang.isVisible() && !player.isCrouching())
+					{
+						Velocity v;
+						if(player.isFacingRight())
+						{
+							batarang.setX(player.getX()+player.getWidth());
+							batarang.setY(player.getY()+26);
+						}
+						else
+						{
+							batarang.setX(player.getX());
+							batarang.setY(player.getY()+26);	
+						}
+						v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset, e.getX()+10, e.getY()+10);
+						batarang.setVelocityX((float)v.getdx());
+						batarang.setVelocityY((float)v.getdy());
+						batarang.playShootSound();
+						batarang.setRotation(v.getAngle());
+						batarang.show();
+					}
+				}
+			}
 		}
 	}
 	public void mouseClicked(MouseEvent arg0) {}
@@ -454,12 +460,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
       		{
       			if(rightKey)
       			{
-      				player.setLookingRight(true);
+      				player.setFacingRight(true);
       				return Player.EPlayerState.RUN_RIGHT;
       			}
       			if(leftKey)
       			{
-      				player.setLookingRight(false);
+      				player.setFacingRight(false);
       				return Player.EPlayerState.RUN_LEFT;
       			}
       		}
@@ -511,7 +517,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(bats.size()==0)
     	{
 	    	Animation ca = new Animation();
-	    	ca.addFrame(loadImage("assets/maps/bat.gif"), 1000);
+	    	ca.addFrame(loadImage("assets/maps/Extras/bat.gif"), 1000);
 	        for (int b=0; b<6; b++)
 	        {
 	        	s = new Sprite(ca);
@@ -536,7 +542,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {
     	inMenu=false;
     	difficultySelection=false;
-    	boss.setDifficulty(diff);
+    	boss.setHpBasedOnDifficulty(diff);
+    	player.setHpBasedOnDifficulty(diff);
     }
 	/*
 	 *    		 LOAD RESOURCES
@@ -545,15 +552,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
         bgImage = loadImage("assets/images/city.png");
-        menuBackground = loadImage("assets/images/Menus/menuBG.jpg");
-        menu = loadImage("assets/images/Menus/menu.png");
-        difficultyMenu = loadImage("assets/images/Menus/diffMenu.jpg");
+        mainMenu = loadImage("assets/images/Menus/mainMenu.png");
+        difficultyMenu = loadImage("assets/images/Menus/diffMenu.png");
         //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
         //levelMusic.start();
 	}
 	private void loadSprites()
 	{
-	  	player = new Player(6,75.f,50.f, "player");
+	  	player = new Player(75.f,50.f, "player");
         grappleHook = new GrappleHook(150,"grappleHook");
         batarang = new SpriteExtension("batarang");
         boss = new Boss("boss");
@@ -592,7 +598,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		}
 		if(batarang.getX()>player.getX()+getWidth() || batarang.getX()<player.getX()-getWidth())
 			batarang.hide();
-		if(!player.isGameOver())
+		if(!player.isKilled())
 			batarang.update(elapsed);
     }
 	/**
@@ -792,7 +798,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
          	g.setColor(Color.black);
          	g.setStroke(new BasicStroke(3));
          	//TODO adjust the line so it follows the hook properly when rotated
-         	if(player.isLookingRight())
+         	if(player.isFacingRight())
          		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
          					(int)player.getY()+26+yOffset,
          					(int)grappleHook.getX()+xOffset,
@@ -867,7 +873,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         //Life Bars
         g.setColor(Color.black);
         int i=0, j=20;
-        for(; i<player.getLifeBars(); i++,j+=8)
+        for(; i<player.getCurrentHP(); i++,j+=8)
         {
         	g.fillRoundRect(j, 40, 5, 25, 6, 6);
         }

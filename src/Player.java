@@ -2,6 +2,7 @@ import game2D.*;
 
 public class Player extends SpriteExtension
 {
+	private int[] difficultyScale = {9,6,3};
 	//Animations
 	private Animation crouch_Right;
 	private Animation crouch_Left;
@@ -15,21 +16,17 @@ public class Player extends SpriteExtension
 	private Sound damaged = null;
 	private Sound jump = null;
 	//Flags
-	private boolean lookingRight = true;
 	private boolean invincible = false;
 	private boolean flashy = false;
 	private boolean collisionABOVE = false;
 	private boolean collisionBELOW = false;
 	private boolean collisionRIGHT = false;
 	private boolean collisionLEFT = false;
-	private boolean gameOver = false;
 	//Gadgets
 	private final String[] gadgets = {"Batarang", "Grapple Hook"}; // holds all of batman's gadgets
 	private String currentGadget = "Grapple Hook";
 	//useful variables
 	private float startingX, startingY;
-	private int lifeBars;
-	private int amountOfDamageBeforeDeath;
 	private final float RUNSPEED = .07f;
 	private final float JUMPHEIGHT = 48;
 	private float invincibleTime = .0f;
@@ -52,29 +49,29 @@ public class Player extends SpriteExtension
     }
     EPlayerState playerState = EPlayerState.FALLING;
     
-	public Player(int maxHP, float startingX, float startingY, String tag)
+	public Player(float startingX, float startingY, String tag)
 	{
 		super();
-		this.amountOfDamageBeforeDeath = maxHP;
-		lifeBars = amountOfDamageBeforeDeath;
 		this.startingX = startingX;
 		this.startingY = startingY;
 		setX(startingX);
 		setY(startingY);
+		maxHP = 8; //default
+		lifeBars = maxHP;
 		this.tag = tag;
 		loadAssets();
 		loadAdditionalAssets();
 	}
-	
-	public boolean isLookingRight() { return lookingRight; }
-	public void setLookingRight(boolean b) { lookingRight = b; }
+	public void setHpBasedOnDifficulty(int difficulty)
+	{ 
+		maxHP = difficultyScale[difficulty];
+		lifeBars = maxHP;
+	}
+	public boolean isFacingRight() { return walkingRight; }
+	public void setFacingRight(boolean b) { walkingRight = b; }
 	public void setState(EPlayerState pState) { playerState = pState; }
 	public EPlayerState getState() { return playerState; }
 	public boolean isInvincible() { return invincible; }
-	public int getLifeBars() { return lifeBars; }
-	public int getMaxHP() { return amountOfDamageBeforeDeath; }
-	public void setMaxHealth(int amountOfDamageBeforeDeath) { this.amountOfDamageBeforeDeath = amountOfDamageBeforeDeath; }
-	public boolean isGameOver() { return gameOver; }
 	/**
 	 * Returns currently equipped gadget.
 	 * */
@@ -124,7 +121,7 @@ public class Player extends SpriteExtension
     	
     	if(playerState.equals(EPlayerState.DEAD)) 
     	{
-    		gameOver = true;
+    		killed = true;
     	}
     	if(playerState.equals(EPlayerState.STANDING))
     	{
@@ -201,7 +198,7 @@ public class Player extends SpriteExtension
     	if(!invincible)
     		setAnimation(getAppropriateAnimation(isGrappleHookVisible));
     	
-        if(!gameOver)
+        if(!killed)
         	update(elapsed);
         else
         	hide();
@@ -233,7 +230,7 @@ public class Player extends SpriteExtension
     	{
     		if(playerState.equals(EPlayerState.CROUCH))
     		{
-    			if(lookingRight)
+    			if(walkingRight)
     				return crouch_Right;
     			return crouch_Left;
     		}
@@ -250,18 +247,18 @@ public class Player extends SpriteExtension
 	    	if(playerState.equals(EPlayerState.JUMP_LEFT))
 	    		return jumpLeft;
 	    	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.FALLING))
-	    		if(lookingRight)
+	    		if(walkingRight)
 	    			return jumpRight;
 	    		else 
 	    			return jumpLeft;
-			if(lookingRight)
+			if(walkingRight)
 				return standRight;
 			else 
 				return standLeft;
     	}
     	else
     	{
-	    	if(lookingRight)
+	    	if(walkingRight)
 	    		return fireRight;
 			else 
 				return fireLeft;
@@ -310,10 +307,10 @@ public class Player extends SpriteExtension
 		{
 			if(this.getState().equals(Player.EPlayerState.STANDING))
 			{
-				if(this.isLookingRight())
+				if(this.isFacingRight())
 				{
 					this.setAnimation(this.getAppropriateAnimation(isGrappleHookVisible));
-					this.setLookingRight(false);
+					this.setFacingRight(false);
 				}
 			}
 		}
@@ -321,10 +318,10 @@ public class Player extends SpriteExtension
 		{
 			if(this.getState().equals(Player.EPlayerState.STANDING))
 			{
-				if(!this.isLookingRight())
+				if(!this.isFacingRight())
 				{
 					this.setAnimation(this.getAppropriateAnimation(isGrappleHookVisible));
-					this.setLookingRight(true);
+					this.setFacingRight(true);
 				}
 			}
 		}
@@ -334,12 +331,12 @@ public class Player extends SpriteExtension
 	 * */
 	public void reset()
 	{
-		lifeBars = amountOfDamageBeforeDeath;
+		lifeBars = maxHP;
 		playerState = EPlayerState.FALLING;
 		this.setX(startingX);
 		this.setY(startingY);
 		this.show();
-		gameOver=false; //TODO move gameOver state out of player and into level or game
+		killed=false; //TODO move gameOver state out of player and into level or game
 	}
 	/**
 	 * Returns true if player is in any of the jumping states.

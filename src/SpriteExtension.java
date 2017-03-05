@@ -5,6 +5,9 @@ import game2D.*;
 
 public class SpriteExtension extends Sprite
 {
+	final int screenWidth = 512;   //512
+	final int screenHeight = 384;  //384
+	
 	//Animations
 	protected Animation mainAnimation;
 	protected Animation standLeft;
@@ -15,16 +18,17 @@ public class SpriteExtension extends Sprite
 	protected Animation fireRight;
 	
 	//Sounds
-	Sound fire;
+	protected Sound fire;
 	
 	protected SpriteExtension projectile;
-	
+	protected int maxHP;
+	protected int lifeBars;
+	protected boolean killed;
 	protected String tag = "";
 	protected float gravity = 0.01f;
 	protected boolean walkingRight = false;
 	protected Collision collider;
-	static final int screenWidth = 512;   //512
-	static final int screenHeight = 384;  //384
+
 	
 	public SpriteExtension(String tag)
 	{
@@ -39,6 +43,17 @@ public class SpriteExtension extends Sprite
 	
 	public void setTag(String tag){ this.tag = tag; }
 	public String getTag() { return tag; }
+	public int getCurrentHP() { return lifeBars; }
+	public int getMaxHP() { return maxHP; }
+	public boolean isKilled() { return killed; }
+	public void kill() 
+	{ 
+		if(!killed)
+		{
+			killed = true; 
+			this.hide();
+		}
+	}
 	/**
 	 * Load the appropriate sound according to the Tag and calls the start() method.
 	 * */
@@ -184,8 +199,6 @@ public class SpriteExtension extends Sprite
 	    default:
 	        	break;
         }
-
-		
 	}
     /**
      * Loads an image with the given 'fileName'

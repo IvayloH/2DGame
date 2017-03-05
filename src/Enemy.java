@@ -2,7 +2,6 @@ import game2D.*;
 
 public class Enemy extends SpriteExtension
 {
-	private boolean killed = false;
 	private final float PATROLSPEED = .04f;
 	private boolean walkingRight = false;
 	
@@ -15,15 +14,6 @@ public class Enemy extends SpriteExtension
 	}
 	
 	public SpriteExtension getProjectile() { return projectile; }
-	public boolean isKilled() { return killed; }
-	public void kill() 
-	{ 
-		if(!killed)
-		{
-			killed = true; 
-			this.hide();
-		}
-	}
 	/**
 	 * Reset the position to the thug's original position
 	 * and set the killed flag to false.
@@ -73,7 +63,7 @@ public class Enemy extends SpriteExtension
 	 */
 	protected void shoot(Player player, boolean aimAtPlayer)
 	{
-		if(!player.isGameOver())//stop shooting after game is over
+		if(!player.isKilled())//stop shooting after game is over
 		{
 	    	if(!projectile.isVisible() || projectile.getX()+screenWidth<this.getX() || projectile.getX()-screenWidth>this.getX())
 	    	{

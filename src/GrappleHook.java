@@ -21,7 +21,7 @@ public class GrappleHook extends SpriteExtension
   	public void retractGrappleHook(Player player)
     {
   		Velocity v = null;
-  		if(player.isLookingRight())
+  		if(player.isFacingRight())
 			v = new Velocity(0.5f, this.getX(), this.getY(), player.getX()+player.getWidth(), player.getY()+20);
 		else
 			v = new Velocity(0.5f,  this.getX(), this.getY(),player.getX(), player.getY()+player.getHeight()/2);

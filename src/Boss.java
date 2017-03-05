@@ -1,35 +1,29 @@
 public class Boss extends Enemy
 {
 	private int[] difficultyScale = {4,8,12};
-	private int HP;
-	private int maxHP=8; // default value
 	private boolean invulnerable = false;
 	private long invulnerableTime = 0;
-	private boolean dead = false;
 
 	public Boss(String tag)
 	{
 		super(tag);
 		loadAssets();
 		projectile = new SpriteExtension("projectile");
-		HP = maxHP;
+		maxHP = 10; // default
+		lifeBars = maxHP;
 	}
-	public void setDifficulty(int difficulty)
+	public void setHpBasedOnDifficulty(int difficulty)
 	{
 		maxHP = difficultyScale[difficulty];
-		HP=maxHP;
+		lifeBars=maxHP;
 	}
 	public void setSpawn(float x, float y)
 	{
 		setX(x);
 		setY(y);
 	}
-	public boolean isDead() { return dead; }
-	public int getCurrentHP() { return HP; }
-	public int getMaxHP() { return maxHP; }
-	public void reset() { HP = maxHP; }
+	public void reset() { lifeBars = maxHP; }
 	public SpriteExtension getProjectile() { return projectile; }
-	public void kill() { dead=true; }
 	public void lookLeft() { setAnimation(standLeft); }
 	public void lookRight() { setAnimation(standRight); }
 	public boolean isInvulnerable() { return invulnerable; }
@@ -43,7 +37,7 @@ public class Boss extends Enemy
 	{
 		if(!invulnerable) 
 		{ 
-			HP--;
+			lifeBars--;
 			invulnerable = true;
 		}
 	}
