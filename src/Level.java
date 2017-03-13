@@ -29,6 +29,7 @@ public class Level
 	public ArrayList<Pair<Enemy,Pair<Float,Float>>> getThugSpawnPositions() { return thugSpawnPositions; }
 	public ArrayList<Pair<Enemy,Pair<Float,Float>>> getTurretSpawnPositions() { return turretSpawnPositions; }
 	public String getLevelName() { return levelName; }
+	private void setLevelName(String lvlName) { levelName = lvlName; }
 	/**
 	 * Handles calling all other methods needed to set up the level.
 	 * */
@@ -40,6 +41,21 @@ public class Level
 		setUpTurrets();
         if(levelName.equals("Level One"))
         	boss.setSpawn(1945f, 50f);
+	}
+	/**
+	 * Restart the game from level one.
+	 * */
+	public void restartGame()
+	{
+		tmap.loadMap("assets/maps", "level1.txt");
+		setLevelName("Level One");
+		thugSpawnPositions.clear();
+		crateSpawnPositions.clear();
+		turretSpawnPositions.clear();
+		setUpLevel();
+		boss.reset();
+		player.reset();
+		player.show();
 	}
 	/**
 	 * Restart the level.

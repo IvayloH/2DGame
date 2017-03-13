@@ -26,8 +26,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 {
 	private static final long serialVersionUID = 1L;
 	// Useful game constants
-	static final int screenWidth = 512;   //512
-	static final int screenHeight = 384;  //384
+	static final int screenWidth = 512;
+	static final int screenHeight = 384;
 	final char[] tileMapChars = {'b','w','r','c','n','v','z'};
 
     private float jumpStartPos = .0f;  // keep track of jump start
@@ -92,7 +92,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         addMouseMotionListener(this);
         
         initialiseGame(); 		
-        System.out.println(tmap);
+        //System.out.println(tmap);
     }
 
     /**
@@ -232,6 +232,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	    	crouchKey = true;
     	}
     	if(key==KeyEvent.VK_R)
+    	{
+    		if(player.isKilled())
+    			restartLevel();
+    	}
+    	if(key==KeyEvent.VK_ENTER)
     	{
     		if(player.isKilled())
     			restartGame();
@@ -390,7 +395,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			{
 				if(!player.isKilled())
 				{
-					//batarang.Throw(player, e.getX(), e.getY());
 					if(!batarang.isVisible() && !player.isCrouching())
 					{
 						Velocity v;
@@ -498,9 +502,20 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
 		return Player.EPlayerState.STANDING;
     }
-    private void restartGame()
+    /**
+     * Reset the current level from its start.
+     * */
+    private void restartLevel()
     {
     	currLevel.restartLevel(); // start from level one
+    	bossFight = false;
+    }
+    /**
+     * Load the first level of the game.
+     * */
+    private void restartGame()
+    {
+    	currLevel.restartGame();
     	bossFight = false;
     }
     private void loadNextLevel()
@@ -538,6 +553,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		}
     	}
     }
+	/**
+	 * Set the menu flags to false and call the setHpBasedOnDifficulty method
+	 * for player and boss using the passed parameter.
+	 */
     private void startGame(int diff)
     {
     	inMenu=false;
@@ -548,7 +567,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	/*
 	 *    		 LOAD RESOURCES
 	 */
-	private void loadAssets()
+	/**
+	 * Load the tmap, backgrounds, menu images and level music.
+	 */
+    private void loadAssets()
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
         bgImage = loadImage("assets/images/city.png");
@@ -557,7 +579,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
         //levelMusic.start();
 	}
-	private void loadSprites()
+	/**
+	 * Set up the player, grappleHook, batarang and boss sprites.
+	 */
+    private void loadSprites()
 	{
 	  	player = new Player(75.f,50.f, "player");
         grappleHook = new GrappleHook(150,"grappleHook");
@@ -790,27 +815,37 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
   	 */
     private void drawGrappleHook(Graphics2D g)
     {
-    	 if(grappleHook.isVisible())
-         {
-    		 grappleHook.setRotation(grappleHook.getRotation());
-    		 grappleHook.drawTransformed(g);
-    		 grappleHook.setOffsets(xOffset, yOffset);
-         	g.setColor(Color.black);
-         	g.setStroke(new BasicStroke(3));
-         	//TODO adjust the line so it follows the hook properly when rotated
-         	if(player.isFacingRight())
-         		g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
-         					(int)player.getY()+26+yOffset,
-         					(int)grappleHook.getX()+xOffset,
-         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-         	else
-             	g.drawLine(	(int)player.getX()+xOffset,
-         					(int)player.getY()+26+yOffset,
-         					(int)grappleHook.getX()+xOffset,
-         					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
-         	//reset stroke
-         	g.setStroke(new BasicStroke(0));
-   	      }
+    	if(grappleHook.isVisible())
+    	{
+    		grappleHook.drawTransformed(g);
+    		grappleHook.setOffsets(xOffset, yOffset);
+    		g.setColor(Color.black);
+    		g.setStroke(new BasicStroke(3));
+    		//TODO adjust the line so it follows the hook properly when rotated - FUCK MY MISERABLE NON-MATHEMATICAL LIFE.
+    		float yCent = (grappleHook.getY() + grappleHook.getHeight()/2);
+    		float xCent = (grappleHook.getX() + grappleHook.getWidth()/2);
+    		
+    		float yDif = (grappleHook.getY() + grappleHook.getHeight()/2) - yCent;
+    		float xDif = grappleHook.getX()- xCent;
+    		
+    		float newX = (float) (xDif*Math.cos(grappleHook.getRotation()) + xCent - yDif*Math.sin(grappleHook.getRotation()));
+    		float newY = (float) (yDif*Math.cos(grappleHook.getRotation()) + yCent + xDif*Math.sin(grappleHook.getRotation()));
+    				
+    				
+    				
+    		if(player.isFacingRight())
+    			g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
+    					(int)player.getY()+26+yOffset,
+    					(int)newX+xOffset,
+    					(int)newY+yOffset);
+    		else
+    			g.drawLine(	(int)player.getX()+xOffset,
+    					(int)player.getY()+26+yOffset,
+    					(int)grappleHook.getX()+xOffset,
+    					(int)grappleHook.getY()+(int)(grappleHook.getHeight()/2)+yOffset);
+    		//reset stroke
+    		g.setStroke(new BasicStroke(0));
+    	}
     }
 	/**
 	 * Draw each crate/thug by going through their ArrayLists accordingly.
@@ -839,7 +874,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			if(th.getProjectile().isVisible())
 				drawProjectile(g, th.getProjectile());
 		}
-		//draw turrets TODO finish this
 		for(int i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
 		{
 			Enemy turret = currLevel.getTurretSpawnPositions().get(i).getFirst();
@@ -906,6 +940,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("       or", screenWidth/2, screenHeight/2+30);
     	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
 	}
+	/**
+	 * Draw inclined short lines to simulate rain.
+	 * */
 	private void drawRain(Graphics2D g)
 	{
         //draw rain

@@ -58,6 +58,10 @@ public class Collision
 			if(c==temp)
 				s.setX(s.getX()+1);
 	}
+	/**
+	 * Check  every pixel from 1 to sprite's width-1, that is 1 pixel above the sprite,
+	 * to see if they are in a 
+	 */
     public boolean checkTopSideForCollision(Sprite s) 
 	{
 		boolean hit = false;

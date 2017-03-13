@@ -46,6 +46,9 @@ public class SpriteExtension extends Sprite
 	public int getCurrentHP() { return lifeBars; }
 	public int getMaxHP() { return maxHP; }
 	public boolean isKilled() { return killed; }
+	/**
+	 * Set killed to true and hide the sprite.
+	 * */
 	public void kill() 
 	{ 
 		if(!killed)

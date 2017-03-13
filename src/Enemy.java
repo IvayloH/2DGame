@@ -112,12 +112,23 @@ public class Enemy extends SpriteExtension
 	    		{
 	    			projectile.shiftY(5f);
 	    			projectile.setScale(1.0f);
-	    			if(projectile.getVelocityX()<0) projectile.setVelocityX(-2.0f);
-	    			else projectile.setVelocityX(2.0f);
+	    			projectile.setVelocityY(.0f);
+	    			if(projectile.getVelocityX()<0)
+	    				{
+	    					projectile.setVelocityX(-1.5f);
+	    					projectile.setRotation(180);
+	    				}
+	    			else
+	    			{ 
+	    				projectile.setVelocityX(1.5f);
+	    				projectile.setRotation(0);
+	    			}
 	    			break;
 	    		}
 	    		case "thug":
 	    		{
+	    			if(projectile.getVelocityX()<0) projectile.setVelocityX(-.5f);
+	    			else projectile.setVelocityX(.5f);
 	    			projectile.setScale(.5f);
 	    			break;
 	    		}
@@ -129,7 +140,9 @@ public class Enemy extends SpriteExtension
 	    	}
 		}
 	}
-	
+	/**
+	 * Makes the sprite move left/right when it reaches end of tile or any other obstacle.
+	 * */
 	private void patrol(Player player, TileMap tmap)//FIXME
 	{
 		if(!isPlayerClose(player))
@@ -164,6 +177,9 @@ public class Enemy extends SpriteExtension
 		else
 			this.setVelocityX(.0f);
 	}
+	/**
+	 * Collision checking modified so the sprite does not walk off the tiles.
+	 * */
 	private boolean modifiedThugCheckBottomSideForCollision(TileMap tmap)
 	{
 		boolean hit = false;
@@ -177,7 +193,11 @@ public class Enemy extends SpriteExtension
 			hit = true;
 		return hit;
 	}
-	
+	/**
+	 * Determines if the player sprite is close.
+	 * @param Player Sprite to compare with.
+	 * @return true if Player Sprite is close on both X and Y axis
+	 * */
 	private boolean isPlayerClose(Player player)
 	{
 		boolean closeOnX = false;

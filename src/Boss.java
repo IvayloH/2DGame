@@ -12,11 +12,18 @@ public class Boss extends Enemy
 		maxHP = 10; // default
 		lifeBars = maxHP;
 	}
+	/**
+	* Sets health based on the difficulty level
+	* @param difficulty (0-Easy, 1 - Medium, 2 - Hard)
+	*/
 	public void setHpBasedOnDifficulty(int difficulty)
 	{
 		maxHP = difficultyScale[difficulty];
 		lifeBars=maxHP;
 	}
+	/**
+	* Sets the spawn Point(x,y) for the boss.
+	*/
 	public void setSpawn(float x, float y)
 	{
 		setX(x);

@@ -40,6 +40,9 @@ public class Crate extends SpriteExtension
 	    	}
         }
 	}
+	/**
+	 * Reset the position of the Crate and its' hit flag.
+	 * */
 	public void reset(float x, float y)
 	{
 		setX(x);
