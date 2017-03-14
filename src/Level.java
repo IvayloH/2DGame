@@ -30,6 +30,7 @@ public class Level
 	public ArrayList<Pair<Enemy,Pair<Float,Float>>> getTurretSpawnPositions() { return turretSpawnPositions; }
 	public String getLevelName() { return levelName; }
 	private void setLevelName(String lvlName) { levelName = lvlName; }
+	
 	/**
 	 * Handles calling all other methods needed to set up the level.
 	 * */
@@ -42,6 +43,7 @@ public class Level
         if(levelName.equals("Level One"))
         	boss.setSpawn(1945f, 50f);
 	}
+	
 	/**
 	 * Restart the game from level one.
 	 * */
@@ -57,6 +59,7 @@ public class Level
 		player.reset();
 		player.show();
 	}
+	
 	/**
 	 * Restart the level.
 	 * */
@@ -94,6 +97,7 @@ public class Level
 			turr.reset(location.getFirst(), location.getSecond());
 		}
 	}
+	
 	/**
 	 * Scan through the tile map and replace every occurrence of 'a'
 	 * with an according tile char. Instantiate a new Thug and add it
@@ -119,6 +123,7 @@ public class Level
     				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     			}
     }
+	
 	/**
 	 * Scan through the tile map and replace every occurrence of 'c'
 	 * with an according tile char. Instantiate a new Crate and add it
@@ -145,6 +150,7 @@ public class Level
     		      	tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     			}
     }
+	
 	/**
 	 * Scan through the tile map and replace every occurrence of 'o'
 	 * with an according tile char. Instantiate a new Turret and add it
@@ -170,6 +176,7 @@ public class Level
     				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     			}
     }
+	
 	/**
 	 * Scan through the tile map and replace every occurrence of 'c'
 	 * with an according tile char. This will reset all of the crates

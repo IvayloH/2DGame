@@ -186,7 +186,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 
        	player.update(elapsed, grappleHook.isVisible(),jumpStartPos,tmap);
     }
-  
+
+    
     /*
      *         KEY EVENTS
      */
@@ -453,6 +454,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	yOffset = minOffsetY;
         }
     }
+	
   	/**
   	 * Return appropriate player state depending on the keys that have been pressed
      */
@@ -502,6 +504,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
 		return Player.EPlayerState.STANDING;
     }
+    
     /**
      * Reset the current level from its start.
      * */
@@ -510,6 +513,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	currLevel.restartLevel(); // start from level one
     	bossFight = false;
     }
+    
     /**
      * Load the first level of the game.
      * */
@@ -518,6 +522,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	currLevel.restartGame();
     	bossFight = false;
     }
+    
     private void loadNextLevel()
     {
     	player.reset();
@@ -525,6 +530,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	tmap.loadMap("assets/maps", "level2.txt");
     	currLevel = new Level(player, boss, tmap, "Level Two");
     }
+    
     private void spawnBats()
     {
     	Sprite s;
@@ -553,6 +559,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		}
     	}
     }
+    
 	/**
 	 * Set the menu flags to false and call the setHpBasedOnDifficulty method
 	 * for player and boss using the passed parameter.
@@ -564,6 +571,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	boss.setHpBasedOnDifficulty(diff);
     	player.setHpBasedOnDifficulty(diff);
     }
+    
 	/*
 	 *    		 LOAD RESOURCES
 	 */
@@ -579,6 +587,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
         //levelMusic.start();
 	}
+    
 	/**
 	 * Set up the player, grappleHook, batarang and boss sprites.
 	 */
@@ -626,6 +635,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(!player.isKilled())
 			batarang.update(elapsed);
     }
+    
 	/**
 	 * Updates the boss and the projectile if visible. 
 	 * Calls the shoot method in the end.
@@ -634,7 +644,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     {
     	if(boss.getCurrentHP()<1)
 		{
-			boss.hide();
 			boss.kill();
 		}
 		else
@@ -672,6 +681,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(boss.getProjectile().isVisible())
 			updateProjectile(elapsed, boss.getProjectile());
     }
+    
     private void updateGrappleHook(long elapsed)
     {
     	for(int i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
@@ -715,6 +725,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		}
 		grappleHook.update(elapsed);
     }
+    
 	/**
 	 * Update the crates/boss/thugs and their projectiles if visible.
 	 * */
@@ -768,6 +779,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		if(collider.boundingBoxCollision(boss.getProjectile(),player) && !player.isInvincible())
 			player.takeDamage();
     }
+    
     private void updateProjectile(long elapsed, SpriteExtension s)
     {
 		collider = new Collision(tmap);
@@ -810,7 +822,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         if(boss.getProjectile().isVisible())
         	drawProjectile(g, boss.getProjectile());
     }
-  	/**
+  	
+    /**
   	 * Draws the Grapple Hook and a line behind.
   	 */
     private void drawGrappleHook(Graphics2D g)
@@ -847,7 +860,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		g.setStroke(new BasicStroke(0));
     	}
     }
-	/**
+	
+    /**
 	 * Draw each crate/thug by going through their ArrayLists accordingly.
 	 * */
     private void drawLevel(Graphics2D g)
@@ -887,9 +901,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 				drawProjectile(g, turret.getProjectile());
 		}
     }
-	/**
+	
+    /**
 	 * Draws the HUD for the player's Life Bars/Gadgets
 	 */
+    
     private void drawPlayerAndHUD(Graphics2D g)
     {
         player.setOffsets(xOffset, yOffset);
@@ -919,12 +935,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         g.drawLine(j, 36, j, 68); // side line
 	
     }
+    
     private void drawProjectile(Graphics2D g, Sprite proj)
     {
 		proj.setOffsets(xOffset, yOffset);
 		proj.drawTransformed(g);
     }
-	private void drawHELP(Graphics2D g)
+	
+    private void drawHELP(Graphics2D g)
     {
 		g.setColor(Color.green);
     	g.drawString("Controls: Action   -  Key", screenWidth-250, 50);
@@ -932,7 +950,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
     	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
     }
-	private void drawGameOverState(Graphics2D g)
+	
+    private void drawGameOverState(Graphics2D g)
 	{
     	g.setColor(Color.red);
     	g.drawString("GAME OVER", screenWidth/2, screenHeight/2);
@@ -940,7 +959,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("       or", screenWidth/2, screenHeight/2+30);
     	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
 	}
-	/**
+	
+    /**
 	 * Draw inclined short lines to simulate rain.
 	 * */
 	private void drawRain(Graphics2D g)

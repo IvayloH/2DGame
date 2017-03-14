@@ -14,6 +14,7 @@ public class Enemy extends SpriteExtension
 	}
 	
 	public SpriteExtension getProjectile() { return projectile; }
+	
 	/**
 	 * Reset the position to the thug's original position
 	 * and set the killed flag to false.
@@ -24,6 +25,7 @@ public class Enemy extends SpriteExtension
 		setY(y);
 		killed=false; 
 	}
+	
 	/**
 	 * @param elapsed Time that has elapsed.
 	 * @param player The player sprite.
@@ -58,6 +60,7 @@ public class Enemy extends SpriteExtension
 			if(collider.checkBottomSideForCollision(this))
 				patrol(player, tmap); // patrol the rooftops
 	}
+	
 	/**
 	 * Handles the shooting animation and action.
 	 */
@@ -140,6 +143,7 @@ public class Enemy extends SpriteExtension
 	    	}
 		}
 	}
+	
 	/**
 	 * Makes the sprite move left/right when it reaches end of tile or any other obstacle.
 	 * */
@@ -177,6 +181,7 @@ public class Enemy extends SpriteExtension
 		else
 			this.setVelocityX(.0f);
 	}
+	
 	/**
 	 * Collision checking modified so the sprite does not walk off the tiles.
 	 * */
@@ -193,6 +198,7 @@ public class Enemy extends SpriteExtension
 			hit = true;
 		return hit;
 	}
+	
 	/**
 	 * Determines if the player sprite is close.
 	 * @param Player Sprite to compare with.
@@ -217,5 +223,4 @@ public class Enemy extends SpriteExtension
 			closeOnY = false;
 		return (closeOnX && closeOnY);
 	}
-	
 }

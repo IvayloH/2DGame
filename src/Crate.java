@@ -11,10 +11,12 @@ public class Crate extends SpriteExtension
 		this.tag = tag;
 		loadAssets();
 	}
+	
 	public void setHit() { crateHit = true; }
 	public void setHitX(float x) { crateHitX = x;}
 	public boolean isHit() { return crateHit;}
 	public float getHitX() { return crateHitX;}
+	
 	/**
 	 * Update the crate if it has been hit by the Grapple Hook.
 	 * Rotates and moves the crate until it is in the needed position.
@@ -40,6 +42,7 @@ public class Crate extends SpriteExtension
 	    	}
         }
 	}
+	
 	/**
 	 * Reset the position of the Crate and its' hit flag.
 	 * */

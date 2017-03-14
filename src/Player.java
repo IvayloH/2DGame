@@ -67,15 +67,19 @@ public class Player extends SpriteExtension
 		maxHP = difficultyScale[difficulty];
 		lifeBars = maxHP;
 	}
+	
 	public boolean isFacingRight() { return walkingRight; }
 	public void setFacingRight(boolean b) { walkingRight = b; }
 	public void setState(EPlayerState pState) { playerState = pState; }
 	public EPlayerState getState() { return playerState; }
 	public boolean isInvincible() { return invincible; }
+	
 	/**
 	 * Returns currently equipped gadget.
 	 * */
+	
 	public String getCurrentGadget() { return currentGadget; }
+	
 	/**
 	 * Loads the sound file and calls the start() method.
 	 * */
@@ -84,6 +88,7 @@ public class Player extends SpriteExtension
 		jump = new Sound("assets/sounds/grunt_jump.wav");
 		jump.start();
 	}
+	
 	/**
 	 * Get results from the checks for collisions and other changes in player state.
 	 * Update player based on those results.
@@ -206,6 +211,7 @@ public class Player extends SpriteExtension
     	handleTileMapCollisions(tmap);
 
 	}
+	
 	/**
 	 * Occurs when the player takes damage and reduces his health by 1.
 	 */
@@ -221,6 +227,7 @@ public class Player extends SpriteExtension
     		damaged.start();
     	}
 	}
+	
 	/**
 	 * Returns an animation depending on the State of the player.
 	 */
@@ -265,6 +272,7 @@ public class Player extends SpriteExtension
 
     	}
 	}
+	
 	/**
 	 * Switches to the next or previous gadget depending on the number of mouse wheel scrolls.
 	 */
@@ -298,6 +306,7 @@ public class Player extends SpriteExtension
 				currentGadget = gadgets[count];
 		}
 	}
+	
 	/**
 	 * Sets the animation for the player based on the location of the mouse on the screen.
 	 * */
@@ -326,6 +335,7 @@ public class Player extends SpriteExtension
 			}
 		}
 	}
+	
 	/**
 	 * Reset Player position, health and game state.
 	 * */
@@ -338,6 +348,7 @@ public class Player extends SpriteExtension
 		this.show();
 		killed=false; //TODO move gameOver state out of player and into level or game
 	}
+	
 	/**
 	 * Returns true if player is in any of the jumping states.
 	 * */
@@ -347,6 +358,7 @@ public class Player extends SpriteExtension
 				|| playerState.equals(EPlayerState.JUMP_RIGHT) 
 				|| playerState.equals(EPlayerState.JUMP_LEFT));
 	}
+	
 	/**
 	 * Returns true if player is in any of the crouching states.
 	 * */
@@ -356,6 +368,7 @@ public class Player extends SpriteExtension
 				|| playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT) 
 				||playerState.equals(EPlayerState.CROUCH_MOVE_LEFT));
 	}
+	
 	/**
 	 *  Check for tile map collisions using the collision methods from the Game Class.
 	 *  Store the results in the collision flags.
@@ -399,6 +412,7 @@ public class Player extends SpriteExtension
         	collisionLEFT = collider.checkLeftSideForCollision(this);
         }
     }
+	
 	/**
 	 * Load the necessary assets for the sprite to work.
 	 * Also sets default animation.

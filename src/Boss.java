@@ -12,6 +12,16 @@ public class Boss extends Enemy
 		maxHP = 10; // default
 		lifeBars = maxHP;
 	}
+	
+	public void reset() { lifeBars = maxHP; }
+	public SpriteExtension getProjectile() { return projectile; }
+	public void lookLeft() { setAnimation(standLeft); }
+	public void lookRight() { setAnimation(standRight); }
+	public boolean isInvulnerable() { return invulnerable; }
+	public long getInvulnerableTimer() { return invulnerableTime; }
+	public void setInvulnerable(boolean state) { invulnerable = state;}
+	public void setInvulnerableTimer(long time) { invulnerableTime = time; }
+	
 	/**
 	* Sets health based on the difficulty level
 	* @param difficulty (0-Easy, 1 - Medium, 2 - Hard)
@@ -21,6 +31,7 @@ public class Boss extends Enemy
 		maxHP = difficultyScale[difficulty];
 		lifeBars=maxHP;
 	}
+	
 	/**
 	* Sets the spawn Point(x,y) for the boss.
 	*/
@@ -29,14 +40,7 @@ public class Boss extends Enemy
 		setX(x);
 		setY(y);
 	}
-	public void reset() { lifeBars = maxHP; }
-	public SpriteExtension getProjectile() { return projectile; }
-	public void lookLeft() { setAnimation(standLeft); }
-	public void lookRight() { setAnimation(standRight); }
-	public boolean isInvulnerable() { return invulnerable; }
-	public long getInvulnerableTimer() { return invulnerableTime; }
-	public void setInvulnerable(boolean state) { invulnerable = state;}
-	public void setInvulnerableTimer(long time) { invulnerableTime = time; }
+
 	/**
 	 * Decrease boss HP and make invulnerable.
 	 */
@@ -48,12 +52,14 @@ public class Boss extends Enemy
 			invulnerable = true;
 		}
 	}
+	
 	/**
 	 * Handles the shooting animation and action.
 	 */
 	public void shoot(Player player)
 	{
 		//call the shoot method from superclass
-		shoot(player, true);
+		if(isVisible())
+			shoot(player, true);
 	}
 }

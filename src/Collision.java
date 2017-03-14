@@ -15,6 +15,7 @@ public class Collision
     	return ((s1.getX() + s1.getWidth()) >= s2.getX()) && (s1.getX() <= s2.getX()+ s2.getWidth()) &&
     			(s1.getY() + s1.getHeight()) >= s2.getY() && (s1.getY() <= s2.getY() + s2.getHeight());
     }
+    
     public boolean boundingCircleCollision(Sprite s1, Sprite s2)
     {
     	float dx, dy, min;
@@ -23,7 +24,6 @@ public class Collision
     	min = (s1.getRadius()+s2.getRadius());
     	return ((dx*dx)+(dy*dy))<(min*min);
     }
-    
     
     /**
      * Push Sprite UP by one pixel if sprite is stuck in a tile below it.
@@ -36,6 +36,7 @@ public class Collision
 			if(c==temp)
 				s.setY(s.getY()-1);
 	}
+	
     /**
      * Push Sprite LEFT by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.
@@ -47,6 +48,7 @@ public class Collision
 			if(c==temp)
 				s.setX(s.getX()-1);
 	}
+	
     /**
      * Push Sprite RIGHT by one pixel if sprite is stuck in a tile below it.
      * @param s Sprite to check and unstuck.
@@ -58,10 +60,7 @@ public class Collision
 			if(c==temp)
 				s.setX(s.getX()+1);
 	}
-	/**
-	 * Check  every pixel from 1 to sprite's width-1, that is 1 pixel above the sprite,
-	 * to see if they are in a 
-	 */
+	
     public boolean checkTopSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
@@ -74,6 +73,7 @@ public class Collision
 		}
 		return hit;
 	}
+    
 	public boolean checkLeftSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
@@ -86,6 +86,7 @@ public class Collision
 		}
 		return hit;
 	}
+	
 	public boolean checkRightSideForCollision(Sprite s) 
 	{
 		boolean hit = false;
@@ -98,6 +99,7 @@ public class Collision
 		}
 		return hit;
 	}
+	
 	public boolean checkBottomSideForCollision(Sprite s)
 	{
 		boolean hit = false;

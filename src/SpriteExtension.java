@@ -36,6 +36,7 @@ public class SpriteExtension extends Sprite
 		this.tag = tag;
 		loadAssets();
 	}
+	
 	/**
 	 * If using this constructor, set tag manually before use!!
 	 * */
@@ -46,6 +47,7 @@ public class SpriteExtension extends Sprite
 	public int getCurrentHP() { return lifeBars; }
 	public int getMaxHP() { return maxHP; }
 	public boolean isKilled() { return killed; }
+	
 	/**
 	 * Set killed to true and hide the sprite.
 	 * */
@@ -57,6 +59,7 @@ public class SpriteExtension extends Sprite
 			this.hide();
 		}
 	}
+	
 	/**
 	 * Load the appropriate sound according to the Tag and calls the start() method.
 	 * */
@@ -89,6 +92,7 @@ public class SpriteExtension extends Sprite
 		}
 		fire.start();
 	}
+	
 	/**
 	 * Load the necessary assets for the sprite to work.
 	 * Also sets default animation.
@@ -203,6 +207,7 @@ public class SpriteExtension extends Sprite
 	        	break;
         }
 	}
+	
     /**
      * Loads an image with the given 'fileName'
      * 
