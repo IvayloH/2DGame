@@ -30,8 +30,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	static final int screenHeight = 384;
 	final char[] tileMapChars = {'b','w','r','c','n','v','z'};
 
-    private float jumpStartPos = .0f;  // keep track of jump start
-    
     // Game state flags
     private boolean cursorChanged = false;
     private boolean bossFight = false;
@@ -183,8 +181,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
         for (Sprite s: bats)
         	s.update(elapsed);
-
-       	player.update(elapsed, grappleHook.isVisible(),jumpStartPos,tmap);
+        
+       	player.update(elapsed, grappleHook.isVisible(),player.getJumpStart(),tmap);
     }
 
     
@@ -202,6 +200,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
+    		currLevel.clearLevel();
     		currLevel = new Level(player, boss, tmap, "Level Two");
     	}
     	if(key==KeyEvent.VK_3)
@@ -225,7 +224,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if (key == KeyEvent.VK_W && !jumpKey)
     	{
     		jumpKey = true;
-    		player.playJumpSound();
     	}
     	
     	if(key==KeyEvent.VK_S)
@@ -494,7 +492,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	
     	if(jumpKey && collider.checkBottomSideForCollision(player))
     	{
-			jumpStartPos=player.getY();
+    		player.setJumpStart(player.getY());
+    		player.playJumpSound();
     		if(rightKey)
     			return Player.EPlayerState.JUMP_RIGHT;
     		else if(leftKey)
@@ -502,6 +501,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		else
     			return Player.EPlayerState.JUMP;
     	}
+    	player.setJumpStart(0.f);
 		return Player.EPlayerState.STANDING;
     }
     

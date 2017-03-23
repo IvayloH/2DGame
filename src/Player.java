@@ -30,6 +30,11 @@ public class Player extends SpriteExtension
 	private final float RUNSPEED = .07f;
 	private final float JUMPHEIGHT = 48;
 	private float invincibleTime = .0f;
+	
+	/**
+	 *  A record of the Y position of the player when he jumps.
+	 * */
+	private float jumpStart = .0f;
 
 	
     public enum EPlayerState
@@ -62,6 +67,7 @@ public class Player extends SpriteExtension
 		loadAssets();
 		loadAdditionalAssets();
 	}
+	
 	public void setHpBasedOnDifficulty(int difficulty)
 	{ 
 		maxHP = difficultyScale[difficulty];
@@ -73,6 +79,8 @@ public class Player extends SpriteExtension
 	public void setState(EPlayerState pState) { playerState = pState; }
 	public EPlayerState getState() { return playerState; }
 	public boolean isInvincible() { return invincible; }
+	public void setJumpStart(float posY) { jumpStart = posY; }
+	public float getJumpStart() { return jumpStart; }
 	
 	/**
 	 * Returns currently equipped gadget.
@@ -420,10 +428,10 @@ public class Player extends SpriteExtension
 	private void loadAdditionalAssets()
 	{
         jumpRight = new Animation();
-        jumpRight.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpRight.png"),60);
+        jumpRight.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpRight.gif"),60);
         
         jumpLeft = new Animation();
-        jumpLeft.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpLeft.png"),60);
+        jumpLeft.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpLeft.gif"),60);
 
         transparent64 = new Animation();
         transparent64.addFrame(loadImage("assets/images/BatmanStates/transparent64.png"), 60);

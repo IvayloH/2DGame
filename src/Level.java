@@ -70,6 +70,14 @@ public class Level
 		player.reset();
 		player.show();
 	}
+	
+	public void clearLevel()
+	{
+		boss.kill();
+		thugSpawnPositions.clear();
+		crateSpawnPositions.clear();
+		turretSpawnPositions.clear();
+	}
 
 	/**
 	 * Reset the Crate and Thug Lists by calling their reset methods.
