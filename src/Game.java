@@ -101,6 +101,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void initialiseGame()
     {	
         currLevel = new Level(player, boss, tmap, "Level One");
+        boss.setSpawn(1945f, 50f);
     }
 
     /**
@@ -203,11 +204,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		currLevel.clearLevel();
     		currLevel = new Level(player, boss, tmap, "Level Two");
     	}
-    	if(key==KeyEvent.VK_3)
-    	{
-    		tmap.loadMap("assets/maps", "level3.txt");
-    		currLevel = new Level(player, boss, tmap, "Level Two");
-    	}
     	if(key==KeyEvent.VK_4)
     	{
     		player.reset();
@@ -233,7 +229,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_R)
     	{
     		if(player.isKilled())
+    		{
+    			currLevel.clearLevel();
     			restartLevel();
+    		}
     	}
     	if(key==KeyEvent.VK_ENTER)
     	{
@@ -614,6 +613,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 			if(collider.boundingBoxCollision(batarang,t))
 				t.kill();
 		}
+    	for(i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
+		{
+    		Enemy t = currLevel.getTurretSpawnPositions().get(i).getFirst();
+			if(collider.boundingBoxCollision(batarang,t))
+				t.kill();
+		}
 		for(i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
 		{
 			Crate c = currLevel.getCrateSpawnPositions().get(i).getFirst();
@@ -790,6 +795,14 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         		s.hide();
         	if(collider.checkRightSideForCollision(s))
         		s.hide();
+        	
+        	//stop bullets from going through crates
+    		for(int i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
+    		{
+    			Crate c = currLevel.getCrateSpawnPositions().get(i).getFirst();
+    			if(collider.boundingBoxCollision(batarang,c))
+    				batarang.hide();
+    		}
         }
 		s.update(elapsed);
     }

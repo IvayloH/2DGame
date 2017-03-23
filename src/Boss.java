@@ -7,7 +7,6 @@ public class Boss extends Enemy
 	public Boss(String tag)
 	{
 		super(tag);
-		loadAssets();
 		projectile = new SpriteExtension("projectile");
 		maxHP = 10; // default
 		lifeBars = maxHP;
@@ -15,8 +14,8 @@ public class Boss extends Enemy
 	
 	public void reset() { lifeBars = maxHP; }
 	public SpriteExtension getProjectile() { return projectile; }
-	public void lookLeft() { setAnimation(standLeft); }
-	public void lookRight() { setAnimation(standRight); }
+	public void lookLeft() { setAnimation(storage.getAnim("thugStandLeft")); }
+	public void lookRight() { setAnimation(storage.getAnim("thugStandRight")); }
 	public boolean isInvulnerable() { return invulnerable; }
 	public long getInvulnerableTimer() { return invulnerableTime; }
 	public void setInvulnerable(boolean state) { invulnerable = state;}

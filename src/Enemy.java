@@ -4,13 +4,12 @@ public class Enemy extends SpriteExtension
 {
 	private final float PATROLSPEED = .04f;
 	private boolean walkingRight = false;
+	private boolean shifted = false;
 	
 	public Enemy(String tag)
 	{
-		super();
-		this.tag = tag;
+		super(tag);
 		projectile = new SpriteExtension("projectile");
-		loadAssets();
 	}
 	
 	public SpriteExtension getProjectile() { return projectile; }
@@ -34,6 +33,11 @@ public class Enemy extends SpriteExtension
 	 */
 	public void update(long elapsed, Player player, TileMap tmap, boolean aimAtPlayer)
 	{
+		if(tag.equals("turret") && killed) //less checking for turret as we leave it showing once it dead
+		{
+			setAnimation(storage.getAnim("turretIdleLeft"));
+			return;
+		}
 		collider = new Collision(tmap);
 		if (this.getY() + this.getHeight() > tmap.getPixelHeight())
 			this.kill();
@@ -46,9 +50,27 @@ public class Enemy extends SpriteExtension
 		else
 		{
 			if(player.getX()>this.getX() && !projectile.isVisible())
-				this.setAnimation(standRight);
+			{
+				if(tag.equals("thug"))
+						this.setAnimation(storage.getAnim("thugStandRight"));
+				else if(tag.equals("turret"))
+				{
+					this.setAnimation(storage.getAnim("turretIdleRight"));
+					if(!shifted)
+					{
+						this.shiftX(32);//turret moves to the left tile and might float in the air depending on position
+						shifted = true;
+					}
+				}
+			}
 			else if(player.getX()<this.getX() && !projectile.isVisible())
-				this.setAnimation(standLeft);
+			{
+				if(tag.equals("thug"))
+					this.setAnimation(storage.getAnim("thugStandLeft"));
+				else if(tag.equals("turret"))
+					this.setAnimation(storage.getAnim("turretIdleLeft"));
+				
+			}
 			this.setVelocityY(.0f);
 			collider.recoverSpriteStuckInBottomTile(this);
     		if(Math.random()>0.6)
@@ -74,7 +96,7 @@ public class Enemy extends SpriteExtension
 				projectile.setVelocityY(.0f);
 				if(player.getX()>this.getX())
 				{
-					this.setAnimation(fireRight);
+					
 					projectile.setX(this.getX()+this.getWidth());
 					projectile.setY(this.getY()+15);
 					if(aimAtPlayer)
@@ -87,12 +109,11 @@ public class Enemy extends SpriteExtension
 					else
 					{
 						v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()+this.getWidth()+5,this.getY()+26);
-						projectile.setRotation(180);
+						projectile.setRotation(v.getAngle());
 					}
 				}
 				else
 				{
-					this.setAnimation(fireLeft);
 					projectile.setX(this.getX());
 					projectile.setY(this.getY()+15);
 					if(aimAtPlayer)
@@ -105,7 +126,7 @@ public class Enemy extends SpriteExtension
 					else
 					{
 						v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()-50,this.getY()+26);
-						projectile.setRotation(0);
+						projectile.setRotation(v.getAngle());
 					}
 				}
 				projectile.setVelocityX((float)v.getdx());
@@ -113,25 +134,42 @@ public class Enemy extends SpriteExtension
 	    		{
 	    		case "turret":
 	    		{
+	    			if(killed) break;
 	    			projectile.shiftY(5f);
 	    			projectile.setScale(1.0f);
 	    			projectile.setVelocityY(.0f);
 	    			if(projectile.getVelocityX()<0)
-	    				{
-	    					projectile.setVelocityX(-1.5f);
-	    					projectile.setRotation(180);
-	    				}
+	    			{
+	    				this.setAnimation(storage.getAnim("turretFireLeft"));
+	    				projectile.setVelocityX(-1.5f);
+	    				projectile.setRotation(v.getAngle());
+	    			}
 	    			else
-	    			{ 
+	    			{
+	    				this.setAnimation(storage.getAnim("turretFireRight"));
+						if(!shifted)
+						{
+							this.shiftX(32);//turret moves to the left tile and might float in the air depending on position
+							shifted = true;
+						}
 	    				projectile.setVelocityX(1.5f);
-	    				projectile.setRotation(0);
+	    				projectile.setRotation(v.getAngle());
 	    			}
 	    			break;
 	    		}
 	    		case "thug":
 	    		{
-	    			if(projectile.getVelocityX()<0) projectile.setVelocityX(-.5f);
-	    			else projectile.setVelocityX(.5f);
+	    			if(projectile.getVelocityX()<0) 
+	    			{
+	    				setAnimation(storage.getAnim("thugFireLeft"));
+	    				projectile.setVelocityX(-.5f);
+	    			}
+	    			else 
+	    			{
+	    				setAnimation(storage.getAnim("thugFireRight"));
+	    				projectile.setVelocityX(.5f);
+	    			}
+	    			
 	    			projectile.setScale(.5f);
 	    			break;
 	    		}
@@ -160,7 +198,7 @@ public class Enemy extends SpriteExtension
 				}
 				else
 				{
-					this.setAnimation(standRight);
+					this.setAnimation(storage.getAnim("thugStandRight"));
 					this.setVelocityX(PATROLSPEED);
 				}
 			}
@@ -173,7 +211,7 @@ public class Enemy extends SpriteExtension
 				}
 				else
 				{
-					this.setAnimation(standLeft);
+					this.setAnimation(storage.getAnim("thugStandLeft"));
 					this.setVelocityX(-PATROLSPEED);
 				}
 			}
@@ -208,17 +246,15 @@ public class Enemy extends SpriteExtension
 	{
 		boolean closeOnX = false;
 		boolean closeOnY = false;
-		if(player.getX()+screenWidth>this.getX())
+		if(player.getX()+screenWidth/2>this.getX())
 		{
-			if(this.getX()+screenWidth<player.getX())
+			if(this.getX()+screenWidth/2<player.getX())
 				closeOnX = false;
 			else
 				closeOnX = true;
 		}
-		if(player.getY()+player.getHeight()+50>this.getY() || player.getY()-player.getHeight()+20>this.getY())
-		{
+		if((player.getY()-player.getHeight()<this.getY() && player.getY()+2*player.getHeight()>this.getY()))
 			closeOnY = true;
-		}
 		else
 			closeOnY = false;
 		return (closeOnX && closeOnY);

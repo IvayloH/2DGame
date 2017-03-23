@@ -3,15 +3,7 @@ import game2D.*;
 public class Player extends SpriteExtension
 {
 	private int[] difficultyScale = {9,6,3};
-	//Animations
-	private Animation crouch_Right;
-	private Animation crouch_Left;
-	private Animation crouchMoveLeft;
-	private Animation crouchMoveRight;
-	private Animation jumpRight;
-	private Animation jumpLeft;
-	private Animation transparent64;
-	private Animation transparent32;
+	
 	//Sounds
 	private Sound damaged = null;
 	private Sound jump = null;
@@ -64,8 +56,7 @@ public class Player extends SpriteExtension
 		maxHP = 8; //default
 		lifeBars = maxHP;
 		this.tag = tag;
-		loadAssets();
-		loadAdditionalAssets();
+		setAnimation(storage.getAnim("playerStandRight"));
 	}
 	
 	public void setHpBasedOnDifficulty(int difficulty)
@@ -120,9 +111,9 @@ public class Player extends SpriteExtension
     		else
     		{
     			if(isCrouching())
-    				setAnimation(transparent32);
+    				setAnimation(storage.getAnim("transparent32"));
     			else
-    				setAnimation(transparent64);
+    				setAnimation(storage.getAnim("transparent64"));
     			flashy=true;
     		}
     		if(invincibleTime>2000f)
@@ -246,38 +237,37 @@ public class Player extends SpriteExtension
     		if(playerState.equals(EPlayerState.CROUCH))
     		{
     			if(walkingRight)
-    				return crouch_Right;
-    			return crouch_Left;
+    				return storage.getAnim("playerCrouchRight");
+    			return storage.getAnim("playerCrouchLeft");
     		}
     		if(playerState.equals(EPlayerState.CROUCH_MOVE_LEFT))
-    			return crouchMoveLeft;
+    			return storage.getAnim("playerCrouchingMoveLeft");
     		if(playerState.equals(EPlayerState.CROUCH_MOVE_RIGHT))
-    			return crouchMoveRight;
+    			return storage.getAnim("playerCrouchingMoveRight");
 	    	if(playerState.equals(EPlayerState.RUN_RIGHT))
-	    		return moveRight;
+	    		return storage.getAnim("playerMoveRight");
 	    	if(playerState.equals(EPlayerState.RUN_LEFT))
-	    		return moveLeft;
+	    		return storage.getAnim("playerMoveLeft");
 	    	if(playerState.equals(EPlayerState.JUMP_RIGHT))
-	    		return jumpRight;
+	    		return storage.getAnim("playerJumpRight");
 	    	if(playerState.equals(EPlayerState.JUMP_LEFT))
-	    		return jumpLeft;
+	    		return storage.getAnim("playerJumpLeft");
 	    	if(playerState.equals(EPlayerState.JUMP) || playerState.equals(EPlayerState.FALLING))
 	    		if(walkingRight)
-	    			return jumpRight;
+	    			return storage.getAnim("playerJumpRight");
 	    		else 
-	    			return jumpLeft;
+	    			return storage.getAnim("playerJumpLeft");
 			if(walkingRight)
-				return standRight;
+				return storage.getAnim("playerStandRight");
 			else 
-				return standLeft;
+				return storage.getAnim("playerStandLeft");
     	}
     	else
     	{
 	    	if(walkingRight)
-	    		return fireRight;
+	    		return storage.getAnim("grappleHookRight");
 			else 
-				return fireLeft;
-
+				return storage.getAnim("grappleHookLeft");
     	}
 	}
 	
@@ -420,35 +410,4 @@ public class Player extends SpriteExtension
         	collisionLEFT = collider.checkLeftSideForCollision(this);
         }
     }
-	
-	/**
-	 * Load the necessary assets for the sprite to work.
-	 * Also sets default animation.
-	 * */
-	private void loadAdditionalAssets()
-	{
-        jumpRight = new Animation();
-        jumpRight.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpRight.gif"),60);
-        
-        jumpLeft = new Animation();
-        jumpLeft.addFrame(loadImage("assets/images/BatmanStates/BatmanJumpLeft.gif"),60);
-
-        transparent64 = new Animation();
-        transparent64.addFrame(loadImage("assets/images/BatmanStates/transparent64.png"), 60);
-	    
-        transparent32 = new Animation();
-        transparent32.addFrame(loadImage("assets/images/BatmanStates/transparent32.png"), 60);
-        
-        crouch_Right = new Animation();
-        crouch_Right.addFrame(loadImage("assets/images/BatmanStates/crouch_R.gif"), 60);
-        
-        crouch_Left = new Animation();
-        crouch_Left.addFrame(loadImage("assets/images/BatmanStates/crouch_L.gif"), 60);
-
-        crouchMoveRight = new Animation();
-        crouchMoveRight.addFrame(loadImage("assets/images/BatmanStates/crouch_move_R.gif"), 60);
-        
-        crouchMoveLeft = new Animation();
-        crouchMoveLeft.addFrame(loadImage("assets/images/BatmanStates/crouch_move_L.gif"), 60);
-	}
 }

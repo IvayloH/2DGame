@@ -40,8 +40,6 @@ public class Level
 		setUpThugs();
 		setUpCrates();
 		setUpTurrets();
-        if(levelName.equals("Level One"))
-        	boss.setSpawn(1945f, 50f);
 	}
 	
 	/**
@@ -184,7 +182,7 @@ public class Level
     				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     			}
     }
-	
+
 	/**
 	 * Scan through the tile map and replace every occurrence of 'c'
 	 * with an according tile char. This will reset all of the crates

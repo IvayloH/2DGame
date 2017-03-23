@@ -9,7 +9,7 @@ public class Crate extends SpriteExtension
 	{
 		super();
 		this.tag = tag;
-		loadAssets();
+		setAnimation(storage.getAnim("crateAnim"));
 	}
 	
 	public void setHit() { crateHit = true; }

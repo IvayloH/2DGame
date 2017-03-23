@@ -7,10 +7,8 @@ public class GrappleHook extends SpriteExtension
 	
 	public GrappleHook(float hookLimit, String tag)
 	{
-		super();
+		super(tag);
 		HOOKLIMIT = hookLimit;
-		this.tag = tag;
-		loadAssets();
 	}
 	
 	public void setGrappleHookRetracting(boolean retract) { grappleHookRetracting = retract;}
