@@ -142,7 +142,7 @@ public class Enemy extends SpriteExtension
 	    			{
 	    				this.setAnimation(storage.getAnim("turretFireLeft"));
 	    				projectile.setVelocityX(-1.5f);
-	    				projectile.setRotation(v.getAngle());
+	    				projectile.setRotation(0);
 	    			}
 	    			else
 	    			{
@@ -153,7 +153,7 @@ public class Enemy extends SpriteExtension
 							shifted = true;
 						}
 	    				projectile.setVelocityX(1.5f);
-	    				projectile.setRotation(v.getAngle());
+	    				projectile.setRotation(180);
 	    			}
 	    			break;
 	    		}

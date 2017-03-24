@@ -7,13 +7,12 @@ public class Level
 	private ArrayList<Pair<Enemy,Pair<Float,Float>>> thugSpawnPositions;
 	private ArrayList<Pair<Enemy,Pair<Float,Float>>> turretSpawnPositions;
 	
-	
 	private Player player;
 	private Boss boss;
 	private TileMap tmap = null;
 	private String levelName="";
 	
-	public Level(Player player, Boss boss, TileMap tmap, String levelName)
+	public Level(Player player, Boss boss, TileMap tmap, String levelName, Pair<Float,Float> bossSpawnLocation)
 	{
 		crateSpawnPositions = new ArrayList<Pair<Crate,Pair<Float,Float>>>();
 		thugSpawnPositions = new ArrayList<Pair<Enemy,Pair<Float,Float>>>();
@@ -21,6 +20,7 @@ public class Level
 		this.player = player;
 		this.tmap = tmap;
 		this.boss = boss;
+		boss.setSpawn(bossSpawnLocation.getFirst(), bossSpawnLocation.getSecond());
 		this.levelName = levelName;
 		setUpLevel();
 	}
@@ -55,7 +55,7 @@ public class Level
 		setUpLevel();
 		boss.reset();
 		player.reset();
-		player.show();
+	 	player.show();
 	}
 	
 	/**

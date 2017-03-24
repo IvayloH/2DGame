@@ -100,8 +100,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-        currLevel = new Level(player, boss, tmap, "Level One");
-        boss.setSpawn(1945f, 50f);
+        currLevel = new Level(player, boss, tmap, "Level One", new Pair<Float,Float>(1945f,50f));
+        //boss.setSpawn(1945f, 50f);
     }
 
     /**
@@ -196,13 +196,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_1)
     	{
     		tmap.loadMap("assets/maps", "level1.txt");
-    		currLevel = new Level(player, boss, tmap, "Level One");
+    		currLevel = new Level(player, boss, tmap, "Level One", new Pair<Float,Float>(1945f,50f));
     	}
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
     		currLevel.clearLevel();
-    		currLevel = new Level(player, boss, tmap, "Level Two");
+    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(2000f,2000f));
     	}
     	if(key==KeyEvent.VK_4)
     	{
@@ -230,7 +230,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(player.isKilled())
     		{
-    			currLevel.clearLevel();
+    			//currLevel.clearLevel();
     			restartLevel();
     		}
     	}
@@ -527,7 +527,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	player.reset();
     	bossFight=false;
     	tmap.loadMap("assets/maps", "level2.txt");
-    	currLevel = new Level(player, boss, tmap, "Level Two");
+    	currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(2000f,2000f));
     }
     
     private void spawnBats()

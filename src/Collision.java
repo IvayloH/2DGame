@@ -2,7 +2,7 @@ import game2D.*;
 
 public class Collision
 {
-	final char[] tileMapChars = {'b','w','r','c','n','v','z'};
+	final char[] tileMapChars = {'b','w','r','c','n','v','z','k'};
 	TileMap tmap;
 	
 	public Collision(TileMap tmap)
