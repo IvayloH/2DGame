@@ -12,7 +12,7 @@ public class Boss extends Enemy
 		lifeBars = maxHP;
 	}
 	
-	public void reset() { lifeBars = maxHP; }
+	public void reset() { lifeBars = maxHP; killed = false; invulnerable = false;}
 	public SpriteExtension getProjectile() { return projectile; }
 	public void lookLeft() { setAnimation(storage.getAnim("thugStandLeft")); }
 	public void lookRight() { setAnimation(storage.getAnim("thugStandRight")); }

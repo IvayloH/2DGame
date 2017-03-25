@@ -33,7 +33,7 @@ public class AnimationsStorage
 	{
 		Animation anim = new Animation();
 		
-		anim.addFrame(loadImage("assets/maps/crate.png"), 60);
+		anim.addFrame(loadImage("assets/maps/Extras/crate.png"), 60);
 		storage.put("crateAnim", anim);
 		
 		anim = new Animation();

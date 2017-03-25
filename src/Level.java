@@ -47,6 +47,7 @@ public class Level
 		setUpThugs();
 		setUpCrates();
 		setUpTurrets();
+		boss.reset();
 	}
 	
 	/**

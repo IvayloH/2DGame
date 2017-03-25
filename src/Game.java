@@ -142,11 +142,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	g.setColor(Color.green);
         	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
         }
-        if(player.getX()+screenWidth/2+screenWidth/4>tmap.getPixelWidth() || bossFight)
+        if(player.getX()+screenWidth/2+screenWidth/4>boss.getX())
         {
         	drawBoss(g);
         	bossFight=true;
-        	spawnBats();
         }
         if(player.isKilled())
         {
@@ -182,6 +181,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	s.update(elapsed);
         
        	player.update(elapsed, grappleHook.isVisible(),player.getJumpStart(),tmap);
+       	//System.out.println(player.getX() + "  " + player.getY());
     }
 
     
@@ -200,11 +200,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
     		currLevel.clearLevel();
-    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(2000f,2000f));
+    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3804f,554f));
     	}
-    	if(key==KeyEvent.VK_4)
+    	if(key==KeyEvent.VK_3)
     	{
-    		player.reset();
+    		player.switchGadget(1);
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
@@ -476,7 +476,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(!player.isJumping())
     		{
-	    		//if(!player.isCrouching())
+	    		//if(!player.isCrouching()) FIXME
 	    			//player.shiftY(30);
 	    		if(rightKey) 
 	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
@@ -531,7 +531,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void spawnBats()
     {
     	Sprite s;
-    	//hasnt been set up yet
     	if(bats.size()==0)
     	{
 	    	Animation ca = new Animation();
@@ -604,11 +603,15 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     private void updateBatarang(long elapsed)
     {
+    	//update only if the player is alive
+    	if(player.isKilled())
+    		return;
+    	
     	int i=0;
     	for(i=0; i<currLevel.getThugSpawnPositions().size(); i++)
 		{
     		Enemy t = currLevel.getThugSpawnPositions().get(i).getFirst();
-			if(collider.boundingBoxCollision(batarang,t))
+			if(collider.boundingBoxCollision(batarang,t) && !t.isKilled())
 			{
 				t.kill();
 				batarang.hide();
@@ -617,7 +620,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	for(i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
 		{
     		Enemy t = currLevel.getTurretSpawnPositions().get(i).getFirst();
-			if(collider.boundingBoxCollision(batarang,t))
+			if(collider.boundingBoxCollision(batarang,t) && !t.isKilled())
 			{
 				t.kill();
 				batarang.hide();
@@ -639,10 +642,12 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		{
 			batarang.hide();
 		}
-		if(batarang.getX()>player.getX()+getWidth() || batarang.getX()<player.getX()-getWidth())
+		//check if batarang is still somewhere on the screen
+		if(batarang.getX()>player.getX()+getWidth() || batarang.getX()<player.getX()-getWidth()
+				|| batarang.getY()>player.getY()+getHeight() || batarang.getY()<player.getY()-getHeight())
 			batarang.hide();
-		if(!player.isKilled())
-			batarang.update(elapsed);
+		
+		batarang.update(elapsed);
     }
     
 	/**
