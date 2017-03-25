@@ -12,6 +12,13 @@ public class Level
 	private TileMap tmap = null;
 	private String levelName="";
 	
+	/**
+	 * @param player The player sprite.
+	 * @param boss The boss sprite.
+	 * @param tmap The current TileMap.
+	 * @param levelName A name for the level.
+	 * @param bossSpawnLocation The X and Y coordinates of the boss to be spawned at.
+	 */
 	public Level(Player player, Boss boss, TileMap tmap, String levelName, Pair<Float,Float> bossSpawnLocation)
 	{
 		crateSpawnPositions = new ArrayList<Pair<Crate,Pair<Float,Float>>>();
@@ -68,7 +75,9 @@ public class Level
 		player.reset();
 		player.show();
 	}
-	
+	/**
+	 * Clear all of the lists.
+	 * */
 	public void clearLevel()
 	{
 		boss.kill();

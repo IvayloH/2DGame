@@ -208,11 +208,10 @@ public class Player extends SpriteExtension
         	hide();
         
     	handleTileMapCollisions(tmap);
-
 	}
 	
 	/**
-	 * Occurs when the player takes damage and reduces his health by 1.
+	 * Occurs when the player takes damage and reduces their health by 1.
 	 */
 	public void takeDamage()
 	{
@@ -344,7 +343,7 @@ public class Player extends SpriteExtension
 		this.setX(startingX);
 		this.setY(startingY);
 		this.show();
-		killed=false; //TODO move gameOver state out of player and into level or game
+		killed=false;
 	}
 	
 	/**

@@ -28,7 +28,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	// Useful game constants
 	static final int screenWidth = 512;
 	static final int screenHeight = 384;
-	final char[] tileMapChars = {'b','w','r','c','n','v','z'};
 
     // Game state flags
     private boolean cursorChanged = false;
@@ -101,7 +100,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void initialiseGame()
     {	
         currLevel = new Level(player, boss, tmap, "Level One", new Pair<Float,Float>(1945f,50f));
-        //boss.setSpawn(1945f, 50f);
     }
 
     /**
@@ -125,7 +123,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
        
         for (Sprite s: bats)
         {
-        	s.setOffsets(xOffset,yOffset); //FIXME spawn offscreen 
+        	s.setOffsets(xOffset,yOffset);
         	s.draw(g);
         }
     	
@@ -611,13 +609,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		{
     		Enemy t = currLevel.getThugSpawnPositions().get(i).getFirst();
 			if(collider.boundingBoxCollision(batarang,t))
+			{
 				t.kill();
+				batarang.hide();
+			}
 		}
     	for(i=0; i<currLevel.getTurretSpawnPositions().size(); i++)
 		{
     		Enemy t = currLevel.getTurretSpawnPositions().get(i).getFirst();
 			if(collider.boundingBoxCollision(batarang,t))
+			{
 				t.kill();
+				batarang.hide();
+			}
 		}
 		for(i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
 		{
@@ -800,8 +804,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		for(int i=0; i<currLevel.getCrateSpawnPositions().size(); i++)
     		{
     			Crate c = currLevel.getCrateSpawnPositions().get(i).getFirst();
-    			if(collider.boundingBoxCollision(batarang,c))
-    				batarang.hide();
+    			if(collider.boundingBoxCollision(s,c))
+    				s.hide();
     		}
         }
 		s.update(elapsed);
@@ -847,7 +851,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		grappleHook.setOffsets(xOffset, yOffset);
     		g.setColor(Color.black);
     		g.setStroke(new BasicStroke(3));
-    		//TODO adjust the line so it follows the hook properly when rotated - FUCK MY MISERABLE NON-MATHEMATICAL LIFE.
+    		
+    		//should calculate the new middle point of the grappleHook image so the line follows the correct point but the calculations are wrong.
     		float yCent = (grappleHook.getY() + grappleHook.getHeight()/2);
     		float xCent = (grappleHook.getX() + grappleHook.getWidth()/2);
     		

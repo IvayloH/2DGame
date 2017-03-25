@@ -36,6 +36,7 @@ public class Crate extends SpriteExtension
 	    	else
 	    	{
 	    		crateHit=false;
+	    		setRotation(0);
 	    		tmap.setTileChar('c', ((int)this.getX()+5)/tmap.getTileWidth(), ((int)this.getY()+5)/tmap.getTileHeight());
 	    		//adding 5 to both X and Y to make sure we're in the correct tile 
 	    		this.hide();

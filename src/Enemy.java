@@ -94,7 +94,7 @@ public class Enemy extends SpriteExtension
 	    	{
 				Velocity v;
 				projectile.setVelocityY(.0f);
-				if(player.getX()>this.getX())
+				if(player.getX()>this.getX()) // player is on the right side of the enemy sprite
 				{
 					
 					projectile.setX(this.getX()+this.getWidth());
@@ -109,10 +109,10 @@ public class Enemy extends SpriteExtension
 					else
 					{
 						v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()+this.getWidth()+5,this.getY()+26);
-						projectile.setRotation(v.getAngle());
+						projectile.setRotation(0);
 					}
 				}
-				else
+				else // player is on the left side
 				{
 					projectile.setX(this.getX());
 					projectile.setY(this.getY()+15);
@@ -126,7 +126,7 @@ public class Enemy extends SpriteExtension
 					else
 					{
 						v = new Velocity(0.7f,projectile.getX(),projectile.getY(),this.getX()-50,this.getY()+26);
-						projectile.setRotation(v.getAngle());
+						projectile.setRotation(180);
 					}
 				}
 				projectile.setVelocityX((float)v.getdx());
@@ -185,7 +185,7 @@ public class Enemy extends SpriteExtension
 	/**
 	 * Makes the sprite move left/right when it reaches end of tile or any other obstacle.
 	 * */
-	private void patrol(Player player, TileMap tmap)//FIXME
+	private void patrol(Player player, TileMap tmap)
 	{
 		if(!isPlayerClose(player))
 		{

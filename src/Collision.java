@@ -2,8 +2,8 @@ import game2D.*;
 
 public class Collision
 {
-	final char[] tileMapChars = {'b','w','r','c','n','v','z','k'};
-	TileMap tmap;
+	private final char[] tileMapChars = {'b','w','r','c','n','v','z','k'};
+	private TileMap tmap;
 	
 	public Collision(TileMap tmap)
 	{ 
@@ -66,7 +66,7 @@ public class Collision
 		boolean hit = false;
 		for(int i=1; i<s.getWidth()-1; i++)
 		{
-			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY()-1)/tmap.getTileHeight());
+			char tileCharTop = tmap.getTileChar(((int)s.getX()+i)/tmap.getTileWidth(), (int)(s.getY())/tmap.getTileHeight());
 			for(char c : tileMapChars)
 				if(c==tileCharTop)
 					hit =true;
@@ -79,7 +79,7 @@ public class Collision
 		boolean hit = false;
 		for(int i=1; i<s.getHeight()-3; i++)
 		{
-			char tileCharLeft = tmap.getTileChar(((int)s.getX()-1)/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
+			char tileCharLeft = tmap.getTileChar(((int)s.getX())/tmap.getTileWidth(), ((int)s.getY()+i)/tmap.getTileHeight());
 			for(char c : tileMapChars)
 				if(c==tileCharLeft)
 					hit =true;
@@ -92,7 +92,7 @@ public class Collision
 		boolean hit = false;
 		for(int i=1; i<s.getHeight()-3; i++)
 		{
-			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth()+1)/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
+			char tileCharRight = tmap.getTileChar(((int)s.getX()+s.getWidth())/tmap.getTileWidth(), (int)(s.getY()+i)/tmap.getTileHeight());
 			for(char c : tileMapChars)
 				if(c==tileCharRight)
 					hit =true;

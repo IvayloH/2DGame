@@ -136,9 +136,6 @@ public class AnimationsStorage
 		anim = new Animation();
 		anim.addFrame(loadImage("assets/images/Enemies/Turret/turret_sh_r.gif"), 60);
 		storage.put("turretFireRight", anim);
-		
-		//for(String s: storage.keySet())
-		//	System.out.println(s);
 	}
 	
     /**
