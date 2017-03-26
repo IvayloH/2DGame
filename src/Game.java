@@ -32,6 +32,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     // Game state flags
     private boolean cursorChanged = false;
     private boolean bossFight = false;
+    private boolean gameWon = false;
     
     //Pressed Key flags
     private boolean leftKey = false;
@@ -142,7 +143,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	g.setColor(Color.green);
         	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
         }
-        if(player.getX()+screenWidth/2+screenWidth/4>boss.getX())
+        //either player is close enough or the boss has already been engaged 
+        if(player.getX()+screenWidth/2+screenWidth/4>boss.getX() || bossFight)
         {
         	drawBoss(g);
         	bossFight=true;
@@ -152,9 +154,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	drawGameOverState(g);
         }
         drawRain(g);
+        if(gameWon)
+        	drawGameWonState(g);
     }
-    
-    /**
+
+	/**
      * Update any sprites and check for collisions
      * 
      * @param elapsed The elapsed time between this call and the previous call of elapsed
@@ -181,7 +185,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	s.update(elapsed);
         
        	player.update(elapsed, grappleHook.isVisible(),player.getJumpStart(),tmap);
-       	//System.out.println(player.getX() + "  " + player.getY());
     }
 
     
@@ -199,8 +202,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel.clearLevel();
-    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3804f,554f));
+    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3968f,512f));
     	}
     	if(key==KeyEvent.VK_3)
     	{
@@ -216,9 +218,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		leftKey=true;
     	
     	if (key == KeyEvent.VK_W && !jumpKey)
-    	{
     		jumpKey = true;
-    	}
     	
     	if(key==KeyEvent.VK_S)
     	{
@@ -227,14 +227,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_R)
     	{
     		if(player.isKilled())
-    		{
-    			//currLevel.clearLevel();
     			restartLevel();
-    		}
     	}
     	if(key==KeyEvent.VK_ENTER)
     	{
-    		if(player.isKilled())
+    		if(player.isKilled() && !currLevel.getLevelName().equals("Level One"))
     			restartGame();
     	}
     	
@@ -397,13 +394,13 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 						if(player.isFacingRight())
 						{
 							batarang.setX(player.getX()+player.getWidth());
-							batarang.setY(player.getY()+26);
 						}
 						else
 						{
 							batarang.setX(player.getX());
-							batarang.setY(player.getY()+26);	
 						}
+						batarang.setY(player.getY()+16);
+						
 						v = new Velocity(.5f,batarang.getX()+xOffset,batarang.getY()+yOffset, e.getX()+10, e.getY()+10);
 						batarang.setVelocityX((float)v.getdx());
 						batarang.setVelocityY((float)v.getdy());
@@ -476,8 +473,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(!player.isJumping())
     		{
-	    		//if(!player.isCrouching()) FIXME
-	    			//player.shiftY(30);
+	    		if(!player.isCrouching()) //FIXME
+	    			player.shiftY(25);
 	    		if(rightKey) 
 	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
 	    		else if(leftKey) 
@@ -522,10 +519,18 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     
     private void loadNextLevel()
     {
-    	player.reset();
-    	bossFight=false;
-    	tmap.loadMap("assets/maps", "level2.txt");
-    	currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(2000f,2000f));
+    	if(currLevel.equals("Level One"))
+    	{
+    		player.reset();
+    		bossFight=false;
+    		tmap.loadMap("assets/maps", "level2.txt");
+    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(2000f,2000f));
+    		spawnBats();
+    	}
+    	if(currLevel.equals("Level Two"))
+    	{
+    		gameWon = true;
+    	}
     }
     
     private void spawnBats()
@@ -964,7 +969,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 		proj.setOffsets(xOffset, yOffset);
 		proj.drawTransformed(g);
     }
-	
+    
+    /**
+	 * Draw key mappings.
+	 * */
     private void drawHELP(Graphics2D g)
     {
 		g.setColor(Color.green);
@@ -973,7 +981,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("Use Gadget - Mouse1", screenWidth-198, 80);
     	g.drawString("Switch Gadget - Mouse Scroll", screenWidth-198, 95);
     }
-	
+    
+    /**
+	 * Draw an appopriate message for when the player dies.
+	 * */
     private void drawGameOverState(Graphics2D g)
 	{
     	g.setColor(Color.red);
@@ -981,6 +992,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	g.drawString("Press Esc to Quit", screenWidth/2-15, screenHeight/2+15);
     	g.drawString("       or", screenWidth/2, screenHeight/2+30);
     	g.drawString("Press R to retry", screenWidth/2-15, screenHeight/2+45);
+    	if(!currLevel.getLevelName().equals("Level One"))
+    		g.drawString("Press Enter to restart game",screenWidth/2-35, screenHeight/2+60);
 	}
 	
     /**
@@ -998,5 +1011,18 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	int y = (int)(Math.random()*yRange)+5;
         	g.drawLine(x, y, x-3, y+3);
         }
+	}
+	
+    /**
+	 * Draw an appopriate message for when the game is won.
+	 * */
+    private void drawGameWonState(Graphics2D g)
+	{
+		g.setColor(Color.red);
+		g.drawString("You defeated all enemies for tonight!", screenWidth/2-35, screenHeight/2);
+		g.drawString("More are sure to cause trouble soon!", screenWidth/2-35, screenHeight/2+15);
+    	g.drawString("Press Esc to Quit", screenWidth/2-15, screenHeight/2+30);
+    	g.drawString("       or", screenWidth/2, screenHeight/2+45);
+    	g.drawString("Press Enter to restart game",screenWidth/2-35, screenHeight/2+60);
 	}
 }

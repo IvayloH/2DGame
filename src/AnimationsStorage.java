@@ -101,8 +101,16 @@ public class AnimationsStorage
 		storage.put("grappleHookRight", anim);
 		
 		anim = new Animation();
+		anim.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunRight_move.gif"), 60);
+		storage.put("grappleHookRight_move", anim);
+		
+		anim = new Animation();
 		anim.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft.gif"), 60);
 		storage.put("grappleHookLeft", anim);
+		
+		anim = new Animation();
+		anim.addFrame(loadImage("assets/images/BatmanWithGadgets/BatmanGrappleHookGunLeft_move.gif"), 60);
+		storage.put("grappleHookLeft_move", anim);
 		
 		anim = new Animation();
 		anim.addFrame(loadImage("assets/images/Enemies/Thug/thug_sl.gif"), 60);

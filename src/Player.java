@@ -264,9 +264,19 @@ public class Player extends SpriteExtension
     	else
     	{
 	    	if(walkingRight)
-	    		return storage.getAnim("grappleHookRight");
-			else 
-				return storage.getAnim("grappleHookLeft");
+	    	{
+	    		if(playerState.equals(EPlayerState.RUN_RIGHT))
+	    			return storage.getAnim("grappleHookRight_move");
+	    		else
+	    			return storage.getAnim("grappleHookRight");
+	    	}
+			else
+			{
+				if(playerState.equals(EPlayerState.RUN_LEFT))
+					return storage.getAnim("grappleHookLeft_move");
+				else
+					return storage.getAnim("grappleHookLeft");
+			}
     	}
 	}
 	
