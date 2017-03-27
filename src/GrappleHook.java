@@ -15,7 +15,7 @@ public class GrappleHook extends SpriteExtension
 	public boolean isGrappleHookRetracting() { return grappleHookRetracting; }
 	public float getHookLimit() { return HOOKLIMIT; }
 	
-	  /**
+	/**
      * Simulate the effect that the grapple hook retracts back into the grapple gun.
      */
   	public void retractGrappleHook(Player player)

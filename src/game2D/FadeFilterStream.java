@@ -27,7 +27,7 @@ public class FadeFilterStream extends FilterInputStream {
 		int bytesRead = super.read(sample,offset,length);
 		// Work out a rate of change in volume per sample
 		// (multiplied by 2 because we are move at 2 bytes per loop cycle)
-		float change = 2.0f * (1.0f / (float)bytesRead);
+		float change = 2.0f * (2.4f / (float)bytesRead);
 		// Start off at full volume
 		float volume = 1.0f;
 		short amp=0;

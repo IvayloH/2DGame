@@ -419,4 +419,18 @@ public class Player extends SpriteExtension
         	collisionLEFT = collider.checkLeftSideForCollision(this);
         }
     }
+	
+	/**
+	 * Causes the player to crouch(image is moved to the pixel in which a collision is detected).
+	 * */
+	public void crouch()
+	{
+		for(int i=0; i<32; i++)
+		{
+			if(collider.checkBottomSideForCollision(this)) 
+				break;
+			else
+				this.shiftY(1);
+		}
+	}
 }

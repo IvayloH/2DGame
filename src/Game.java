@@ -206,7 +206,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	if(key==KeyEvent.VK_3)
     	{
-    		player.switchGadget(1);
+    		player.switchGadget(1); // TODO remove before submitting - VK1/2 as well
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
@@ -473,8 +473,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		if(!player.isJumping())
     		{
-	    		if(!player.isCrouching()) //FIXME
-	    			player.shiftY(25);
+	    		if(!player.isCrouching())
+    				player.crouch();
 	    		if(rightKey) 
 	    			return Player.EPlayerState.CROUCH_MOVE_RIGHT;
 	    		else if(leftKey) 
@@ -942,7 +942,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	String msg = "Equipped Gadget: "; 
     	if(player.getCurrentGadget().equals("Batarang"))
     		g.drawImage(loadImage("assets/images/BatmanGadgets/batarang.png"), 125, 75, null);
-    	else if(player.getCurrentGadget().equals("Grapple Hok"))
+    	else if(player.getCurrentGadget().equals("Grapple Hook"))
     		g.drawImage(loadImage("assets/images/BatmanGadgets/grappleHookGun.png"), 125, 75, null);
     	
         g.setColor(Color.red);

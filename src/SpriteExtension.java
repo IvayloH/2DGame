@@ -8,7 +8,8 @@ public class SpriteExtension extends Sprite
 	AnimationsStorage storage;
 
 	//Sounds
-	protected Sound fire;
+	protected Sound fire = null;
+	protected FadingSound fadingFire = null;
 	
 	protected SpriteExtension projectile;
 	protected int maxHP;
@@ -64,28 +65,28 @@ public class SpriteExtension extends Sprite
 		{
 		case "batarang":
 		{
-			fire = new Sound("assets/sounds/grunt_throw.wav");
+			fadingFire = new FadingSound("assets/sounds/grunt_throw.wav");
 			break;
 		}
 		case "thug":
 		{
-			fire = new Sound("assets/sounds/shoot.wav");
+			fadingFire = new FadingSound("assets/sounds/shoot.wav");
 			break;
 		}
 		case "turret":
 		{
-			fire = new Sound("assets/sounds/shoot.wav");
+			fadingFire = new FadingSound("assets/sounds/shoot.wav");
 			break;
 		}
 		case "boss":
 		{
-			fire = new Sound("assets/sounds/shoot.wav");
+			fadingFire = new FadingSound("assets/sounds/shoot.wav");
 			break;
 		}
 			default:
 				break;
 		}
-		fire.start();
+		fadingFire.start();
 	}
 	
 	protected void setAnimationsAccordingToTag(String tag)
