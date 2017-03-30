@@ -349,7 +349,7 @@ public class Player extends SpriteExtension
 	public void reset()
 	{
 		lifeBars = maxHP;
-		playerState = EPlayerState.FALLING;
+		playerState = EPlayerState.STANDING;
 		this.setX(startingX);
 		this.setY(startingY);
 		this.show();

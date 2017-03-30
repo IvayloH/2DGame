@@ -43,6 +43,7 @@ public class Level
 	 * */
 	private void setUpLevel() 
 	{ 
+		randomizeWindowTiles();
 		player.show();
 		setUpThugs();
 		setUpCrates();
@@ -205,4 +206,27 @@ public class Level
     			if(tmap.getTileChar(x, y)=='c') //find the tile with 'c' -> reset it
     				tmap.setTileChar(tmap.getTileChar(x, y-1), x, y);
     }
+	
+	/**
+	 * Go through the tilemap and randomly replace the window tiles with
+	 * a glowing window to simulate a more realistic world and feel.
+	 */
+	private void randomizeWindowTiles()
+	{
+		for(int y=0; y<tmap.getMapHeight(); y++)
+    		for(int x=0; x<tmap.getMapWidth(); x++)
+    		{
+    			//background window tile
+    			if(tmap.getTileChar(x, y) == 'W')
+    			{
+    				if(Math.random()>0.5)
+    					tmap.setTileChar('Q', x, y);
+    			}
+    			
+    			//collideable window tile
+    			if(tmap.getTileChar(x, y) == 'w')
+    				if(Math.random()>0.5)
+    					tmap.setTileChar('q', x, y);
+    		}
+	}
 }
