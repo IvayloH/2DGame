@@ -8,7 +8,7 @@ public class Boss extends Enemy
 	{
 		super(tag);
 		projectile = new SpriteExtension("projectile");
-		maxHP = 10; // default
+		maxHP = 4; // default
 		lifeBars = maxHP;
 	}
 	

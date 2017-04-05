@@ -41,8 +41,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private boolean crouchKey = false;
     private boolean helpKey = false;
     
-    private boolean inMenu = false; // TODO set to true later
+    private boolean inMenu = true; // TRUE = use menu / FALSE = skip menu(uses default hp settings for player and boss)
     private boolean difficultySelection = false;
+    private boolean loadingNextLevel = false;
+    private float loadTime = .0f;
     
     // Game resources
     private Player player = null;
@@ -53,6 +55,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Image bgImage = null;
     private Image mainMenu;
     private Image difficultyMenu;
+    private Image fgImage = null;
     
 	private Level currLevel;
     private Collision collider;
@@ -88,7 +91,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         addMouseListener(this);
         addMouseWheelListener(this);
         addMouseMotionListener(this);
-        
+        loadingNextLevel = true;
         initialiseGame(); 		
         //System.out.println(tmap);
     }
@@ -119,9 +122,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
             return;
     	}
     	calculateOffsets();
-        g.drawImage(bgImage,xOffset,yOffset,null);
+    	
+        g.drawImage(bgImage, (int) (xOffset * 0.2f), (int) (yOffset * 0.2f), null);
         tmap.draw(g,xOffset,yOffset);
-       
+        
         for (Sprite s: bats)
         {
         	s.setOffsets(xOffset,yOffset);
@@ -141,21 +145,33 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         else if(!bossFight)
         {
         	g.setColor(Color.green);
-        	g.drawString("Pres H to show/hide Controls", screenWidth-170, 50);
+        	g.drawString("Press H to show/hide Controls", screenWidth-170, 50);
         }
         //either player is close enough or the boss has already been engaged 
-        if(player.getX()+screenWidth/2+screenWidth/4>boss.getX() || bossFight)
+        if((player.getX()+screenWidth/2+screenWidth/4>boss.getX() || bossFight) && !boss.isKilled())
         {
         	drawBoss(g);
         	bossFight=true;
         }
+        
         if(player.isKilled())
         {
         	drawGameOverState(g);
         }
+        
+        if(player.getY()>500)
+        {
+        	//16+(int) (xOffset * 1.4f)
+        	g.drawImage(fgImage, xOffset%fgImage.getWidth(null), 195, null);
+        }
+        
         drawRain(g);
+        
         if(gameWon)
+        {
         	drawGameWonState(g);
+        }
+
     }
 
 	/**
@@ -166,11 +182,27 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void update(long elapsed)
     {
     	if(inMenu) return;
+    	if(loadingNextLevel)
+    	{
+    		if(loadTime<1000f)
+    		{
+    			loadTime+=elapsed;
+    			return;
+    		}
+    		loadTime=0;
+    		loadingNextLevel = false;
+    	}
     	if(bossFight)
     	{
     		updateBoss(elapsed);
     		if(boss.isKilled())
+    		{
+    			bossFight=false;
+    			boss.getProjectile().hide();
+    			boss.getProjectile().setY(.0f);
+    			boss.hide();
     			loadNextLevel();
+    		}
     	}
     	
     	if(batarang.isVisible())
@@ -179,6 +211,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if (grappleHook.isVisible() && !player.isKilled())
     		updateGrappleHook(elapsed);
 	
+    	if(player.isKilled()) return;
+    	
     	updateLevel(elapsed);
     	
         for (Sprite s: bats)
@@ -194,19 +228,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void keyPressed(KeyEvent e) 
     { 
     	int key = e.getKeyCode();
-    	if(key==KeyEvent.VK_1)
-    	{
-    		tmap.loadMap("assets/maps", "level1.txt");
-    		currLevel = new Level(player, boss, tmap, "Level One", new Pair<Float,Float>(1945f,50f));
-    	}
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
     		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3968f,512f));
-    	}
-    	if(key==KeyEvent.VK_3)
-    	{
-    		player.switchGadget(1); // TODO remove before submitting - VK1/2 as well
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
@@ -226,7 +251,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	}
     	if(key==KeyEvent.VK_R)
     	{
-    		if(player.isKilled())
+    		if(player.isKilled() && !gameWon)
     			restartLevel();
     	}
     	if(key==KeyEvent.VK_ENTER)
@@ -496,6 +521,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     			return Player.EPlayerState.JUMP;
     	}
     	player.setJumpStart(0.f);
+    	if(collider.checkBottomSideForCollision(player))
+    		return Player.EPlayerState.FALLING;
+  
 		return Player.EPlayerState.STANDING;
     }
     
@@ -505,6 +533,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void restartLevel()
     {
     	currLevel.restartLevel(); // start from level one
+    	loadingNextLevel = true;
     	bossFight = false;
     }
     
@@ -514,20 +543,24 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void restartGame()
     {
     	currLevel.restartGame();
+    	loadingNextLevel = true;
+    	gameWon = false;
     	bossFight = false;
     }
     
     private void loadNextLevel()
     {
-    	if(currLevel.equals("Level One"))
+    	
+    	if(currLevel.getLevelName().equals("Level One"))
     	{
-    		player.reset();
     		bossFight=false;
     		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(2000f,2000f));
+    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3968f,512f));
+    		player.reset();
+    		loadingNextLevel = true;
     		spawnBats();
     	}
-    	if(currLevel.equals("Level Two"))
+    	else if(currLevel.getLevelName().equals("Level Two"))
     	{
     		gameWon = true;
     	}
@@ -582,9 +615,10 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void loadAssets()
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
-        bgImage = loadImage("assets/images/city.png");
+        bgImage = loadImage("assets/maps/Backgrounds/city.png");
         mainMenu = loadImage("assets/images/Menus/mainMenu.png");
         difficultyMenu = loadImage("assets/images/Menus/diffMenu.png");
+        fgImage = loadImage("assets/maps/Foregrounds/poles_front.png");
         //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
         //levelMusic.start();
 	}
@@ -594,7 +628,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
 	 */
     private void loadSprites()
 	{
-	  	player = new Player(75.f,50.f, "player");
+	  	player = new Player(75.f,0.f, "player");
         grappleHook = new GrappleHook(150,"grappleHook");
         batarang = new SpriteExtension("batarang");
         boss = new Boss("boss");
@@ -872,8 +906,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     		float newX = (float) (xDif*Math.cos(grappleHook.getRotation()) + xCent - yDif*Math.sin(grappleHook.getRotation()));
     		float newY = (float) (yDif*Math.cos(grappleHook.getRotation()) + yCent + xDif*Math.sin(grappleHook.getRotation()));
     				
-    				
-    				
     		if(player.isFacingRight())
     			g.drawLine(	(int)player.getX()+(int)player.getWidth()+xOffset,
     					(int)player.getY()+26+yOffset,
@@ -945,11 +977,11 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	else if(player.getCurrentGadget().equals("Grapple Hook"))
     		g.drawImage(loadImage("assets/images/BatmanGadgets/grappleHookGun.png"), 125, 75, null);
     	
-        g.setColor(Color.red);
+    	g.setColor(new Color(0,128,171));
         g.drawString(msg, 20, 90);
         
         //Life Bars
-        g.setColor(Color.black);
+        //g.setColor(new Color(0,128,171));
         int i=0, j=20;
         for(; i<player.getCurrentHP(); i++,j+=8)
         {
@@ -1019,8 +1051,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private void drawGameWonState(Graphics2D g)
 	{
 		g.setColor(Color.red);
-		g.drawString("You defeated all enemies for tonight!", screenWidth/2-35, screenHeight/2);
-		g.drawString("More are sure to cause trouble soon!", screenWidth/2-35, screenHeight/2+15);
+		g.drawString("You defeated all enemies for tonight!", screenWidth/2-55, screenHeight/2);
+		g.drawString("More are sure to cause trouble soon!", screenWidth/2-55, screenHeight/2+15);
     	g.drawString("Press Esc to Quit", screenWidth/2-15, screenHeight/2+30);
     	g.drawString("       or", screenWidth/2, screenHeight/2+45);
     	g.drawString("Press Enter to restart game",screenWidth/2-35, screenHeight/2+60);

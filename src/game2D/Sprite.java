@@ -53,7 +53,9 @@ public class Sprite {
         scale = 1.0f;
         rotation = 0.0f;
     }
-    
+    /**
+     *  Creates a new Sprite object without an Animation.
+     */
     public Sprite()
     {
     	render = false;
