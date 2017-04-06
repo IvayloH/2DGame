@@ -1,0 +1,40 @@
+64 12 32 32
+// The first line should contain the width and height of the
+// map and the width and height of each tile. A list of character to
+// tile mappings is then provided where each character is preceded by a
+// # character. The dot character always defaults to a blank space 
+// Note that the referenced files should be in the same directory as the
+// tile map.
+#b=Tiles/wall.png
+#v=Tiles/wallR.png
+#n=Tiles/wallL.png
+#w=Tiles/windowb.png
+#q=Tiles/window.png
+#r=Tiles/roof.png
+#z=Extras/crate.png
+#c=Extras/crate.png
+//crates for spawn
+//thugs -> a
+//turrets -> o
+//background tiles
+#B=Tiles/wall.png
+#W=Tiles/windowb.png
+#Q=Tiles/window.png
+#R=Tiles/roof.png
+#V=Tiles/wallRb.png
+#N=Tiles/wallLb.png
+#m=Extras/bomb.png
+// The actual tile map is preceded by the #map line
+#map
+...........RRRRR................................................
+...........NWWWV................................................
+r..........NWWWV...........RRRRR....RRRRR.....................rr
+v..........NWWWaRRRRRR.....NBWWV....NWWWV.....................ww
+v..........NWWWVWWWBWV...a.NBWWV....NWWWV....a...............rww
+v..........NWWWVWWWBWVc....NBWWV....NWWWV...c................nww
+brrrr......NWWWVWWWBWVrrrrrrrWWVz...NWWWV...rrrr.............nww
+bbwwv..,...NWWWVWWWBWVbwwbwwvWzzz..rrrWWV...nwwv.............nww
+bbwwbrrrr..NWWWVWWWBzzbwwbwwbrrrr..nwbrrrrrrbwwbrrrrrrrrrrrrrbww
+bbwwbwwwbrrrrrrrrrrrrrbwwbwwbwwbv..nwbbwwbwbbwwbwwbbwbbwwbbwbbww
+bbwwbwwwbbwwbwwbbwwwwbbwwbwwbwwbv..nwbbwwbwbbwwbwwbbwbbwwbbwbbww
+bbwwbwwwbbwwbwwbbwwwwbbwwbwwbwwbv..nwbbwwbwbbwwbwwbbwbbwwbbwbbww
