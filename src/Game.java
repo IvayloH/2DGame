@@ -34,7 +34,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private boolean bossFight = false;
     private boolean gameWon = false;
     
-    // Pressed Key flags
+    //Pressed Key flags
     private boolean leftKey = false;
     private boolean rightKey = false;
     private boolean jumpKey = false;
@@ -56,7 +56,6 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private Image mainMenu;
     private Image difficultyMenu;
     private Image fgImage = null;
-    private Sound levelMusic;
     
 	private Level currLevel;
     private Collision collider;
@@ -618,8 +617,8 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         mainMenu = loadImage("assets/images/Menus/mainMenu.png");
         difficultyMenu = loadImage("assets/images/Menus/diffMenu.png");
         fgImage = loadImage("assets/maps/Foregrounds/poles_front.png");
-        levelMusic = new Sound("assets/sounds/level.wav");
-        levelMusic.start();
+        //levelMusic = new Sound("assets/sounds/level.wav"); TODO UNCOMMENT LATER ON
+        //levelMusic.start();
 	}
     
 	/**
