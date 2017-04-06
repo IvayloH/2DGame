@@ -63,6 +63,9 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     private ArrayList<Sprite> bats = new ArrayList<Sprite>();
     private TileMap tmap = new TileMap();	// Our tile map, note that we load it in init()
     
+    private Pair<Float,Float> firstBossSpawn = new Pair<Float,Float>(1945f,50f); // spawn location for boss in first level
+    private Pair<Float,Float> secondBossSpawn = new Pair<Float,Float>(3968f,512f); // spawn location for boss in second level
+    
     private int xOffset, yOffset;
     
     /**
@@ -103,7 +106,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      */
     public void initialiseGame()
     {	
-        currLevel = new Level(player, boss, tmap, "Level One", new Pair<Float,Float>(1945f,50f));
+        currLevel = new Level(player, boss, tmap, "Level One", firstBossSpawn);
     }
 
     /**
@@ -154,24 +157,19 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         	bossFight=true;
         }
         
-        if(player.isKilled())
-        {
-        	drawGameOverState(g);
-        }
         
+        //Game over
+        if(player.isKilled())
+        	drawGameOverState(g);
+        
+        //draw foreground if player is on the ground
         if(player.getY()>500)
-        {
-        	//16+(int) (xOffset * 1.4f)
-        	g.drawImage(fgImage, xOffset%fgImage.getWidth(null), 195, null);
-        }
+        	g.drawImage(fgImage, 16+(int) (xOffset * 1.4f), 195, null);
         
         drawRain(g);
         
         if(gameWon)
-        {
         	drawGameWonState(g);
-        }
-
     }
 
 	/**
@@ -231,7 +229,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	if(key==KeyEvent.VK_2)
     	{
     		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3968f,512f));
+    		currLevel = new Level(player, boss, tmap, "Level Two", secondBossSpawn);
     	}
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
@@ -542,7 +540,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
      * */
     private void restartGame()
     {
-    	currLevel.restartGame();
+    	currLevel.restartGame(firstBossSpawn);
     	loadingNextLevel = true;
     	gameWon = false;
     	bossFight = false;
@@ -555,7 +553,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     	{
     		bossFight=false;
     		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new Level(player, boss, tmap, "Level Two", new Pair<Float,Float>(3968f,512f));
+    		currLevel = new Level(player, boss, tmap, "Level Two", secondBossSpawn);
     		player.reset();
     		loadingNextLevel = true;
     		spawnBats();

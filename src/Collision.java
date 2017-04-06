@@ -38,7 +38,7 @@ public class Collision
 	}
 	
     /**
-     * Push Sprite LEFT by one pixel if sprite is stuck in a tile below it.
+     * Push Sprite LEFT by one pixel if sprite is stuck in a tile right of it.
      * @param s Sprite to check and unstuck.
      * */
 	public void recoverSpriteStuckInRightTile(Sprite s) 
@@ -50,7 +50,7 @@ public class Collision
 	}
 	
     /**
-     * Push Sprite RIGHT by one pixel if sprite is stuck in a tile below it.
+     * Push Sprite RIGHT by one pixel if sprite is stuck in a tile left of it.
      * @param s Sprite to check and unstuck.
      * */
 	public void recoverSpriteStuckInLeftTile(Sprite s) 

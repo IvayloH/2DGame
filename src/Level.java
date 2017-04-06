@@ -54,7 +54,7 @@ public class Level
 	/**
 	 * Restart the game from level one.
 	 * */
-	public void restartGame()
+	public void restartGame(Pair<Float,Float> bossSpawnLocation)
 	{
 		tmap.loadMap("assets/maps", "level1.txt");
 		setLevelName("Level One");
@@ -62,6 +62,8 @@ public class Level
 		crateSpawnPositions.clear();
 		turretSpawnPositions.clear();
 		setUpLevel();
+		boss.setX(bossSpawnLocation.getFirst());
+		boss.setY(bossSpawnLocation.getSecond());
 		boss.reset();
 		player.reset();
 	 	player.show();
