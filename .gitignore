@@ -1,10 +1,4 @@
 ########
-#Assets#
-########
-assets/
-images/
-sounds/
-########
 #Others#
 ########
 *.project

@@ -1,0 +1,50 @@
+128 22 32 32
+// The first line should contain the width and height of the
+// map and the width and height of each tile. A list of character to
+// tile mappings is then provided where each character is preceded by a
+// # character. The dot character always defaults to a blank space 
+// Note that the referenced files should be in the same directory as the
+// tile map.
+#k=Tiles/road.png
+#b=Tiles/wall.png
+#v=Tiles/wallR.png
+#n=Tiles/wallL.png
+#w=Tiles/windowb.png
+#q=Tiles/window.png
+#r=Tiles/roof.png
+#z=Extras/crate.png
+//crates for spawn
+#c=Extras/crate.png
+//thugs -> a
+//turrets -> o
+//background tiles
+#B=Tiles/wall.png
+#W=Tiles/windowb.png
+#Q=Tiles/window.png
+#R=Tiles/roof.png
+#V=Tiles/wallRb.png
+#N=Tiles/wallLb.png
+// The actual tile map is preceded by the #map line
+#map
+.NWWWWV....RRRRRR............NWWWWV.............................................................................................
+rNWWWWV....NWWBWV............NWWWWV.......RRRRRRRR..............................................................................
+vNWWWWV....NWWBWV............NaWWWV.......NBBBBBBV......................RRRRRR..................................................
+vNWWWWV....NWWBWV............NWWWWV.......NBWWBWWV.................RRRRRNWWBWV................................................rr
+vNWWWWV....NWWBWV........zzrrrrrrWV.......NBWWBWWV.................NWBWVNWWBWV................................................nv
+vNWWWWV....NWWBWV.....c.zzzWWNWWvWV.......NBWWBWWV.................NWBWVNWWBWV................................................nv
+vrrrrrr....NWWBWV.....rrrrrWWNWWvWV.......NBWWBWWV.................NWBWVNWWBWV................................................nv
+bwwbwwv....NWWBWV.....nWWWVWWNWWVrrrrrr...NBWWBWWV.................NWBWVNWWBWV................................................nv
+bwwbwwv...rrrrrrr...zrnWWWVWWNWWVNWWWBv...NBWWBWWV.................NWBWVNWWBWV................................................nv
+bwwbwwv...nwbbwwb..zzVNWWWVWWNWWVNWWWBv...NBWWBWWV.................NWBWVNWcBWVa...............................................nv
+bwwbwwv...nwbbwwbzzzzVNWWWVWWNWWVNWWWBv...NBWWBWWVRRRR.............NWBWVNWrrrrrrrrrrrrrrrrrr..................................nv
+bwwbwwv...nwbbwwbRRRRVNWWWVWWNWWVNWWWBv...NBWWBWWVBWBV........c....NWBWVNWnWWWWVNWWWWWBBWWWV..................................nv
+bwwbwwv...nwbbwwbNWWWVNWWWVWWNWWVNWWWBv...NBWWBWWVBWBV........rrrrrNarrrrrnWWWWVNWWWWWBBWWWV..................................nv
+bwwbwwv...nwbbwwbNWWWVNWWWVWWNWWVNWWWBv...NBWWBWWVBWBV........nBWBNrrNWWWVNWWWWVNWWWWWBBWWWV..................................nv
+bwwbwwv...nwbbwwbNWWWVNWWWVWWNWWVNWWWBv...NBWWBWWVBoBV...rrrrbVBWBNVWNWWWVNWWWWVNWWWWWBBWWWV..................................nv
+bwwbwwv...nwbbwwbNWWWVNWWWVWWNWWVNWWWBv...NBWWBWWVBWrrrrrbNBBBVBWBNVWNWWWVNWWWWVNWWWrrrrrrrrrrrrrrrr..........................nv
+bwwbwwv...nwbbwwbNWWWVNWWWVWWNWWVNWWWBVrrrrrrrrrrrrrbVWWWVNWWBVBWBNVWNWWWVNWWWcVNaWrNWWBBWWVBWWwWWBv..........................nv
+bwwbwwvRR.NWBBWWBNWWWVNWWWVWWNWWVNWWWBVNWVNBWWBWWVBWBVWWWVNWWBVBWBNVWNWWWVNWWWrrrrrNNWWBBWWVBWWWWWBv..........................nv
+bwwbwwvWV.NWBBWWBNcWWVNWWWVWWNWWVNWWWBVNWVNBWWBWWVBWBVWWWVNWWBVBWBNVWNWWWVcWWWbWWWVNNWWBBWWVBWWwwwBv.......................rrrnv
+bwwbwwvWV.NWBBWWBNzWWVNWWWVWcNWWVNWWWBVNWVNBWaBWWVBoBVWWWVNWWBVBWBNVWNWWWVrrrrbWWWVNNWWBBWWVBWWWWWBv....zzzz...............nwwbv
+bwwbwwvWV.NWBBWWBNzWWVNWWaVWzNWaVNWWWBVNWVNBWWBWWVBWzVWWaVNWWBVBWBNVWNWWWVbwwbNWWWVNNWWBBWWVBWwwWWBv...zzzzz.......zzz.....nwWbv
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbwwbNWWWVNNWWBBWWVBWwWwWBvkkkkkkkkkkkkkkkkkkkkkkkkkkbv
