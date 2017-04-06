@@ -164,7 +164,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
         
         //draw foreground if player is on the ground
         if(player.getY()>500)
-        	g.drawImage(fgImage, 16+(int) (xOffset * 1.4f), 195, null);
+        	g.drawImage(fgImage, 16+(int) (xOffset * 1.1f), 195, null);
         
         drawRain(g);
         
@@ -226,11 +226,7 @@ public class Game extends GameCore implements MouseListener, MouseWheelListener,
     public void keyPressed(KeyEvent e) 
     { 
     	int key = e.getKeyCode();
-    	if(key==KeyEvent.VK_2)
-    	{
-    		tmap.loadMap("assets/maps", "level2.txt");
-    		currLevel = new Level(player, boss, tmap, "Level Two", secondBossSpawn);
-    	}
+    	
     	if (key == KeyEvent.VK_ESCAPE)
     		stop();
 
